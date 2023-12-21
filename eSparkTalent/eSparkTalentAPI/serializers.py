@@ -3,9 +3,9 @@ from .models import *
 
 class userSerializer(serializers.ModelSerializer):
     class Meta:
-        model= user
+        model= end_user
         # exclude = ['id']
-        fields='__all__'
+        fields = ['email', 'password', 'username','role']
         # fields=['id']
 
 class hiring_requestSerializer(serializers.ModelSerializer):

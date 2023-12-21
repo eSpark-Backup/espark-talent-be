@@ -1,147 +1,60 @@
-from django.shortcuts import render
+from .models import *
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.decorators import api_view
-from rest_framework.views import APIView
-from .models import *
-from .serializers import *
-# Create your views here.
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+from rest_framework.decorators import authentication_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from django.db.models import Count
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from .serializers import userSerializer
 
-
-class UserSignupAPI(APIView):
-    def get(self,request):
-        user_data= user.objects.all()
-        serializer= userSerializer(user_data, many=True)
-        return Response({'payload':serializer.data, 'status': 200})
+class create_user(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = userSerializer(data=request.data)
+        if serializer.is_valid():
+            # Use the custom manager to create a user
+            end_user.objects.create_user(
+                email=serializer.validated_data['email'],
+                password=serializer.validated_data['password'],
+                username=serializer.validated_data['username'],
+                role=serializer.validated_data['role'],
+                created_at=datetime.datetime.now(),
+                updated_at=datetime.datetime.now(),
+            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def post(self,request):
-        new_user=request.data
-        # print(new_user)
-        serializer=userSerializer(data=new_user)
-        if not serializer.is_valid():
-            return Response({
-            'status':400,
-            'error': serializer.errors,
-            'message': 'Something went wrong'
-        })
-
-        serializer.save()
-        return Response({
-            'status':200,
-            'payload': serializer.data,
-            'message': 'Data recieved'
-        })
-    
-    def patch(self,request):
-        try:
-            id= request.GET.get('id')
-            user_data = user.objects.get(id=id)
-            serializer=userSerializer(user_data , data=request.data, partial=True)
-            if not serializer.is_valid():
-                return Response({
-                'status':400,
-                'error': serializer.errors,
-                'message': 'Something went wrong'
-            })
-
-            serializer.save()
-            return Response({
-                'status':200,
-                'payload': serializer.data,
-                'message': 'Data recieved'
-            })
+class LoginView(APIView):
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        user = authenticate(request, email=email, password=password)
+        if user:
+            refresh = RefreshToken.for_user(user)
+            token = str(refresh.access_token)
+            return Response({'token': token, 'role': user.role}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
         
-        except:
-            return Response({
-                'status':400,
-                'error': 'You have entered invalid id',
-            })
-    
-    def delete(self,request):
-        try:
-            id= request.GET.get('id')
-            user_data = user.objects.get(id=id)
-            # user_data.delete()
-            return Response({
-                'status' : 200,
-                'error' : 'Record deleted!',
-            })
-        
-        except:
-            return Response({
-                'status':400,
-                'error': 'You have entered invalid id',
-            })
-        
-class UserSigninAPI(APIView):
-    def post(self, request):
-        user_credentials= request.data
-        print(user_credentials)
-        try:
-            user_data= user.objects.get(email=user_credentials['email'],password=user_credentials['password'])
-            if user_data:
-                return Response({
-                'status':200,
-                'message': 'Signin successfull'
-            })
-        except:
-            return Response({
-            'status':400,
-            'message': 'Invalid email id or password'
-        })           
 
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Client_Home(APIView):
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        print(user)
+        hiring_request_count = hiring_request.objects.filter(user_id=user).count()
+        interview_schedule_count = interview_schedule.objects.filter(user_id=user).count()
+        onboarding_count = onboarding.objects.filter(user_id=user).count()
 
+        data = {
+            'username': user.username,
+            'hiring_request_count': hiring_request_count,
+            'interview_schedule_count': interview_schedule_count,
+            'onboarding_count': onboarding_count,
+            'active': 0,
+        }
 
-
-# @api_view(['GET'])
-# def users(request):
-#     user_data= user.objects.all()
-#     serializer= userSerializer(user_data, many=True)
-#     return Response({'payload':serializer.data, 'status': 200})
-
-
-# @api_view(['POST'])
-# def new_user(request):
-    # new_user=request.data
-    # print(new_user)
-    # serializer=userSerializer(data=new_user)
-    # if not serializer.is_valid():
-    #     return Response({
-    #     'status':400,
-    #     'error': serializer.errors,
-    #     'message': 'Something went wrong'
-    # })
-
-    # serializer.save()
-    # return Response({
-    #     'status':200,
-    #     'payload': serializer.data,
-    #     'message': 'Data recieved'
-    # })
-
-
-# @api_view(['PATCH'])
-# def edit_user(request):
-#     id= request.GET.get('id')
-#     user_data = user.objects.get(id=id)
-#     serializer=userSerializer(user_data , data=request.data, partial=True)
-#     if not serializer.is_valid():
-#         return Response({
-#         'status':400,
-#         'error': serializer.errors,
-#         'message': 'Something went wrong'
-#     })
-
-#     serializer.save()
-#     return Response({
-#         'status':200,
-#         'payload': serializer.data,
-#         'message': 'Data recieved'
-#     })
-
-
-# @api_view(['GET'])
-# def hirirng_requests(request):
-#     user_data= hiring_request.objects.all()
-#     serializer= hiring_requestSerializer(user_data, many=True)
-#     return Response({'payload':serializer.data, 'status': 200})
+        return Response(data, status=status.HTTP_200_OK)

@@ -1,17 +1,40 @@
 from django.db import models
 from django.utils import timezone
 import datetime
+from django.db import models
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
+class ClientManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('The Email field must be set')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(email, password, **extra_fields)
+    
 # Create your models here.
-class user(models.Model):
+class end_user(AbstractBaseUser, PermissionsMixin):
     id = models.AutoField(primary_key=True)
     username=models.CharField(max_length=50)
     role = models.CharField(max_length=15)
-    status = models.BooleanField()
     email=models.EmailField(unique=True)
-    password=models.CharField(max_length=15)
+    password=models.CharField(max_length=255)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(default=timezone.now)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
+
+    objects = ClientManager()
 
     def save(self, *args, **kwargs):
         if not self.created_at:
@@ -21,11 +44,11 @@ class user(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.username
+        return self.email
     
 class hiring_request(models.Model):
     id = models.AutoField(primary_key=True)
-    user_id = models.ForeignKey(user, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(end_user, on_delete=models.CASCADE)
     job_title = models.CharField(max_length=30)
     role_type = models.CharField(max_length=15)
     gender = models.CharField(max_length=7)
@@ -48,7 +71,7 @@ class hiring_request(models.Model):
     
 class interview_schedule(models.Model):
     id = models.AutoField(primary_key=True)
-    user_id = models.ForeignKey(user, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(end_user, on_delete=models.CASCADE)
     employee_name = models.CharField(max_length=50)
     gender = models.CharField(max_length=7)
     job_title = models.CharField(max_length=30)
@@ -69,7 +92,7 @@ class interview_schedule(models.Model):
 
 class onboarding(models.Model):
     id = models.AutoField(primary_key=True)
-    user_id = models.ForeignKey(user, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(end_user, on_delete=models.CASCADE)
     employee_name = models.CharField(max_length=50)
     gender = models.CharField(max_length=7)
     country = models.CharField(max_length=30)
