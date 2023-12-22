@@ -44,7 +44,6 @@ class LoginView(APIView):
 class Client_Home(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user
-        print(user)
         hiring_request_count = hiring_request.objects.filter(user_id=user).count()
         interview_schedule_count = interview_schedule.objects.filter(user_id=user).count()
         onboarding_count = onboarding.objects.filter(user_id=user).count()
@@ -54,7 +53,7 @@ class Client_Home(APIView):
             'hiring_request_count': hiring_request_count,
             'interview_schedule_count': interview_schedule_count,
             'onboarding_count': onboarding_count,
-            'active': 0,
+            'active_employee': 0,
         }
 
         return Response(data, status=status.HTTP_200_OK)
