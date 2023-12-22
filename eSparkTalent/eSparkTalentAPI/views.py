@@ -8,7 +8,7 @@ from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from .serializers import userSerializer
+from .serializers import *
 
 class create_user(APIView):
     def post(self, request, *args, **kwargs):
@@ -20,8 +20,6 @@ class create_user(APIView):
                 password=serializer.validated_data['password'],
                 username=serializer.validated_data['username'],
                 role=serializer.validated_data['role'],
-                created_at=datetime.datetime.now(),
-                updated_at=datetime.datetime.now(),
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -57,3 +55,28 @@ class Client_Home(APIView):
         }
 
         return Response(data, status=status.HTTP_200_OK)
+    
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Start_Hiring(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer=hiring_requestSerializer(data=request.data)
+        if serializer.is_valid():
+            hiring_request.objects.create(
+                user_id = request.user,
+                job_title = serializer.validated_data['job_title'],
+                role_type = serializer.validated_data['role_type'],
+                gender = serializer.validated_data['gender'],
+                employment_term = serializer.validated_data['employment_term'],
+                salary_range= serializer.validated_data['salary_range'],
+                hiring_start_date = serializer.validated_data['hiring_start_date'],
+                hiring_end_date = serializer.validated_data['hiring_end_date'],
+            )
+            print(request.data, request.user)
+            return Response({"message": "Resquest created"},status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+
+

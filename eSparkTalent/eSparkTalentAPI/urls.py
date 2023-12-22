@@ -5,4 +5,5 @@ urlpatterns=[
     path('user_create/',create_user.as_view()),
     path('login/',LoginView.as_view()),
     path('chome/',Client_Home.as_view()),
+    path('csh/',Start_Hiring.as_view()),
 ]
