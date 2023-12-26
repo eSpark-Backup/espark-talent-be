@@ -26,8 +26,8 @@ class end_user(AbstractBaseUser, PermissionsMixin):
     role = models.CharField(max_length=15)
     email=models.EmailField(unique=True)
     password=models.CharField(max_length=255)
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
@@ -35,13 +35,6 @@ class end_user(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ['username']
 
     objects = ClientManager()
-
-    def save(self, *args, **kwargs):
-        if not self.created_at:
-            self.created_at=datetime.datetime.now()
-
-        self.updated_at=datetime.datetime.now()
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.email
@@ -57,24 +50,16 @@ class hiring_request(models.Model):
     country = models.CharField(max_length=30)
     hiring_start_date = models.DateField()
     hiring_end_date = models.DateField()
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(default=timezone.now)
-
-    def save(self, *args, **kwargs):
-        if not self.created_at:
-            self.created_at=datetime.datetime.now()
-
-        self.updated_at=datetime.datetime.now()
-        super().save(*args, **kwargs)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'{self.job_title} - {self.hiring_start_date}'
+        return f'{self.user_id} - {self.id}'
     
 # from django.contrib.auth.hashers import make_password, check_password  
 class employee(models.Model):
     id = models.AutoField(primary_key=True)
     employee_id=models.CharField(max_length=15,unique=True, default='')
-    # user_id = models.ForeignKey(end_user, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     gender = models.CharField(max_length=7)
@@ -85,39 +70,13 @@ class employee(models.Model):
     joining_date=models.DateField()
     company=models.CharField(max_length=30)
     department=models.CharField(max_length=30)
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    def save(self, *args, **kwargs):
-        current_year = str(datetime.datetime.now().year)
-
-        if not self.employee_id:
-            latest_emp = employee.objects.filter(
-                employee_id__startswith="eS-"
-            ).order_by("-employee_id").first()
-
-            if latest_emp:
-                numeric_part = int(latest_emp.employee_id.split("-")[-1])
-                numeric_part += 1
-            else:
-                numeric_part = 1
-
-            self.employee_id = f"eS-{current_year}-{numeric_part:02}"
-            
-        if not self.created_at:
-            self.created_at=datetime.datetime.now()
-
-        self.updated_at=datetime.datetime.now()
-        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f'{self.username} - {self.email}'
-
-    # def set_password(self, raw_password):
-    #     self.password = make_password(raw_password)
-
-    # def check_password(self, raw_password):
-    #     return check_password(raw_password, self.password)
+        return self.employee_id
+    
     
 class interview_schedule(models.Model):
     id = models.AutoField(primary_key=True)
@@ -128,18 +87,12 @@ class interview_schedule(models.Model):
     interview_date_time=models.DateTimeField()
     country = models.CharField(max_length=30)
     status = models.CharField(max_length=15)
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    def save(self, *args, **kwargs):
-        if not self.created_at:
-            self.created_at=datetime.datetime.now()
-
-        self.updated_at=datetime.datetime.now()
-        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f'{self.employee_id.username} - {self.interview_date_time}'
+        return f'{self.user_id} - {self.id}'
 
 class onboarding(models.Model):
     statuses=[
@@ -157,16 +110,9 @@ class onboarding(models.Model):
     notice_period=models.CharField(max_length=15)
     salary=models.IntegerField()
     status=models.CharField(max_length=10, choices=statuses, default='')
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(default=timezone.now)
-
-    def save(self, *args, **kwargs):
-        if not self.created_at:
-            self.created_at=datetime.datetime.now()
-
-        self.updated_at=datetime.datetime.now()
-        super().save(*args, **kwargs)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'{self.employee_id.username} - {self.employee_id.designation}'
+        return f'{self.user_id} - {self.id}'
     

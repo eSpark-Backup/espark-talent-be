@@ -44,14 +44,15 @@ class Client_Home(APIView):
         user = request.user
         hiring_request_count = hiring_request.objects.filter(user_id=user).count()
         interview_schedule_count = interview_schedule.objects.filter(user_id=user).count()
-        onboarding_count = onboarding.objects.filter(user_id=user).count()
+        onboarding_count = onboarding.objects.filter(user_id=user, status='onboard').count()
+        active_employee = onboarding.objects.filter(user_id=user, status='active').count()
 
         data = {
             'username': user.username,
             'hiring_request_count': hiring_request_count,
             'interview_schedule_count': interview_schedule_count,
             'onboarding_count': onboarding_count,
-            'active_employee': 0,
+            'active_employee': active_employee,
         }
 
         return Response(data, status=status.HTTP_200_OK)
@@ -86,10 +87,10 @@ class Hiring_Resquest(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user
         hiring_requests = hiring_request.objects.filter(user_id=user)
-        requests={}
+        records={}
         if hiring_requests:
             for num,data in enumerate(hiring_requests):
-                requests['record'+str(num+1)]={
+                records['record'+str(num+1)]={
                     'job_title':data.job_title,
                     'role_type':data.role_type,
                     'gender':data.gender,
@@ -98,7 +99,7 @@ class Hiring_Resquest(APIView):
                     'hiring_start_date':data.hiring_start_date,
                     'hiring_end_date':data.hiring_end_date,
                 }
-            return Response(requests,status=status.HTTP_200_OK)
+            return Response(records,status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         
@@ -109,10 +110,10 @@ class Interview_Schedule(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user
         interview_schedules = interview_schedule.objects.filter(user_id=user)
-        requests={}
+        records={}
         if interview_schedules:
             for num,data in enumerate(interview_schedules):
-                requests['record'+str(num+1)]={
+                records['record'+str(num+1)]={
                     'employee_name':data.employee_id.username,
                     'gender':data.employee_id.gender,
                     'job_title':data.employee_id.designation,
@@ -122,7 +123,7 @@ class Interview_Schedule(APIView):
                     'country':data.country,
                     'status':data.status,
                 }
-            return Response(requests,status=status.HTTP_200_OK)
+            return Response(records,status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -132,11 +133,11 @@ class Interview_Schedule(APIView):
 class Onboarding(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user
-        onboardings = onboarding.objects.filter(user_id=user)
-        requests={}
+        onboardings = onboarding.objects.filter(user_id=user, status='onboard')
+        records={}
         if onboardings:
             for num,data in enumerate(onboardings):
-                requests['record'+str(num+1)]={
+                records['record'+str(num+1)]={
                     'employee_name':data.employee_id.username,
                     'gender':data.employee_id.gender,
                     'country':data.country,
@@ -147,6 +148,6 @@ class Onboarding(APIView):
                     'notice_period':data.notice_period,
                     'salary':data.salary,
                 }
-            return Response(requests,status=status.HTTP_200_OK)
+            return Response(records,status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
