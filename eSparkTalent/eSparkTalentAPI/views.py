@@ -63,6 +63,7 @@ class Start_Hiring(APIView):
     def post(self, request, *args, **kwargs):
         serializer=hiring_requestSerializer(data=request.data)
         if serializer.is_valid():
+            print(request.data)
             hiring_request.objects.create(
                 user_id = request.user,
                 job_title = serializer.validated_data['job_title'],
@@ -70,6 +71,7 @@ class Start_Hiring(APIView):
                 gender = serializer.validated_data['gender'],
                 employment_term = serializer.validated_data['employment_term'],
                 salary_range= serializer.validated_data['salary_range'],
+                country=serializer.validated_data['country'],
                 hiring_start_date = serializer.validated_data['hiring_start_date'],
                 hiring_end_date = serializer.validated_data['hiring_end_date'],
             )
@@ -79,4 +81,73 @@ class Start_Hiring(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Hiring_Resquest(APIView):
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        hiring_requests = hiring_request.objects.filter(user_id=user)
+        requests={}
+        if hiring_requests:
+            for num,data in enumerate(hiring_requests):
+                requests['record'+str(num+1)]={
+                    'job_title':data.job_title,
+                    'role_type':data.role_type,
+                    'gender':data.gender,
+                    'employment_term':data.employment_term,
+                    'salary_range':data.salary_range,
+                    'hiring_start_date':data.hiring_start_date,
+                    'hiring_end_date':data.hiring_end_date,
+                }
+            return Response(requests,status=status.HTTP_201_CREATED)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
 
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Interview_Schedule(APIView):
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        interview_schedules = interview_schedule.objects.filter(user_id=user)
+        requests={}
+        if interview_schedules:
+            for num,data in enumerate(interview_schedules):
+                requests['record'+str(num+1)]={
+                    'employee_name':data.employee_name,
+                    'gender':data.gender,
+                    'job_title':data.job_title,
+                    'role_type':data.role_type,
+                    'employment_term':data.employment_term,
+                    'interview_date_time':data.interview_date_time,
+                    'country':data.country,
+                    'status':data.status,
+                }
+            return Response(requests,status=status.HTTP_201_CREATED)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Onboarding(APIView):
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        onboardings = onboarding.objects.filter(user_id=user)
+        requests={}
+        if onboardings:
+            for num,data in enumerate(onboardings):
+                requests['record'+str(num+1)]={
+                    'employee_name':data.employee_name,
+                    'gender':data.gender,
+                    'country':data.country,
+                    'job_title':data.job_title,
+                    'role_type':data.role_type,
+                    'employment_term':data.employment_term,
+                    'joining_date':data.joining_date,
+                    'notice_period':data.notice_period,
+                    'salary':data.salary,
+                }
+            return Response(requests,status=status.HTTP_201_CREATED)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)

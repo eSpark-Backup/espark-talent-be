@@ -54,6 +54,7 @@ class hiring_request(models.Model):
     gender = models.CharField(max_length=7)
     employment_term = models.CharField(max_length=15)
     salary_range=models.JSONField()
+    country = models.CharField(max_length=30)
     hiring_start_date = models.DateField()
     hiring_end_date = models.DateField()
     created_at = models.DateTimeField(default=timezone.now)
@@ -89,6 +90,9 @@ class interview_schedule(models.Model):
 
         self.updated_at=datetime.datetime.now()
         super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'{self.job_title} - {self.interview_date_time}'
 
 class onboarding(models.Model):
     id = models.AutoField(primary_key=True)
