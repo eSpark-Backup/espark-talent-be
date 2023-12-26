@@ -7,5 +7,6 @@ urlpatterns=[
     path('chome/',Client_Home.as_view()),
     path('csh/',Start_Hiring.as_view()),
     path('chr/',Hiring_Resquest.as_view()),
-    path('cis/',Interview_Schedule.as_view())
+    path('cis/',Interview_Schedule.as_view()),
+    path('conboard/',Onboarding.as_view())
 ]

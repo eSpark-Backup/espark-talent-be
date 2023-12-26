@@ -75,7 +75,6 @@ class Start_Hiring(APIView):
                 hiring_start_date = serializer.validated_data['hiring_start_date'],
                 hiring_end_date = serializer.validated_data['hiring_end_date'],
             )
-            print(request.data, request.user)
             return Response({"message": "Resquest created"},status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -99,7 +98,7 @@ class Hiring_Resquest(APIView):
                     'hiring_start_date':data.hiring_start_date,
                     'hiring_end_date':data.hiring_end_date,
                 }
-            return Response(requests,status=status.HTTP_201_CREATED)
+            return Response(requests,status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         
@@ -114,16 +113,16 @@ class Interview_Schedule(APIView):
         if interview_schedules:
             for num,data in enumerate(interview_schedules):
                 requests['record'+str(num+1)]={
-                    'employee_name':data.employee_name,
-                    'gender':data.gender,
-                    'job_title':data.job_title,
+                    'employee_name':data.employee_id.username,
+                    'gender':data.employee_id.gender,
+                    'job_title':data.employee_id.designation,
                     'role_type':data.role_type,
                     'employment_term':data.employment_term,
                     'interview_date_time':data.interview_date_time,
                     'country':data.country,
                     'status':data.status,
                 }
-            return Response(requests,status=status.HTTP_201_CREATED)
+            return Response(requests,status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -138,16 +137,16 @@ class Onboarding(APIView):
         if onboardings:
             for num,data in enumerate(onboardings):
                 requests['record'+str(num+1)]={
-                    'employee_name':data.employee_name,
-                    'gender':data.gender,
+                    'employee_name':data.employee_id.username,
+                    'gender':data.employee_id.gender,
                     'country':data.country,
-                    'job_title':data.job_title,
+                    'job_title':data.employee_id.designation,
                     'role_type':data.role_type,
                     'employment_term':data.employment_term,
                     'joining_date':data.joining_date,
                     'notice_period':data.notice_period,
                     'salary':data.salary,
                 }
-            return Response(requests,status=status.HTTP_201_CREATED)
+            return Response(requests,status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
