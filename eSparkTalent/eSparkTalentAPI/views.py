@@ -172,6 +172,7 @@ class Team_Memebers(APIView):
                     'job_title':data.employee_id.designation,
                     'employment_term':data.employment_term,
                     'joining_date':data.joining_date,
+                    'benifts': data.employee_id.benefits
                 }
             return Response(records,status=status.HTTP_200_OK)
         else:
