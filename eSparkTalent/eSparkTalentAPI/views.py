@@ -155,7 +155,7 @@ class Onboarding(APIView):
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-class Team_Memebers(APIView):
+class Team_Memeber(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user
         get_status=request.data['status']
@@ -172,8 +172,68 @@ class Team_Memebers(APIView):
                     'job_title':data.employee_id.designation,
                     'employment_term':data.employment_term,
                     'joining_date':data.joining_date,
-                    'benifts': data.employee_id.benefits
+                    'benefits': data.employee_id.benefits
                 }
             return Response(records,status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Leave_Request(APIView):
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        get_status=request.data['status']
+        if get_status=='pending' or get_status=='completed' or get_status=='rejected':
+            leave_requests = leave_request.objects.filter(onboarding_id__user_id=user, status=get_status)
+        elif get_status=='all':
+            leave_requests = leave_request.objects.filter(onboarding_id__user_id=user)
+        records = {}
+
+        if leave_requests:
+            for num, data in enumerate(leave_requests):
+                employee_serializer = EmployeeSerializer(data.onboarding_id.employee_id)
+                employee_data = employee_serializer.data
+
+                records['record' + str(num + 1)] = {
+                    'employee_id': employee_data.get('employee_id', ''),
+                    'employee_name': employee_data.get('username', ''),
+                    'country': data.onboarding_id.country,
+                    'department': employee_data.get('department', ''),
+                    'leave_type': data.leave_type,
+                    'count': data.count,
+                    'requested_at': data.requested_at,
+                    'status': data.status
+                }
+
+            return Response(records, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Leave_Balance(APIView):
+    def get(self, balance, *args, **kwargs):
+        user = balance.user
+        leave_balances = leave_balance.objects.filter(onboarding_id__user_id=user)
+        records = {}
+
+        if leave_balances:
+            for num, data in enumerate(leave_balances):
+                employee_serializer = EmployeeSerializer(data.onboarding_id.employee_id)
+                employee_data = employee_serializer.data
+
+                records['record' + str(num + 1)] = {
+                    'employee_name': employee_data.get('username', ''),
+                    'casual_leaves': data.casual_leaves,
+                    'sick_leaves': data.sick_leaves,
+                    'annual_leaves': data.annual_leaves,
+                    'taken': data.taken,
+                    'balance': data.balance,
+                }
+
+            return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)

@@ -15,3 +15,8 @@ class hiring_requestSerializer(serializers.ModelSerializer):
         # exclude = ['id']
         fields='__all__'
         depth=1
+
+class EmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = employee
+        fields = '__all__'
