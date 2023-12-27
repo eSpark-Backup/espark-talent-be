@@ -68,6 +68,7 @@ class employee(models.Model):
     joining_date=models.DateField()
     company=models.CharField(max_length=30)
     department=models.CharField(max_length=30)
+    benefits=models.JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
