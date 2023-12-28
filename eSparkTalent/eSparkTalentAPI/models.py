@@ -3,6 +3,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 
 class ClientManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -147,7 +148,12 @@ class leave_request(models.Model):
     id = models.AutoField(primary_key=True)
     onboarding_id=models.ForeignKey(onboarding, on_delete=models.CASCADE, default='')
     leave_type=models.CharField(max_length=7, choices=leave_type)
-    count=models.IntegerField()
+    start_date=models.DateField(default=timezone.now)
+    end_date=models.DateField(default=timezone.now)
+    count=models.IntegerField(default=1)
+    sandwich_count=models.IntegerField(default=0)
+    total=models.IntegerField(default=1)
+    reason=models.CharField(max_length=200, default= '')
     requested_at=models.DateTimeField()
     status=models.CharField(max_length=10, choices=status)
 

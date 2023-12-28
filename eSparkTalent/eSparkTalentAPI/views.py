@@ -428,7 +428,12 @@ class Leave_Request(APIView):
                     'country': data.onboarding_id.country,
                     'department': employee_data.get('department', ''),
                     'leave_type': data.leave_type,
+                    'start_date': data.start_date,
+                    'end_date': data.end_date,
                     'count': data.count,
+                    'sandwich_count': data.sandwich_count,
+                    'total': data.total,
+                    'reason': data.reason,
                     'requested_at': data.requested_at,
                     'status': data.status
                 }
