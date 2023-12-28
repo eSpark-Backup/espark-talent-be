@@ -1,5 +1,6 @@
 from .models import *
 from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -9,8 +10,27 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from .serializers import *
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 class create_user(APIView):
+    @swagger_auto_schema(
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'email': openapi.Schema(type=openapi.TYPE_STRING),
+            'password': openapi.Schema(type=openapi.TYPE_STRING),
+            'username': openapi.Schema(type=openapi.TYPE_STRING),
+            'role': openapi.Schema(type=openapi.TYPE_STRING),
+        },
+        required=['email', 'password', 'username', 'role'],
+    ),
+    responses={
+        200: openapi.Response(description='Successful response'),
+        400: openapi.Response(description='Bad request'),
+    },
+    operation_description="Endpoint for user create.",
+)
     def post(self, request, *args, **kwargs):
         serializer = userSerializer(data=request.data)
         if serializer.is_valid():
@@ -25,6 +45,29 @@ class create_user(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class LoginView(APIView):
+    @swagger_auto_schema(
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'email': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+            'password': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_PASSWORD),
+        },
+        required=['email', 'password'],
+    ),
+    responses={
+        200: openapi.Response(
+            description='Successful login',
+            schema=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'token': openapi.Schema(type=openapi.TYPE_STRING),
+            'role': openapi.Schema(type=openapi.TYPE_STRING),
+        })
+        ),
+        401: openapi.Response(description='Invalid credentials'),
+    },
+    operation_description="Endpoint for user login.",
+)
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
@@ -40,6 +83,21 @@ class LoginView(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Client_Home(APIView):
+    @swagger_auto_schema(
+        responses={
+            200: openapi.Response('Successful response'),
+            401: openapi.Response('Unauthorized'),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                'Authorization',
+                openapi.IN_HEADER,
+                description='Bearer Token',
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_description="Endpoint to retrieve client home data.",
+    )
     def get(self, request, *args, **kwargs):
         user = request.user
         hiring_request_count = hiring_request.objects.filter(user_id=user).count()
@@ -61,6 +119,36 @@ class Client_Home(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Start_Hiring(APIView):
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'job_title': openapi.Schema(type=openapi.TYPE_STRING),
+            'role_type': openapi.Schema(type=openapi.TYPE_STRING),
+            'gender': openapi.Schema(type=openapi.TYPE_STRING),
+            'employment_term': openapi.Schema(type=openapi.TYPE_STRING),
+            'salary_range': openapi.Schema(type=openapi.TYPE_OBJECT, properties={'minimum':openapi.Schema(type=openapi.TYPE_INTEGER),'maximum':openapi.Schema(type=openapi.TYPE_INTEGER)}),
+            'country': openapi.Schema(type=openapi.TYPE_STRING),
+            'hiring_start_date': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
+            'hiring_end_date': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
+        },
+        required=['email', 'password'],
+    ),
+        responses={
+            200: openapi.Response('Successful response'),
+            400: openapi.Response('Bad request'),
+            401: openapi.Response('UnAuthorize')
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                'Authorization',
+                openapi.IN_HEADER,
+                description='Bearer Token',
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_description="Endpoint to create hiring request.",
+    )
     def post(self, request, *args, **kwargs):
         serializer=hiring_requestSerializer(data=request.data)
         if serializer.is_valid():
@@ -84,36 +172,100 @@ class Start_Hiring(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Hiring_Resquest(APIView):
+    @swagger_auto_schema(
+        responses={
+            200: openapi.Response(
+            description='Successful response',
+            schema=openapi.Schema(
+            type=openapi.TYPE_ARRAY,
+            items=openapi.Schema(type=openapi.TYPE_OBJECT,
+             properties={
+                 'job_title': openapi.Schema(type=openapi.TYPE_STRING),
+                 'role_type': openapi.Schema(type=openapi.TYPE_STRING),
+                 'gender': openapi.Schema(type=openapi.TYPE_STRING),
+                 'employment_term': openapi.Schema(type=openapi.TYPE_STRING),
+                 'salary_range': openapi.Schema(type=openapi.TYPE_OBJECT, properties={'minimum':openapi.Schema(type=openapi.TYPE_INTEGER),'maximum':openapi.Schema(type=openapi.TYPE_INTEGER)}),
+                 'hiring_start_date': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
+                 'hiring_end_date': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
+        }))
+        ),
+            204: openapi.Response('No content'),
+            401: openapi.Response('UnAuthorize')
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                'Authorization',
+                openapi.IN_HEADER,
+                description='Bearer Token',
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_description="Endpoint to retrieve hiring request data.",
+    )
     def get(self, request, *args, **kwargs):
         user = request.user
         hiring_requests = hiring_request.objects.filter(user_id=user)
-        records={}
+
         if hiring_requests:
-            for num,data in enumerate(hiring_requests):
-                records['record'+str(num+1)]={
-                    'job_title':data.job_title,
-                    'role_type':data.role_type,
-                    'gender':data.gender,
-                    'employment_term':data.employment_term,
-                    'salary_range':data.salary_range,
-                    'hiring_start_date':data.hiring_start_date,
-                    'hiring_end_date':data.hiring_end_date,
+            records = []
+            for data in hiring_requests:
+                record = {
+                    'job_title': data.job_title,
+                    'role_type': data.role_type,
+                    'gender': data.gender,
+                    'employment_term': data.employment_term,
+                    'salary_range': data.salary_range,
+                    'hiring_start_date': data.hiring_start_date,
+                    'hiring_end_date': data.hiring_end_date,
                 }
-            return Response(records,status=status.HTTP_200_OK)
+                records.append(record)
+
+            return Response(records, status=status.HTTP_200_OK)
         else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Interview_Schedule(APIView):
+    @swagger_auto_schema(
+        responses={
+            200: openapi.Response(
+            description='Successful response',
+            schema=openapi.Schema(
+            type=openapi.TYPE_ARRAY,
+            items=openapi.Schema(type=openapi.TYPE_OBJECT,
+             properties={
+                 'employee_name': openapi.Schema(type=openapi.TYPE_STRING),
+                 'gender': openapi.Schema(type=openapi.TYPE_STRING),
+                 'job_title': openapi.Schema(type=openapi.TYPE_STRING),
+                 'role_type': openapi.Schema(type=openapi.TYPE_STRING),
+                 'employment_term': openapi.Schema(type=openapi.TYPE_OBJECT, properties={'minimum':openapi.Schema(type=openapi.TYPE_INTEGER),'maximum':openapi.Schema(type=openapi.TYPE_INTEGER)}),
+                 'interview_date_time': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                 'country': openapi.Schema(type=openapi.TYPE_STRING),
+                 'status': openapi.Schema(type=openapi.TYPE_STRING),
+        }))
+        ),
+            204: openapi.Response('No content'),
+            401: openapi.Response('UnAuthorize')
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                'Authorization',
+                openapi.IN_HEADER,
+                description='Bearer Token',
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_description="Endpoint to retrieve interview schedule data.",
+    )
     def get(self, request, *args, **kwargs):
         user = request.user
         interview_schedules = interview_schedule.objects.filter(user_id=user)
-        records={}
+        records=[]
         if interview_schedules:
-            for num,data in enumerate(interview_schedules):
-                records['record'+str(num+1)]={
+            for data in interview_schedules:
+                record={
                     'employee_name':data.employee_id.username,
                     'gender':data.employee_id.gender,
                     'job_title':data.employee_id.designation,
@@ -123,21 +275,53 @@ class Interview_Schedule(APIView):
                     'country':data.country,
                     'status':data.status,
                 }
+                records.append(record)
             return Response(records,status=status.HTTP_200_OK)
         else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Onboarding(APIView):
+    @swagger_auto_schema(
+        responses={
+            200: openapi.Response(
+            description='Successful response',
+            schema=openapi.Schema(
+            type=openapi.TYPE_ARRAY,
+            items=openapi.Schema(type=openapi.TYPE_OBJECT,
+             properties={
+                 'employee_name': openapi.Schema(type=openapi.TYPE_STRING),
+                 'gender': openapi.Schema(type=openapi.TYPE_STRING),
+                 'job_title': openapi.Schema(type=openapi.TYPE_STRING),
+                 'role_type': openapi.Schema(type=openapi.TYPE_STRING),
+                 'employment_term': openapi.Schema(type=openapi.TYPE_OBJECT, properties={'minimum':openapi.Schema(type=openapi.TYPE_INTEGER),'maximum':openapi.Schema(type=openapi.TYPE_INTEGER)}),
+                 'joining_date': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
+                 'notice_period': openapi.Schema(type=openapi.TYPE_STRING),
+                 'salary': openapi.Schema(type=openapi.TYPE_INTEGER),
+        }))
+        ),
+            204: openapi.Response('No content'),
+            401: openapi.Response('UnAuthorize')
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                'Authorization',
+                openapi.IN_HEADER,
+                description='Bearer Token',
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_description="Endpoint to retrieve on-boarding data.",
+    )
     def get(self, request, *args, **kwargs):
         user = request.user
         onboardings = onboarding.objects.filter(user_id=user, status='onboard')
-        records={}
+        records=[]
         if onboardings:
-            for num,data in enumerate(onboardings):
-                records['record'+str(num+1)]={
+            for data in onboardings:
+                record={
                     'employee_name':data.employee_id.username,
                     'gender':data.employee_id.gender,
                     'country':data.country,
@@ -148,25 +332,66 @@ class Onboarding(APIView):
                     'notice_period':data.notice_period,
                     'salary':data.salary,
                 }
+                records.append(record)
             return Response(records,status=status.HTTP_200_OK)
         else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Team_Memeber(APIView):
+    @swagger_auto_schema(
+    manual_parameters=[
+        openapi.Parameter(
+            'status',
+            openapi.IN_QUERY,
+            description='Status filter (all, active, onboard, terminated)',
+            type=openapi.TYPE_STRING,
+            enum=['all', 'active', 'onboard', 'terminated'],
+            required=True,
+        ),
+        openapi.Parameter(
+            'Authorization',
+            openapi.IN_HEADER,
+            description='Bearer Token',
+            type=openapi.TYPE_STRING,
+        ),
+    ],
+    responses={
+        200: openapi.Response(
+            description='Successful response',
+            schema=openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'employee_name': openapi.Schema(type=openapi.TYPE_STRING),
+                        'country': openapi.Schema(type=openapi.TYPE_STRING),
+                        'job_title': openapi.Schema(type=openapi.TYPE_STRING),
+                        'employment_term': openapi.Schema(type=openapi.TYPE_OBJECT, properties={'minimum':openapi.Schema(type=openapi.TYPE_INTEGER),'maximum':openapi.Schema(type=openapi.TYPE_INTEGER)}),
+                        'joining_date': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
+                        'benefits': openapi.Schema(type=openapi.TYPE_OBJECT)
+                    }
+                )
+            )
+        ),
+        204: openapi.Response('No content'),
+        401: openapi.Response('UnAuthorize')
+    },
+    operation_description="Endpoint to retrieve team members data.",
+)
     def get(self, request, *args, **kwargs):
         user = request.user
-        get_status=request.data['status']
+        get_status=request.query_params.get('status')
         if get_status=='active' or get_status=='onboard' or get_status=='terminated':
             onboardings = onboarding.objects.filter(user_id=user, status=get_status)
         elif get_status=='all':
             onboardings = onboarding.objects.filter(user_id=user)
-        records={}
+        records=[]
         if onboardings:
-            for num,data in enumerate(onboardings):
-                records['record'+str(num+1)]={
+            for data in onboardings:
+                record={
                     'employee_name':data.employee_id.username,
                     'country':data.country,
                     'job_title':data.employee_id.designation,
@@ -174,9 +399,10 @@ class Team_Memeber(APIView):
                     'joining_date':data.joining_date,
                     'benefits': data.employee_id.benefits
                 }
+                records.append(record)
             return Response(records,status=status.HTTP_200_OK)
         else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @authentication_classes([JWTAuthentication])
@@ -184,19 +410,19 @@ class Team_Memeber(APIView):
 class Leave_Request(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user
-        get_status=request.data['status']
+        get_status=request.query_params.get('status')
         if get_status=='pending' or get_status=='completed' or get_status=='rejected':
             leave_requests = leave_request.objects.filter(onboarding_id__user_id=user, status=get_status)
         elif get_status=='all':
             leave_requests = leave_request.objects.filter(onboarding_id__user_id=user)
-        records = {}
+        records = []
 
         if leave_requests:
-            for num, data in enumerate(leave_requests):
+            for data in leave_requests:
                 employee_serializer = EmployeeSerializer(data.onboarding_id.employee_id)
                 employee_data = employee_serializer.data
 
-                records['record' + str(num + 1)] = {
+                record = {
                     'employee_id': employee_data.get('employee_id', ''),
                     'employee_name': employee_data.get('username', ''),
                     'country': data.onboarding_id.country,
@@ -206,10 +432,10 @@ class Leave_Request(APIView):
                     'requested_at': data.requested_at,
                     'status': data.status
                 }
-
+                records.append(record)
             return Response(records, status=status.HTTP_200_OK)
         else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         
 
 @authentication_classes([JWTAuthentication])
@@ -218,14 +444,14 @@ class Leave_Balance(APIView):
     def get(self, balance, *args, **kwargs):
         user = balance.user
         leave_balances = leave_balance.objects.filter(onboarding_id__user_id=user)
-        records = {}
+        records = []
 
         if leave_balances:
-            for num, data in enumerate(leave_balances):
+            for data in leave_balances:
                 employee_serializer = EmployeeSerializer(data.onboarding_id.employee_id)
                 employee_data = employee_serializer.data
 
-                records['record' + str(num + 1)] = {
+                record = {
                     'employee_name': employee_data.get('username', ''),
                     'casual_leaves': data.casual_leaves,
                     'sick_leaves': data.sick_leaves,
@@ -233,7 +459,7 @@ class Leave_Balance(APIView):
                     'taken': data.taken,
                     'balance': data.balance,
                 }
-
+                records.append(record)
             return Response(records, status=status.HTTP_200_OK)
         else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_204_NO_CONTENT)
