@@ -26,7 +26,7 @@ class create_user(APIView):
         required=['email', 'password', 'username', 'role'],
     ),
     responses={
-        200: openapi.Response(description='Successful response'),
+        201: openapi.Response(description='Successful created'),
         400: openapi.Response(description='Bad request'),
     },
     operation_description="Endpoint for user create.",
@@ -85,7 +85,18 @@ class LoginView(APIView):
 class Client_Home(APIView):
     @swagger_auto_schema(
         responses={
-            200: openapi.Response('Successful response'),
+            200: openapi.Response(
+                    description='Successful request',
+                    schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'username': openapi.Schema(type=openapi.TYPE_STRING),
+                        'hiring_request_count': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'interview_schedule_count': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'onboarding_count': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'active_employee': openapi.Schema(type=openapi.TYPE_INTEGER),
+                     })
+             ),
             401: openapi.Response('Unauthorized'),
         },
         manual_parameters=[
@@ -135,7 +146,7 @@ class Start_Hiring(APIView):
         required=['email', 'password'],
     ),
         responses={
-            200: openapi.Response('Successful response'),
+            201: openapi.Response('Successful created'),
             400: openapi.Response('Bad request'),
             401: openapi.Response('UnAuthorize')
         },
