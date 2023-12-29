@@ -413,9 +413,9 @@ class Leave_Request(APIView):
         openapi.Parameter(
             'status',
             openapi.IN_QUERY,
-            description='Status filter (all, active, onboard, terminated)',
+            description='Status filter (all, pending, completed, rejected)',
             type=openapi.TYPE_STRING,
-            enum=['all', 'active', 'onboard', 'terminated'],
+            enum=['all', 'pending', 'completed', 'rejected'],
             required=True,
         ),
         openapi.Parameter(
@@ -444,7 +444,7 @@ class Leave_Request(APIView):
                         'sandwich_count': openapi.Schema(type=openapi.TYPE_INTEGER),
                         'total':  openapi.Schema(type=openapi.TYPE_INTEGER),
                         'reason': openapi.Schema(type=openapi.TYPE_STRING) ,
-                        'requested_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
+                        'requested_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
                         'status': openapi.Schema(type=openapi.TYPE_STRING),
                     }
                 )
