@@ -481,6 +481,7 @@ class Leave_Request(APIView):
                     employee_data = employee_serializer.data
 
                     record = {
+                        "id":data.id,
                         'employee_id': employee_data.get('employee_id', ''),
                         'employee_name': employee_data.get('username', ''),
                         'country': data.onboarding_id.country,
@@ -499,6 +500,22 @@ class Leave_Request(APIView):
                 return Response(records, status=status.HTTP_200_OK)
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
+            
+        def patch(self, request, *args, **kwargs):
+            user=request.user
+            request_id=request.query_params.get('id')
+            to_update_status=request.data['status']
+            try:
+                to_update_leave_request=leave_request.objects.get(id=request_id)
+                if to_update_leave_request:
+                    to_update_leave_request.status=to_update_status
+                    to_update_leave_request.save()
+
+                    return Response(status=status.HTTP_200_OK)
+                else:
+                    return Response(status=status.HTTP_204_NO_CONTENT)
+            except:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
             
 
 @authentication_classes([JWTAuthentication])
@@ -555,3 +572,48 @@ class Leave_Balance(APIView):
                 return Response(records, status=status.HTTP_200_OK)
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
+            
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class ClockInOut_Request(APIView):
+        def get(self, balance, *args, **kwargs):
+            user = balance.user
+            clockinout_requests = clockinout_request.objects.filter(onboarding_id__user_id=user)
+            records = []
+
+            if clockinout_requests:
+                for data in clockinout_requests:
+                    employee_serializer = EmployeeSerializer(data.onboarding_id.employee_id)
+                    employee_data = employee_serializer.data
+
+                    record = {
+                        "id":data.id,
+                        'employee_id': employee_data.get('employee_id', ''),
+                        'employee_name': employee_data.get('username', ''),
+                        'date': data.date,
+                        'punch_time': data.punch_time,
+                        'punch_type': data.punch_type,
+                        'description': data.description,
+                        'status': data.status
+                    }
+                    records.append(record)
+                return Response(records, status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            
+        def patch(self, request, *args, **kwargs):
+            user=request.user
+            request_id=request.query_params.get('id')
+            to_update_status=request.data['status']
+            try:
+                to_update_clockinout_request=clockinout_request.objects.get(id=request_id)
+                if to_update_clockinout_request:
+                    to_update_clockinout_request.status=to_update_status
+                    to_update_clockinout_request.save()
+
+                    return Response(status=status.HTTP_200_OK)
+                else:
+                    return Response(status=status.HTTP_204_NO_CONTENT)
+            except:
+                return Response(status=status.HTTP_400_BAD_REQUEST)

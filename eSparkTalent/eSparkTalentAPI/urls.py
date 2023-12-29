@@ -12,4 +12,5 @@ urlpatterns=[
     path('c_team/',Team_Memeber.as_view()),
     path('c_lr/',Leave_Request.as_view()),
     path('c_lb/',Leave_Balance.as_view()),
+    path('c_clockinout/',ClockInOut_Request.as_view()),
 ]

@@ -176,9 +176,31 @@ def update_leave_balance(sender, instance, **kwargs):
 
         leave_balance_entry.taken += instance.count
         leave_balance_entry.balance = (
-            leave_balance_entry.annual_leave
+            leave_balance_entry.annual_leaves
             + leave_balance_entry.casual_leaves
             + leave_balance_entry.sick_leaves
         )
 
         leave_balance_entry.save()
+
+
+class clockinout_request(models.Model):
+    punch_type=[
+        ('check_in', 'check_in'),
+        ('check_out', 'check_out')
+    ]
+    status=[
+        ('pending','pending'),
+        ('completed','completed'),
+        ('rejected','rejected'),
+    ]
+    id = models.AutoField(primary_key=True)
+    onboarding_id=models.ForeignKey(onboarding, on_delete=models.CASCADE, default='')
+    punch_type=models.CharField(max_length=10, choices=punch_type)
+    punch_time=models.TimeField()
+    date=models.DateField()
+    description=models.CharField(max_length=200, default= '')
+    status=models.CharField(max_length=10, choices=status)
+
+    def __str__(self):
+        return f'{self.onboarding_id.user_id} - {self.id}'    
