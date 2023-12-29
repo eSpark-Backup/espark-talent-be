@@ -408,63 +408,139 @@ class Team_Memeber(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Leave_Request(APIView):
-    def get(self, request, *args, **kwargs):
-        user = request.user
-        get_status=request.query_params.get('status')
-        if get_status=='pending' or get_status=='completed' or get_status=='rejected':
-            leave_requests = leave_request.objects.filter(onboarding_id__user_id=user, status=get_status)
-        elif get_status=='all':
-            leave_requests = leave_request.objects.filter(onboarding_id__user_id=user)
-        records = []
+        @swagger_auto_schema(
+    manual_parameters=[
+        openapi.Parameter(
+            'status',
+            openapi.IN_QUERY,
+            description='Status filter (all, active, onboard, terminated)',
+            type=openapi.TYPE_STRING,
+            enum=['all', 'active', 'onboard', 'terminated'],
+            required=True,
+        ),
+        openapi.Parameter(
+            'Authorization',
+            openapi.IN_HEADER,
+            description='Bearer Token',
+            type=openapi.TYPE_STRING,
+        ),
+    ],
+    responses={
+        200: openapi.Response(
+            description='Successful response',
+            schema=openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'employee_id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'employee_name': openapi.Schema(type=openapi.TYPE_STRING),
+                        'country': openapi.Schema(type=openapi.TYPE_STRING),
+                        'department': openapi.Schema(type=openapi.TYPE_STRING),
+                        'leave_type': openapi.Schema(type=openapi.TYPE_STRING),
+                        'start_date': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE) ,
+                        'end_date': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
+                        'count': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'sandwich_count': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'total':  openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'reason': openapi.Schema(type=openapi.TYPE_STRING) ,
+                        'requested_at': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
+                        'status': openapi.Schema(type=openapi.TYPE_STRING),
+                    }
+                )
+            )
+        ),
+        204: openapi.Response('No content'),
+        401: openapi.Response('UnAuthorize')
+    },
+    operation_description="Endpoint to retrieve Leave request data.",
+)
+        def get(self, request, *args, **kwargs):
+            user = request.user
+            get_status=request.query_params.get('status')
+            if get_status=='pending' or get_status=='completed' or get_status=='rejected':
+                leave_requests = leave_request.objects.filter(onboarding_id__user_id=user, status=get_status)
+            elif get_status=='all':
+                leave_requests = leave_request.objects.filter(onboarding_id__user_id=user)
+            records = []
 
-        if leave_requests:
-            for data in leave_requests:
-                employee_serializer = EmployeeSerializer(data.onboarding_id.employee_id)
-                employee_data = employee_serializer.data
+            if leave_requests:
+                for data in leave_requests:
+                    employee_serializer = EmployeeSerializer(data.onboarding_id.employee_id)
+                    employee_data = employee_serializer.data
 
-                record = {
-                    'employee_id': employee_data.get('employee_id', ''),
-                    'employee_name': employee_data.get('username', ''),
-                    'country': data.onboarding_id.country,
-                    'department': employee_data.get('department', ''),
-                    'leave_type': data.leave_type,
-                    'start_date': data.start_date,
-                    'end_date': data.end_date,
-                    'count': data.count,
-                    'sandwich_count': data.sandwich_count,
-                    'total': data.total,
-                    'reason': data.reason,
-                    'requested_at': data.requested_at,
-                    'status': data.status
-                }
-                records.append(record)
-            return Response(records, status=status.HTTP_200_OK)
-        else:
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        
+                    record = {
+                        'employee_id': employee_data.get('employee_id', ''),
+                        'employee_name': employee_data.get('username', ''),
+                        'country': data.onboarding_id.country,
+                        'department': employee_data.get('department', ''),
+                        'leave_type': data.leave_type,
+                        'start_date': data.start_date,
+                        'end_date': data.end_date,
+                        'count': data.count,
+                        'sandwich_count': data.sandwich_count,
+                        'total': data.total,
+                        'reason': data.reason,
+                        'requested_at': data.requested_at,
+                        'status': data.status
+                    }
+                    records.append(record)
+                return Response(records, status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Leave_Balance(APIView):
-    def get(self, balance, *args, **kwargs):
-        user = balance.user
-        leave_balances = leave_balance.objects.filter(onboarding_id__user_id=user)
-        records = []
+        @swagger_auto_schema(
+        responses={
+            200: openapi.Response(
+            description='Successful response',
+            schema=openapi.Schema(
+            type=openapi.TYPE_ARRAY,
+            items=openapi.Schema(type=openapi.TYPE_OBJECT,
+             properties={
+                        'employee_name': openapi.Schema(type=openapi.TYPE_STRING),
+                        'casual_leaves': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'sick_leaves': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'annual_leaves': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'taken': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'balance': openapi.Schema(type=openapi.TYPE_INTEGER),
+        }))
+        ),
+            204: openapi.Response('No content'),
+            401: openapi.Response('UnAuthorize')
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                'Authorization',
+                openapi.IN_HEADER,
+                description='Bearer Token',
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_description="Endpoint to retrieve leave balance data.",
+    )
+        def get(self, balance, *args, **kwargs):
+            user = balance.user
+            leave_balances = leave_balance.objects.filter(onboarding_id__user_id=user)
+            records = []
 
-        if leave_balances:
-            for data in leave_balances:
-                employee_serializer = EmployeeSerializer(data.onboarding_id.employee_id)
-                employee_data = employee_serializer.data
+            if leave_balances:
+                for data in leave_balances:
+                    employee_serializer = EmployeeSerializer(data.onboarding_id.employee_id)
+                    employee_data = employee_serializer.data
 
-                record = {
-                    'employee_name': employee_data.get('username', ''),
-                    'casual_leaves': data.casual_leaves,
-                    'sick_leaves': data.sick_leaves,
-                    'annual_leaves': data.annual_leaves,
-                    'taken': data.taken,
-                    'balance': data.balance,
-                }
-                records.append(record)
-            return Response(records, status=status.HTTP_200_OK)
-        else:
-            return Response(status=status.HTTP_204_NO_CONTENT)
+                    record = {
+                        'employee_name': employee_data.get('username', ''),
+                        'casual_leaves': data.casual_leaves,
+                        'sick_leaves': data.sick_leaves,
+                        'annual_leaves': data.annual_leaves,
+                        'taken': data.taken,
+                        'balance': data.balance,
+                    }
+                    records.append(record)
+                return Response(records, status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
