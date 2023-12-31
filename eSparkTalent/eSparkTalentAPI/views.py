@@ -577,6 +577,48 @@ class Leave_Balance(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class ClockInOut_Request(APIView):
+        @swagger_auto_schema(
+    manual_parameters=[
+        openapi.Parameter(
+            'status',
+            openapi.IN_QUERY,
+            description='Status filter (all, pending, completed, rejected)',
+            type=openapi.TYPE_STRING,
+            enum=['all', 'pending', 'completed', 'rejected'],
+            required=True,
+        ),
+        openapi.Parameter(
+            'Authorization',
+            openapi.IN_HEADER,
+            description='Bearer Token',
+            type=openapi.TYPE_STRING,
+        ),
+    ],
+    responses={
+        200: openapi.Response(
+            description='Successful response',
+            schema=openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'employee_id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                        'employee_name': openapi.Schema(type=openapi.TYPE_STRING),
+                        'country': openapi.Schema(type=openapi.TYPE_STRING),
+                        'date': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE) ,
+                        'punch_time': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                        'punch_type':  openapi.Schema(type=openapi.TYPE_STRING),
+                        'description':  openapi.Schema(type=openapi.TYPE_STRING),
+                        'status': openapi.Schema(type=openapi.TYPE_STRING),
+                    }
+                )
+            )
+        ),
+        204: openapi.Response('No content'),
+        401: openapi.Response('UnAuthorize')
+    },
+    operation_description="Endpoint to retrieve clock IN and OUT request data.",
+)
         def get(self, balance, *args, **kwargs):
             user = balance.user
             clockinout_requests = clockinout_request.objects.filter(onboarding_id__user_id=user)
