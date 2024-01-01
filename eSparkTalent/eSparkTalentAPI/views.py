@@ -622,7 +622,6 @@ class ClockInOut_Request(APIView):
                         "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                         'employee_id': openapi.Schema(type=openapi.TYPE_INTEGER),
                         'employee_name': openapi.Schema(type=openapi.TYPE_STRING),
-                        'country': openapi.Schema(type=openapi.TYPE_STRING),
                         'date': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE) ,
                         'punch_time': openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
                         'punch_type':  openapi.Schema(type=openapi.TYPE_STRING),
