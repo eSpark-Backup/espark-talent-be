@@ -12,6 +12,12 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from .serializers import *
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+import datetime
 
 
 class create_user(APIView):
@@ -844,3 +850,145 @@ class ClockInOut_Request(APIView):
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])                
+class Download_Report(APIView):
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                "tab",
+                openapi.IN_QUERY,
+                description="Download tab filter",
+                type=openapi.TYPE_STRING,
+                enum=["lr", "lb", "cio"],
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response("Successful Download"),
+            204: openapi.Response("No content"),
+            401: openapi.Response("UnAuthorize"),
+        },
+        operation_description="Endpoint to download report.",
+    )
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        get_tab = request.query_params.get('tab')
+
+        if get_tab not in ['lr', 'lb', 'cio']:
+            return Response({"error": "Invalid 'tab' value."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            if get_tab == 'lr':
+                records = leave_request.objects.filter(onboarding_id__user_id=user)
+                current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+                filename = f"leaveRequestReport_{current_datetime}.pdf"
+                table_headers = ['Employee ID', 'Employee Name', 'Country', 'Department', 'Leave Type',
+                                'Count', 'Requested At', 'Status']
+                FileHeading = "Leave Request"
+                table_data = [table_headers]
+                raw_data = []
+                for data in records:
+                    employee_serializer = EmployeeSerializer(data.onboarding_id.employee_id)
+                    employee_data = employee_serializer.data
+
+                    row_data = [str(employee_data.get('employee_id', '')),
+                                    str(employee_data.get('username', '')), str(data.onboarding_id.country),
+                                    str(employee_data.get('department', '')), str(data.leave_type),
+                                    str(data.count),str(data.requested_at), str(data.status)]
+                    table_data.append(row_data)
+                    raw_data.append(f"Raw Data for {get_tab}: {data}")
+                col_widths = [65, 80, 70, 70, 60, 35, 150, 60]
+            elif get_tab == 'cio':
+                records = clockinout_request.objects.filter(onboarding_id__user_id=user)
+                current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+                filename = f"ClockInOutReport{current_datetime}.pdf"
+                table_headers = ['Employee ID', 'Employee Name', 'Date', 'Punch Time', 'Punch Type', 'Status']
+                FileHeading = "Clock In Out Request"
+                table_data = [table_headers]
+                raw_data = []
+                for data in records:
+                    employee_serializer = EmployeeSerializer(data.onboarding_id.employee_id)
+                    employee_data = employee_serializer.data
+
+                    row_data = [str(employee_data.get('employee_id', '')),
+                                    str(employee_data.get('username', '')), str(data.date),
+                                    str(data.punch_time), str(data.punch_type),
+                                    str(data.status)]
+                    table_data.append(row_data)
+                    raw_data.append(f"Raw Data for {get_tab}: {data}")
+                col_widths = [100, 100, 80, 80, 80, 80]
+            elif get_tab == 'lb':
+                records = leave_balance.objects.filter(onboarding_id__user_id=user)
+                current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+                filename = f"leaveBalanceReport{current_datetime}.pdf"
+                table_headers = ['Employee Name', 'Casual Leave', 'Sick Leave', 'Annual Leave', 'Taken', 'Balance']
+                FileHeading = "Leave Balace"
+                table_data = [table_headers]
+                raw_data = []
+                for data in records:
+                    employee_serializer = EmployeeSerializer(data.onboarding_id.employee_id)
+                    employee_data = employee_serializer.data
+
+                    row_data = [str(employee_data.get('username', '')), str(data.casual_leaves),
+                                     str(data.sick_leaves), str(data.annual_leaves),
+                                     str(data.taken),str(data.balance)]
+                    table_data.append(row_data)
+                    raw_data.append(f"Raw Data for {get_tab}: {data}")
+                col_widths = [100, 100, 80, 80, 80, 80]
+            if records.exists():
+                response = HttpResponse(content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+                # Create PDF document
+                pdf_buffer = HttpResponse(content_type='application/pdf')
+                pdf = SimpleDocTemplate(pdf_buffer, pagesize=letter)
+                    
+
+                # Create table and style
+                pdf_table = Table(table_data, colWidths=col_widths)
+                style = TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                                    ('GRID', (0, 0), (-1, -1), 1, colors.black)])
+
+                pdf_table.setStyle(style)
+
+                # Create paragraph for raw data
+                styles = getSampleStyleSheet()
+
+                # Build PDF document
+                elements = []
+
+                # Draw centered heading using the canvas object
+                heading = FileHeading
+                elements.append(Paragraph(heading, styles['Title']))
+
+                # Add a line break
+                elements.append(Paragraph("<br/>", styles["Normal"]))
+
+                # Add the table
+                elements.append(pdf_table)
+
+                # Add a line break
+                elements.append(Paragraph("<br/>", styles["Normal"]))
+
+
+                pdf.build(elements)
+
+                response.write(pdf_buffer.getvalue())
+                return response
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

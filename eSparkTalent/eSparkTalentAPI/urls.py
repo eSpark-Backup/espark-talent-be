@@ -13,4 +13,5 @@ urlpatterns=[
     path('c_lr/',Leave_Request.as_view()),
     path('c_lb/',Leave_Balance.as_view()),
     path('c_clockinout/',ClockInOut_Request.as_view()),
+    path('c_downreport/',Download_Report.as_view()),
 ]
