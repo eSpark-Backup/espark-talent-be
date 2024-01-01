@@ -444,6 +444,7 @@ class Leave_Request(APIView):
                 items=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                         'employee_id': openapi.Schema(type=openapi.TYPE_INTEGER),
                         'employee_name': openapi.Schema(type=openapi.TYPE_STRING),
                         'country': openapi.Schema(type=openapi.TYPE_STRING),
@@ -500,6 +501,22 @@ class Leave_Request(APIView):
                 return Response(records, status=status.HTTP_200_OK)
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
+        
+        @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                'status': openapi.Schema(type=openapi.TYPE_STRING),
+            }
+        ),
+        responses={
+            200: openapi.Response(description='Successful update'),
+            204: openapi.Response(description='No content'),
+            400: openapi.Response(description='Bad request'),
+        },
+        operation_description="Endpoint to update the status of a leave request.",
+    )
             
         def patch(self, request, *args, **kwargs):
             user=request.user
@@ -602,6 +619,7 @@ class ClockInOut_Request(APIView):
                 items=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                         'employee_id': openapi.Schema(type=openapi.TYPE_INTEGER),
                         'employee_name': openapi.Schema(type=openapi.TYPE_STRING),
                         'country': openapi.Schema(type=openapi.TYPE_STRING),
@@ -643,7 +661,22 @@ class ClockInOut_Request(APIView):
                 return Response(records, status=status.HTTP_200_OK)
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
-            
+        
+        @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                'status': openapi.Schema(type=openapi.TYPE_STRING),
+            }
+        ),
+        responses={
+            200: openapi.Response(description='Successful update'),
+            204: openapi.Response(description='No content'),
+            400: openapi.Response(description='Bad request'),
+        },
+        operation_description="Endpoint to update the status of a clock in/out record.",
+    )    
         def patch(self, request, *args, **kwargs):
             user=request.user
             request_id=request.query_params.get('id')
