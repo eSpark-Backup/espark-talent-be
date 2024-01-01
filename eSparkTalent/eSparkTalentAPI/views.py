@@ -702,8 +702,8 @@ class Leave_Balance(APIView):
         ],
         operation_description="Endpoint to retrieve leave balance data.",
     )
-    def get(self, balance, *args, **kwargs):
-        user = balance.user
+    def get(self, request, *args, **kwargs):
+        user = request.user
         leave_balances = leave_balance.objects.filter(onboarding_id__user_id=user)
         records = []
 
@@ -775,9 +775,19 @@ class ClockInOut_Request(APIView):
         },
         operation_description="Endpoint to retrieve clock IN and OUT request data.",
     )
-    def get(self, balance, *args, **kwargs):
-        user = balance.user
-        clockinout_requests = clockinout_request.objects.filter(
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        get_status = request.query_params.get("status")
+        if (
+            get_status == "pending"
+            or get_status == "completed"
+            or get_status == "rejected"
+        ):
+            clockinout_requests = clockinout_request.objects.filter(
+            onboarding_id__user_id=user, status=get_status
+        )
+        elif get_status == "all":
+            clockinout_requests = clockinout_request.objects.filter(
             onboarding_id__user_id=user
         )
         records = []
@@ -930,7 +940,7 @@ class Download_Report(APIView):
                 current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
                 filename = f"leaveBalanceReport{current_datetime}.pdf"
                 table_headers = ['Employee Name', 'Casual Leave', 'Sick Leave', 'Annual Leave', 'Taken', 'Balance']
-                FileHeading = "Leave Balace"
+                FileHeading = "Leave Balance"
                 table_data = [table_headers]
                 raw_data = []
                 for data in records:
