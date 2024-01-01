@@ -21,7 +21,9 @@ import datetime
 
 
 class create_user(APIView):
+    
     @swagger_auto_schema(
+        tags = ["Creat Dummy User"],
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -36,7 +38,8 @@ class create_user(APIView):
             201: openapi.Response(description="Successful created"),
             400: openapi.Response(description="Bad request"),
         },
-        operation_description="Endpoint for user create.",
+        operation_summary="Endpoint for user create.",
+        operation_id= [""]
     )
     def post(self, request, *args, **kwargs):
         serializer = userSerializer(data=request.data)
@@ -51,9 +54,10 @@ class create_user(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+login_tags =["Authentication Login"]
 class LoginView(APIView):
     @swagger_auto_schema(
+        tags =login_tags,
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -79,7 +83,8 @@ class LoginView(APIView):
             ),
             401: openapi.Response(description="Invalid credentials"),
         },
-        operation_description="Endpoint for user login.",
+        operation_summary="Endpoint for user login.",
+        operation_id= [""]
     )
     def post(self, request, *args, **kwargs):
         email = request.data.get("email")
@@ -101,6 +106,7 @@ class LoginView(APIView):
 @permission_classes([IsAuthenticated])
 class Client_Home(APIView):
     @swagger_auto_schema(
+        tags = ["Dashboard"],
         responses={
             200: openapi.Response(
                 description="Successful request",
@@ -129,7 +135,8 @@ class Client_Home(APIView):
                 type=openapi.TYPE_STRING,
             ),
         ],
-        operation_description="Endpoint to retrieve client home data.",
+        operation_summary="Endpoint to retrieve client home data.",
+        operation_id= [""]
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -154,11 +161,12 @@ class Client_Home(APIView):
 
         return Response(data, status=status.HTTP_200_OK)
 
-
+# StartHire_tags=["Start Hiring"]
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Start_Hiring(APIView):
     @swagger_auto_schema(
+        tags= ["Hire & Onboard : Start Hiring"],
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -196,7 +204,8 @@ class Start_Hiring(APIView):
                 type=openapi.TYPE_STRING,
             ),
         ],
-        operation_description="Endpoint to create hiring request.",
+        operation_summary="Endpoint to create hiring request.",
+        operation_id= [""]
     )
     def post(self, request, *args, **kwargs):
         serializer = hiring_requestSerializer(data=request.data)
@@ -219,11 +228,12 @@ class Start_Hiring(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+HireProg_tags = ["Hiring Progress"]
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Hiring_Resquest(APIView):
     @swagger_auto_schema(
+        tags= ["Hire & Onboard : Hiring Progress"],
         responses={
             200: openapi.Response(
                 description="Successful response",
@@ -268,7 +278,8 @@ class Hiring_Resquest(APIView):
                 type=openapi.TYPE_STRING,
             ),
         ],
-        operation_description="Endpoint to retrieve hiring request data.",
+        operation_summary="Endpoint to retrieve hiring request data.",
+        operation_id= [""]
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -292,7 +303,34 @@ class Hiring_Resquest(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
-        
+
+    @swagger_auto_schema(
+    tags= ["Hire & Onboard : Hiring Progress"],
+    manual_parameters=[
+        openapi.Parameter(
+            "id",
+            openapi.IN_QUERY,
+            description="ID of the record to delete",
+            type=openapi.TYPE_INTEGER,
+            required=True,
+        ),
+        openapi.Parameter(
+            "Authorization",
+            openapi.IN_HEADER,
+            description="Bearer Token",
+            type=openapi.TYPE_STRING,
+        ),
+    ],
+    responses={
+        200: openapi.Response(description="Successful deletion"),
+        204: openapi.Response(description="No content"),
+        400: openapi.Response(description="Bad request"),
+        401: openapi.Response(description="Unauthorize"),
+    },
+    operation_summary="Endpoint to delete a hiring request.",
+    operation_id= [""]
+)
+       
     def delete(self,request,*args, **kwargs):
         user = request.user
         delete_id=request.query_params.get('id')
@@ -308,6 +346,7 @@ class Hiring_Resquest(APIView):
 @permission_classes([IsAuthenticated])
 class Interview_Schedule(APIView):
     @swagger_auto_schema(
+        tags= ["Hire & Onboard : Hiring Progress"],
         responses={
             200: openapi.Response(
                 description="Successful response",
@@ -351,7 +390,8 @@ class Interview_Schedule(APIView):
                 type=openapi.TYPE_STRING,
             ),
         ],
-        operation_description="Endpoint to retrieve interview schedule data.",
+        operation_summary="Endpoint to retrieve interview schedule data.",
+        operation_id= [""]
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -375,6 +415,41 @@ class Interview_Schedule(APIView):
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
         
+    @swagger_auto_schema(
+        tags= ["Hire & Onboard : Hiring Progress"],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "status": openapi.Schema(
+                    type=openapi.TYPE_STRING, enum=["Pending", "Reject", "Short list"]
+                ),
+            },
+            required=["status"],
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful update"),
+            204: openapi.Response(description="No content"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="Unauthorize"),
+        },
+        operation_summary="Endpoint to update the status of an interview schedule.",
+        operation_id= [""]
+    )
     def patch(self, request, *args, **kwargs):
         user = request.user
         request_id = request.query_params.get("id")
@@ -396,6 +471,7 @@ class Interview_Schedule(APIView):
 @permission_classes([IsAuthenticated])
 class Onboarding(APIView):
     @swagger_auto_schema(
+        tags= ["Hire & Onboard : Hiring Progress"],
         responses={
             200: openapi.Response(
                 description="Successful response",
@@ -439,7 +515,8 @@ class Onboarding(APIView):
                 type=openapi.TYPE_STRING,
             ),
         ],
-        operation_description="Endpoint to retrieve on-boarding data.",
+        operation_summary="Endpoint to retrieve on-boarding data.",
+        operation_id= [""]
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -463,11 +540,13 @@ class Onboarding(APIView):
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-
+# Team_Memeber_tags = ["Team Member"]
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Team_Memeber(APIView):
     @swagger_auto_schema(
+        # tags = Team_Memeber_tags,
+        tags = ["Team : Team Member"],
         manual_parameters=[
             openapi.Parameter(
                 "status",
@@ -517,7 +596,8 @@ class Team_Memeber(APIView):
             204: openapi.Response("No content"),
             401: openapi.Response("UnAuthorize"),
         },
-        operation_description="Endpoint to retrieve team members data.",
+        operation_summary="Endpoint to retrieve team members data.",
+        operation_id= [""]
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -545,12 +625,16 @@ class Team_Memeber(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
-
-
+        
+# team_tags = ["Team"]
+# time_off_tags = ["Time Off"]
+        
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Leave_Request(APIView):
     @swagger_auto_schema(
+        # tags = [time_off_tags],
+        tags = ["Team : Time Off"],
         manual_parameters=[
             openapi.Parameter(
                 "status",
@@ -602,7 +686,8 @@ class Leave_Request(APIView):
             204: openapi.Response("No content"),
             401: openapi.Response("UnAuthorize"),
         },
-        operation_description="Endpoint to retrieve Leave request data.",
+        operation_summary="Endpoint to retrieve Leave request data.",
+        operation_id= [""]
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -646,6 +731,8 @@ class Leave_Request(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(
+        # tags = time_off_tags,
+            tags = ["Team : Time Off"],
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -676,7 +763,8 @@ class Leave_Request(APIView):
             400: openapi.Response(description="Bad request"),
             401: openapi.Response("UnAuthorize"),
         },
-        operation_description="Endpoint to update the status of a leave request.",
+        operation_summary="Endpoint to update the status of a leave request.",
+        operation_id= [""]
     )
     def patch(self, request, *args, **kwargs):
         user = request.user
@@ -699,6 +787,8 @@ class Leave_Request(APIView):
 @permission_classes([IsAuthenticated])
 class Leave_Balance(APIView):
     @swagger_auto_schema(
+        # tags = time_off_tags,
+        tags = ["Team : Time Off"],
         responses={
             200: openapi.Response(
                 description="Successful response",
@@ -728,7 +818,8 @@ class Leave_Balance(APIView):
                 type=openapi.TYPE_STRING,
             ),
         ],
-        operation_description="Endpoint to retrieve leave balance data.",
+        operation_summary="Endpoint to retrieve leave balance data.",
+        operation_id= [""]
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -758,6 +849,8 @@ class Leave_Balance(APIView):
 @permission_classes([IsAuthenticated])
 class ClockInOut_Request(APIView):
     @swagger_auto_schema(
+        # tags = time_off_tags,
+        tags = ["Team : Time Off"],
         manual_parameters=[
             openapi.Parameter(
                 "status",
@@ -801,7 +894,8 @@ class ClockInOut_Request(APIView):
             204: openapi.Response("No content"),
             401: openapi.Response("UnAuthorize"),
         },
-        operation_description="Endpoint to retrieve clock IN and OUT request data.",
+        operation_summary="Endpoint to retrieve clock IN and OUT request data.",
+        operation_id= [""]
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -841,6 +935,8 @@ class ClockInOut_Request(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(
+        # tags = time_off_tags,
+        tags = ["Team : Time Off"],
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -871,7 +967,8 @@ class ClockInOut_Request(APIView):
             400: openapi.Response(description="Bad request"),
             401: openapi.Response("UnAuthorize"),
         },
-        operation_description="Endpoint to update the status of a clock in/out record.",
+        operation_summary="Endpoint to update the status of a clock in/out record.",
+        operation_id= [""]
     )
     def patch(self, request, *args, **kwargs):
         user = request.user
@@ -893,6 +990,7 @@ class ClockInOut_Request(APIView):
 @permission_classes([IsAuthenticated])                
 class Download_Report(APIView):
     @swagger_auto_schema(
+        tags= ["Download"],
         manual_parameters=[
             openapi.Parameter(
                 "tab",
@@ -909,12 +1007,14 @@ class Download_Report(APIView):
                 type=openapi.TYPE_STRING,
             ),
         ],
+        
         responses={
             200: openapi.Response("Successful Download"),
             204: openapi.Response("No content"),
             401: openapi.Response("UnAuthorize"),
         },
-        operation_description="Endpoint to download report.",
+        operation_summary="Endpoint to download report.",
+        operation_id= [""]
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -1030,3 +1130,4 @@ class Download_Report(APIView):
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
