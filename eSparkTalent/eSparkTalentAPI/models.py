@@ -83,6 +83,11 @@ class employee(models.Model):
     
     
 class interview_schedule(models.Model):
+    status=[
+        ('Short list', 'Short list'),
+        ('Pending', 'Pending'),
+        ('Reject', 'Reject')
+    ]
     id = models.AutoField(primary_key=True)
     user_id = models.ForeignKey(end_user, on_delete=models.CASCADE)
     employee_id=models.ForeignKey(employee,to_field='employee_id', on_delete=models.CASCADE, default='')
@@ -90,7 +95,7 @@ class interview_schedule(models.Model):
     employment_term = models.CharField(max_length=15)
     interview_date_time=models.DateTimeField()
     country = models.CharField(max_length=30)
-    status = models.CharField(max_length=15)
+    status = models.CharField(max_length=15, choices=status)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

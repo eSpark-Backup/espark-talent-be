@@ -278,6 +278,7 @@ class Hiring_Resquest(APIView):
             records = []
             for data in hiring_requests:
                 record = {
+                    "id": data.id,
                     "job_title": data.job_title,
                     "role_type": data.role_type,
                     "gender": data.gender,
@@ -291,6 +292,16 @@ class Hiring_Resquest(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
+        
+    def delete(self,request,*args, **kwargs):
+        user = request.user
+        delete_id=request.query_params.get('id')
+        try:
+            hiring_request.objects.filter(id=delete_id).delete()
+            return Response(status=status.HTTP_200_OK)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
 
 
 @authentication_classes([JWTAuthentication])
@@ -349,6 +360,7 @@ class Interview_Schedule(APIView):
         if interview_schedules:
             for data in interview_schedules:
                 record = {
+                    "id":data.id,
                     "employee_name": data.employee_id.username,
                     "gender": data.employee_id.gender,
                     "job_title": data.employee_id.designation,
@@ -362,7 +374,23 @@ class Interview_Schedule(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
+        
+    def patch(self, request, *args, **kwargs):
+        user = request.user
+        request_id = request.query_params.get("id")
+        to_update_status = request.data["status"]
+        try:
+            to_update_interview_status = interview_schedule.objects.get(id=request_id)
+            if to_update_interview_status:
+                to_update_interview_status.status = to_update_status
+                to_update_interview_status.save()
 
+                return Response(status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
