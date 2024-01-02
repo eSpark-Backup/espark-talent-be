@@ -1,13 +1,11 @@
 from .models import *
 from rest_framework.views import APIView
-from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Count
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from .serializers import *
 from drf_yasg.utils import swagger_auto_schema
@@ -21,13 +19,13 @@ import datetime
 
 
 class create_user(APIView):
-    
     @swagger_auto_schema(
-        tags = ["Creat Dummy User"],
+        operation_id=".",
+        tags=["Creat Dummy User"],
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "email": openapi.Schema(type=openapi.TYPE_STRING),
+                "email": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
                 "password": openapi.Schema(type=openapi.TYPE_STRING),
                 "username": openapi.Schema(type=openapi.TYPE_STRING),
                 "role": openapi.Schema(type=openapi.TYPE_STRING),
@@ -39,7 +37,6 @@ class create_user(APIView):
             400: openapi.Response(description="Bad request"),
         },
         operation_summary="Endpoint for user create.",
-        operation_id= [""]
     )
     def post(self, request, *args, **kwargs):
         serializer = userSerializer(data=request.data)
@@ -54,10 +51,10 @@ class create_user(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-login_tags =["Authentication Login"]
+
 class LoginView(APIView):
     @swagger_auto_schema(
-        tags =login_tags,
+        tags=["Authentication Login"],
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -84,7 +81,7 @@ class LoginView(APIView):
             401: openapi.Response(description="Invalid credentials"),
         },
         operation_summary="Endpoint for user login.",
-        operation_id= [""]
+        operation_id=".",
     )
     def post(self, request, *args, **kwargs):
         email = request.data.get("email")
@@ -106,7 +103,7 @@ class LoginView(APIView):
 @permission_classes([IsAuthenticated])
 class Client_Home(APIView):
     @swagger_auto_schema(
-        tags = ["Dashboard"],
+        tags=["Dashboard"],
         responses={
             200: openapi.Response(
                 description="Successful request",
@@ -136,7 +133,7 @@ class Client_Home(APIView):
             ),
         ],
         operation_summary="Endpoint to retrieve client home data.",
-        operation_id= [""]
+        operation_id=".",
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -161,12 +158,11 @@ class Client_Home(APIView):
 
         return Response(data, status=status.HTTP_200_OK)
 
-# StartHire_tags=["Start Hiring"]
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Start_Hiring(APIView):
     @swagger_auto_schema(
-        tags= ["Hire & Onboard : Start Hiring"],
+        tags=["Hire & Onboard : Start Hiring"],
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -205,7 +201,7 @@ class Start_Hiring(APIView):
             ),
         ],
         operation_summary="Endpoint to create hiring request.",
-        operation_id= [""]
+        operation_id=".",
     )
     def post(self, request, *args, **kwargs):
         serializer = hiring_requestSerializer(data=request.data)
@@ -228,12 +224,12 @@ class Start_Hiring(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-HireProg_tags = ["Hiring Progress"]
+
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Hiring_Resquest(APIView):
     @swagger_auto_schema(
-        tags= ["Hire & Onboard : Hiring Progress"],
+        tags=["Hire & Onboard : Hiring Progress"],
         responses={
             200: openapi.Response(
                 description="Successful response",
@@ -279,7 +275,7 @@ class Hiring_Resquest(APIView):
             ),
         ],
         operation_summary="Endpoint to retrieve hiring request data.",
-        operation_id= [""]
+        operation_id=".",
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -305,35 +301,34 @@ class Hiring_Resquest(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(
-    tags= ["Hire & Onboard : Hiring Progress"],
-    manual_parameters=[
-        openapi.Parameter(
-            "id",
-            openapi.IN_QUERY,
-            description="ID of the record to delete",
-            type=openapi.TYPE_INTEGER,
-            required=True,
-        ),
-        openapi.Parameter(
-            "Authorization",
-            openapi.IN_HEADER,
-            description="Bearer Token",
-            type=openapi.TYPE_STRING,
-        ),
-    ],
-    responses={
-        200: openapi.Response(description="Successful deletion"),
-        204: openapi.Response(description="No content"),
-        400: openapi.Response(description="Bad request"),
-        401: openapi.Response(description="Unauthorize"),
-    },
-    operation_summary="Endpoint to delete a hiring request.",
-    operation_id= [""]
-)
-       
-    def delete(self,request,*args, **kwargs):
+        tags=["Hire & Onboard : Hiring Progress"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            204: openapi.Response(description="No content"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="Unauthorize"),
+        },
+        operation_summary="Endpoint to delete a hiring request.",
+        operation_id=".",
+    )
+    def delete(self, request, *args, **kwargs):
         user = request.user
-        delete_id=request.query_params.get('id')
+        delete_id = request.query_params.get("id")
         try:
             hiring_request.objects.filter(id=delete_id).delete()
             return Response(status=status.HTTP_200_OK)
@@ -341,12 +336,11 @@ class Hiring_Resquest(APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
-
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Interview_Schedule(APIView):
     @swagger_auto_schema(
-        tags= ["Hire & Onboard : Hiring Progress"],
+        tags=["Hire & Onboard : Hiring Progress"],
         responses={
             200: openapi.Response(
                 description="Successful response",
@@ -391,7 +385,7 @@ class Interview_Schedule(APIView):
             ),
         ],
         operation_summary="Endpoint to retrieve interview schedule data.",
-        operation_id= [""]
+        operation_id=".",
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -400,7 +394,7 @@ class Interview_Schedule(APIView):
         if interview_schedules:
             for data in interview_schedules:
                 record = {
-                    "id":data.id,
+                    "id": data.id,
                     "employee_name": data.employee_id.username,
                     "gender": data.employee_id.gender,
                     "job_title": data.employee_id.designation,
@@ -414,9 +408,9 @@ class Interview_Schedule(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
-        
+
     @swagger_auto_schema(
-        tags= ["Hire & Onboard : Hiring Progress"],
+        tags=["Hire & Onboard : Hiring Progress"],
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -448,7 +442,7 @@ class Interview_Schedule(APIView):
             401: openapi.Response(description="Unauthorize"),
         },
         operation_summary="Endpoint to update the status of an interview schedule.",
-        operation_id= [""]
+        operation_id=".",
     )
     def patch(self, request, *args, **kwargs):
         user = request.user
@@ -465,13 +459,13 @@ class Interview_Schedule(APIView):
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Onboarding(APIView):
     @swagger_auto_schema(
-        tags= ["Hire & Onboard : Hiring Progress"],
+        tags=["Hire & Onboard : Hiring Progress"],
         responses={
             200: openapi.Response(
                 description="Successful response",
@@ -516,7 +510,7 @@ class Onboarding(APIView):
             ),
         ],
         operation_summary="Endpoint to retrieve on-boarding data.",
-        operation_id= [""]
+        operation_id=".",
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -540,13 +534,11 @@ class Onboarding(APIView):
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-# Team_Memeber_tags = ["Team Member"]
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Team_Memeber(APIView):
     @swagger_auto_schema(
-        # tags = Team_Memeber_tags,
-        tags = ["Team : Team Member"],
+        tags=["Team : Team Member"],
         manual_parameters=[
             openapi.Parameter(
                 "status",
@@ -597,7 +589,7 @@ class Team_Memeber(APIView):
             401: openapi.Response("UnAuthorize"),
         },
         operation_summary="Endpoint to retrieve team members data.",
-        operation_id= [""]
+        operation_id=".",
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -625,16 +617,13 @@ class Team_Memeber(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
-        
-# team_tags = ["Team"]
-# time_off_tags = ["Time Off"]
-        
+
+
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Leave_Request(APIView):
     @swagger_auto_schema(
-        # tags = [time_off_tags],
-        tags = ["Team : Time Off"],
+        tags=["Team : Time Off"],
         manual_parameters=[
             openapi.Parameter(
                 "status",
@@ -687,7 +676,7 @@ class Leave_Request(APIView):
             401: openapi.Response("UnAuthorize"),
         },
         operation_summary="Endpoint to retrieve Leave request data.",
-        operation_id= [""]
+        operation_id=".",
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -731,8 +720,7 @@ class Leave_Request(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(
-        # tags = time_off_tags,
-            tags = ["Team : Time Off"],
+        tags=["Team : Time Off"],
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -764,7 +752,7 @@ class Leave_Request(APIView):
             401: openapi.Response("UnAuthorize"),
         },
         operation_summary="Endpoint to update the status of a leave request.",
-        operation_id= [""]
+        operation_id=".",
     )
     def patch(self, request, *args, **kwargs):
         user = request.user
@@ -787,8 +775,7 @@ class Leave_Request(APIView):
 @permission_classes([IsAuthenticated])
 class Leave_Balance(APIView):
     @swagger_auto_schema(
-        # tags = time_off_tags,
-        tags = ["Team : Time Off"],
+        tags=["Team : Time Off"],
         responses={
             200: openapi.Response(
                 description="Successful response",
@@ -819,7 +806,7 @@ class Leave_Balance(APIView):
             ),
         ],
         operation_summary="Endpoint to retrieve leave balance data.",
-        operation_id= [""]
+        operation_id=".",
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -849,8 +836,7 @@ class Leave_Balance(APIView):
 @permission_classes([IsAuthenticated])
 class ClockInOut_Request(APIView):
     @swagger_auto_schema(
-        # tags = time_off_tags,
-        tags = ["Team : Time Off"],
+        tags=["Team : Time Off"],
         manual_parameters=[
             openapi.Parameter(
                 "status",
@@ -895,7 +881,7 @@ class ClockInOut_Request(APIView):
             401: openapi.Response("UnAuthorize"),
         },
         operation_summary="Endpoint to retrieve clock IN and OUT request data.",
-        operation_id= [""]
+        operation_id=".",
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -906,12 +892,12 @@ class ClockInOut_Request(APIView):
             or get_status == "rejected"
         ):
             clockinout_requests = clockinout_request.objects.filter(
-            onboarding_id__user_id=user, status=get_status
-        )
+                onboarding_id__user_id=user, status=get_status
+            )
         elif get_status == "all":
             clockinout_requests = clockinout_request.objects.filter(
-            onboarding_id__user_id=user
-        )
+                onboarding_id__user_id=user
+            )
         records = []
 
         if clockinout_requests:
@@ -935,8 +921,7 @@ class ClockInOut_Request(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @swagger_auto_schema(
-        # tags = time_off_tags,
-        tags = ["Team : Time Off"],
+        tags=["Team : Time Off"],
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -968,7 +953,7 @@ class ClockInOut_Request(APIView):
             401: openapi.Response("UnAuthorize"),
         },
         operation_summary="Endpoint to update the status of a clock in/out record.",
-        operation_id= [""]
+        operation_id=".",
     )
     def patch(self, request, *args, **kwargs):
         user = request.user
@@ -986,11 +971,12 @@ class ClockInOut_Request(APIView):
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
+
 @authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])                
+@permission_classes([IsAuthenticated])
 class Download_Report(APIView):
     @swagger_auto_schema(
-        tags= ["Download"],
+        tags=["Team : Time Off"],
         manual_parameters=[
             openapi.Parameter(
                 "tab",
@@ -1007,98 +993,145 @@ class Download_Report(APIView):
                 type=openapi.TYPE_STRING,
             ),
         ],
-        
         responses={
             200: openapi.Response("Successful Download"),
             204: openapi.Response("No content"),
             401: openapi.Response("UnAuthorize"),
         },
         operation_summary="Endpoint to download report.",
-        operation_id= [""]
+        operation_id=".",
     )
     def get(self, request, *args, **kwargs):
         user = request.user
-        get_tab = request.query_params.get('tab')
+        get_tab = request.query_params.get("tab")
 
-        if get_tab not in ['lr', 'lb', 'cio']:
-            return Response({"error": "Invalid 'tab' value."}, status=status.HTTP_400_BAD_REQUEST)
+        if get_tab not in ["lr", "lb", "cio"]:
+            return Response(
+                {"error": "Invalid 'tab' value."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
-            if get_tab == 'lr':
+            if get_tab == "lr":
                 records = leave_request.objects.filter(onboarding_id__user_id=user)
                 current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
                 filename = f"leaveRequestReport_{current_datetime}.pdf"
-                table_headers = ['Employee ID', 'Employee Name', 'Country', 'Department', 'Leave Type',
-                                'Count', 'Requested At', 'Status']
+                table_headers = [
+                    "Employee ID",
+                    "Employee Name",
+                    "Country",
+                    "Department",
+                    "Leave Type",
+                    "Count",
+                    "Requested At",
+                    "Status",
+                ]
                 FileHeading = "Leave Request"
                 table_data = [table_headers]
                 raw_data = []
                 for data in records:
-                    employee_serializer = EmployeeSerializer(data.onboarding_id.employee_id)
+                    employee_serializer = EmployeeSerializer(
+                        data.onboarding_id.employee_id
+                    )
                     employee_data = employee_serializer.data
 
-                    row_data = [str(employee_data.get('employee_id', '')),
-                                    str(employee_data.get('username', '')), str(data.onboarding_id.country),
-                                    str(employee_data.get('department', '')), str(data.leave_type),
-                                    str(data.count),str(data.requested_at), str(data.status)]
+                    row_data = [
+                        str(employee_data.get("employee_id", "")),
+                        str(employee_data.get("username", "")),
+                        str(data.onboarding_id.country),
+                        str(employee_data.get("department", "")),
+                        str(data.leave_type),
+                        str(data.count),
+                        str(data.requested_at),
+                        str(data.status),
+                    ]
                     table_data.append(row_data)
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
                 col_widths = [65, 80, 70, 70, 60, 35, 150, 60]
-            elif get_tab == 'cio':
+            elif get_tab == "cio":
                 records = clockinout_request.objects.filter(onboarding_id__user_id=user)
                 current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
                 filename = f"ClockInOutReport{current_datetime}.pdf"
-                table_headers = ['Employee ID', 'Employee Name', 'Date', 'Punch Time', 'Punch Type', 'Status']
+                table_headers = [
+                    "Employee ID",
+                    "Employee Name",
+                    "Date",
+                    "Punch Time",
+                    "Punch Type",
+                    "Status",
+                ]
                 FileHeading = "Clock In Out Request"
                 table_data = [table_headers]
                 raw_data = []
                 for data in records:
-                    employee_serializer = EmployeeSerializer(data.onboarding_id.employee_id)
+                    employee_serializer = EmployeeSerializer(
+                        data.onboarding_id.employee_id
+                    )
                     employee_data = employee_serializer.data
 
-                    row_data = [str(employee_data.get('employee_id', '')),
-                                    str(employee_data.get('username', '')), str(data.date),
-                                    str(data.punch_time), str(data.punch_type),
-                                    str(data.status)]
+                    row_data = [
+                        str(employee_data.get("employee_id", "")),
+                        str(employee_data.get("username", "")),
+                        str(data.date),
+                        str(data.punch_time),
+                        str(data.punch_type),
+                        str(data.status),
+                    ]
                     table_data.append(row_data)
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
                 col_widths = [100, 100, 80, 80, 80, 80]
-            elif get_tab == 'lb':
+            elif get_tab == "lb":
                 records = leave_balance.objects.filter(onboarding_id__user_id=user)
                 current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
                 filename = f"leaveBalanceReport{current_datetime}.pdf"
-                table_headers = ['Employee Name', 'Casual Leave', 'Sick Leave', 'Annual Leave', 'Taken', 'Balance']
+                table_headers = [
+                    "Employee Name",
+                    "Casual Leave",
+                    "Sick Leave",
+                    "Annual Leave",
+                    "Taken",
+                    "Balance",
+                ]
                 FileHeading = "Leave Balance"
                 table_data = [table_headers]
                 raw_data = []
                 for data in records:
-                    employee_serializer = EmployeeSerializer(data.onboarding_id.employee_id)
+                    employee_serializer = EmployeeSerializer(
+                        data.onboarding_id.employee_id
+                    )
                     employee_data = employee_serializer.data
 
-                    row_data = [str(employee_data.get('username', '')), str(data.casual_leaves),
-                                     str(data.sick_leaves), str(data.annual_leaves),
-                                     str(data.taken),str(data.balance)]
+                    row_data = [
+                        str(employee_data.get("username", "")),
+                        str(data.casual_leaves),
+                        str(data.sick_leaves),
+                        str(data.annual_leaves),
+                        str(data.taken),
+                        str(data.balance),
+                    ]
                     table_data.append(row_data)
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
                 col_widths = [100, 100, 80, 80, 80, 80]
             if records.exists():
-                response = HttpResponse(content_type='application/pdf')
-                response['Content-Disposition'] = f'attachment; filename="{filename}"'
+                response = HttpResponse(content_type="application/pdf")
+                response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
                 # Create PDF document
-                pdf_buffer = HttpResponse(content_type='application/pdf')
+                pdf_buffer = HttpResponse(content_type="application/pdf")
                 pdf = SimpleDocTemplate(pdf_buffer, pagesize=letter)
-                    
 
                 # Create table and style
                 pdf_table = Table(table_data, colWidths=col_widths)
-                style = TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                                    ('GRID', (0, 0), (-1, -1), 1, colors.black)])
+                style = TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                        ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                        ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
+                        ("GRID", (0, 0), (-1, -1), 1, colors.black),
+                    ]
+                )
 
                 pdf_table.setStyle(style)
 
@@ -1110,7 +1143,7 @@ class Download_Report(APIView):
 
                 # Draw centered heading using the canvas object
                 heading = FileHeading
-                elements.append(Paragraph(heading, styles['Title']))
+                elements.append(Paragraph(heading, styles["Title"]))
 
                 # Add a line break
                 elements.append(Paragraph("<br/>", styles["Normal"]))
@@ -1121,7 +1154,6 @@ class Download_Report(APIView):
                 # Add a line break
                 elements.append(Paragraph("<br/>", styles["Normal"]))
 
-
                 pdf.build(elements)
 
                 response.write(pdf_buffer.getvalue())
@@ -1129,5 +1161,6 @@ class Download_Report(APIView):
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
