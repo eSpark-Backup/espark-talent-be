@@ -208,4 +208,5 @@ class clockinout_request(models.Model):
     status=models.CharField(max_length=10, choices=status)
 
     def __str__(self):
-        return f'{self.onboarding_id.user_id} - {self.id}'    
+        return f'{self.onboarding_id.user_id} - {self.id}'   
+

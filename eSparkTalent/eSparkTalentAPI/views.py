@@ -732,7 +732,7 @@ class Leave_Request(APIView):
                     type=openapi.TYPE_STRING, enum=["completed", "rejected"]
                 ),
             },
-            required="status",
+            required=["status"],
         ),
         manual_parameters=[
             openapi.Parameter(
@@ -1196,7 +1196,7 @@ class UpdateUserNameView(APIView):
             401: openapi.Response("UnAuthorize"),
         },
         operation_summary="Update company name/user name in the database or settings.",
-        operation_id="1",
+        operation_id="3",
     )
         def put(self, request):
             user = request.user
@@ -1208,25 +1208,83 @@ class UpdateUserNameView(APIView):
                 return Response(status=status.HTTP_200_OK)
             else:
                 return Response({"error": "Invalid data provided"}, status=status.HTTP_400_BAD_REQUEST)
+            
 
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 class UploadPictureView(APIView):
+    @swagger_auto_schema(
+        tags=["Oragnization : Settings"],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'picture': openapi.Schema(type=openapi.TYPE_FILE),
+            },
+            required=['picture'],
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful upload"),
+            204: openapi.Response(description="No content"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response("UnAuthorize"),
+        },
+        operation_summary="Upload a picture.",
+        operation_id="2",
+    )
     def post(self, request):
         picture_file = request.data.get('picture')
         if picture_file:
             # You may want to handle file upload and storage appropriately
             # For demonstration purposes, I'll store the file name in a variable
             file_name = default_storage.save(picture_file.name, ContentFile(picture_file.read()))
-            return Response({"message": "Picture uploaded successfully"})
+            return Response({"message": "Picture uploaded successfully", "file_name": file_name}, status=status.HTTP_201_CREATED)
         else:
             return Response({"error": "No picture provided"}, status=status.HTTP_400_BAD_REQUEST)
 
+
+
 class UpdatePasswordView(APIView):
+    @swagger_auto_schema(
+        tags=["Oragnization : Settings"],
+        request_body=openapi.Schema(
+         type=openapi.TYPE_OBJECT,
+         properties={
+                'password': openapi.Schema(type=openapi.TYPE_STRING),
+                },
+        required=["password"],
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful update"),
+            204: openapi.Response(description="No content"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response("UnAuthorize"),
+        },
+        operation_summary="Update new password in the database or settings.",
+        operation_id="1",
+    )
     def put(self, request):
+        user = request.user
         new_password = request.data.get('password')
         if new_password:
-            # Update password in your database or settings
-            # For demonstration purposes, I'll store it in a variable
-            password = new_password
+            record= end_user.objects.get(email=user)
+            record.username = new_password
+            record.save()
             return Response({"message": "Password updated successfully"})
         else:
             return Response({"error": "Invalid data provided"}, status=status.HTTP_400_BAD_REQUEST)
