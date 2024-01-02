@@ -52,3 +52,7 @@ __pycache__/
 # Ignore all .pyc files in the project
 **/__pycache__/
 *.pyc
+
+eSparkTalent/eSparkTalent/__pycache__/
+eSparkTalent/eSparkTalentAPI/__pycache__/
+eSparkTalent/eSparkTalentAPI/migrations/__pycache__/
