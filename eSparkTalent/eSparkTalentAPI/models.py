@@ -208,4 +208,28 @@ class clockinout_request(models.Model):
     status=models.CharField(max_length=10, choices=status)
 
     def __str__(self):
-        return f'{self.onboarding_id.user_id} - {self.id}'    
+        return f'{self.onboarding_id.user_id} - {self.id}'
+    
+
+class time_sheet(models.Model):    
+    months=[
+        ('January','January'),
+        ('February','February'),
+        ('March','March'),
+        ('April','April'),
+        ('May','May'),
+        ('June','June'),
+        ('July','July'),
+        ('August','August'),
+        ('September','September'),
+        ('October','October'),
+        ('November','November'),
+        ('December','December'),
+    ]
+    employee_id=models.CharField(max_length=15)
+    user_id=models.CharField(max_length=15)
+    month=models.CharField(max_length=15, choices=months)
+    record=models.JSONField()    
+    
+    def __str__(self):
+        return f'{self.user_id} - {self.employee_id} - {self.month}'

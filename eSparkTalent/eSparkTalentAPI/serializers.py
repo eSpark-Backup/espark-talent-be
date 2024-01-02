@@ -20,3 +20,13 @@ class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = employee
         fields = '__all__'
+
+class TimeSheetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=time_sheet
+        fields='__all__'
+
+class TimeSheetEmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=time_sheet
+        fields=['employee_id']

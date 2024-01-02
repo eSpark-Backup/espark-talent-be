@@ -1166,3 +1166,28 @@ class Download_Report(APIView):
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Time_Tracking(APIView):
+    def get(self, request, *args, **kwargs):
+        user=request.user   
+        month=request.query_params.get('month')
+        employee_id=request.query_params.get('emp_id')
+        available_employees= time_sheet.objects.filter(user_id=user)
+        serialized_available_employees = TimeSheetEmployeeSerializer(available_employees, many=True).data
+        for record in serialized_available_employees:
+            emp_record=employee.objects.get(employee_id=record['employee_id'])
+            record['name']=emp_record.first_name+' '+emp_record.last_name
+        if month and employee_id:
+                
+            time_sheet_data = time_sheet.objects.filter(user_id=user, month=month, employee_id=employee_id)
+            serialized_time_sheet_data = TimeSheetSerializer(time_sheet_data, many=True).data
+            if serialized_time_sheet_data:
+                return Response({"employees":serialized_available_employees,"time_sheet":serialized_time_sheet_data[0]},status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+        else:
+            return Response(serialized_available_employees, status=status.HTTP_200_OK)
