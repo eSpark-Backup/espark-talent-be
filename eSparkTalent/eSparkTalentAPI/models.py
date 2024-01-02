@@ -84,7 +84,7 @@ class employee(models.Model):
     
 class interview_schedule(models.Model):
     status=[
-        ('Short list', 'Short list'),
+        ('Short_list', 'Short_list'),
         ('Pending', 'Pending'),
         ('Reject', 'Reject')
     ]

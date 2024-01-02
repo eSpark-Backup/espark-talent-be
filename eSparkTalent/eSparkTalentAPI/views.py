@@ -238,6 +238,7 @@ class Hiring_Resquest(APIView):
                     items=openapi.Schema(
                         type=openapi.TYPE_OBJECT,
                         properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "job_title": openapi.Schema(type=openapi.TYPE_STRING),
                             "role_type": openapi.Schema(type=openapi.TYPE_STRING),
                             "gender": openapi.Schema(type=openapi.TYPE_STRING),
@@ -275,7 +276,7 @@ class Hiring_Resquest(APIView):
             ),
         ],
         operation_summary="Endpoint to retrieve hiring request data.",
-        operation_id=".",
+        operation_id="1",
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -324,7 +325,7 @@ class Hiring_Resquest(APIView):
             401: openapi.Response(description="Unauthorize"),
         },
         operation_summary="Endpoint to delete a hiring request.",
-        operation_id=".",
+        operation_id="2",
     )
     def delete(self, request, *args, **kwargs):
         user = request.user
@@ -349,6 +350,7 @@ class Interview_Schedule(APIView):
                     items=openapi.Schema(
                         type=openapi.TYPE_OBJECT,
                         properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
                             "gender": openapi.Schema(type=openapi.TYPE_STRING),
                             "job_title": openapi.Schema(type=openapi.TYPE_STRING),
@@ -385,7 +387,7 @@ class Interview_Schedule(APIView):
             ),
         ],
         operation_summary="Endpoint to retrieve interview schedule data.",
-        operation_id=".",
+        operation_id="3",
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -415,7 +417,7 @@ class Interview_Schedule(APIView):
             type=openapi.TYPE_OBJECT,
             properties={
                 "status": openapi.Schema(
-                    type=openapi.TYPE_STRING, enum=["Pending", "Reject", "Short list"]
+                    type=openapi.TYPE_STRING, enum=["Pending", "Reject", "Short_list"]
                 ),
             },
             required=["status"],
@@ -442,7 +444,7 @@ class Interview_Schedule(APIView):
             401: openapi.Response(description="Unauthorize"),
         },
         operation_summary="Endpoint to update the status of an interview schedule.",
-        operation_id=".",
+        operation_id="4",
     )
     def patch(self, request, *args, **kwargs):
         user = request.user
@@ -510,7 +512,7 @@ class Onboarding(APIView):
             ),
         ],
         operation_summary="Endpoint to retrieve on-boarding data.",
-        operation_id=".",
+        operation_id="5",
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -676,7 +678,7 @@ class Leave_Request(APIView):
             401: openapi.Response("UnAuthorize"),
         },
         operation_summary="Endpoint to retrieve Leave request data.",
-        operation_id=".",
+        operation_id="1",
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -752,7 +754,7 @@ class Leave_Request(APIView):
             401: openapi.Response("UnAuthorize"),
         },
         operation_summary="Endpoint to update the status of a leave request.",
-        operation_id=".",
+        operation_id="2",
     )
     def patch(self, request, *args, **kwargs):
         user = request.user
@@ -806,7 +808,7 @@ class Leave_Balance(APIView):
             ),
         ],
         operation_summary="Endpoint to retrieve leave balance data.",
-        operation_id=".",
+        operation_id="3",
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -881,7 +883,7 @@ class ClockInOut_Request(APIView):
             401: openapi.Response("UnAuthorize"),
         },
         operation_summary="Endpoint to retrieve clock IN and OUT request data.",
-        operation_id=".",
+        operation_id="4",
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -953,7 +955,7 @@ class ClockInOut_Request(APIView):
             401: openapi.Response("UnAuthorize"),
         },
         operation_summary="Endpoint to update the status of a clock in/out record.",
-        operation_id=".",
+        operation_id="5",
     )
     def patch(self, request, *args, **kwargs):
         user = request.user
@@ -999,7 +1001,7 @@ class Download_Report(APIView):
             401: openapi.Response("UnAuthorize"),
         },
         operation_summary="Endpoint to download report.",
-        operation_id=".",
+        operation_id="6",
     )
     def get(self, request, *args, **kwargs):
         user = request.user
