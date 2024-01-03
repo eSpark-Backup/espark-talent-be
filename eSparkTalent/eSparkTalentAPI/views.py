@@ -1243,7 +1243,7 @@ class UploadPictureView(APIView):
         picture_file = request.data.get('picture')
         if picture_file:
             file_name = default_storage.save(picture_file.name, ContentFile(picture_file.read()))
-            return Response({"message": "Picture uploaded successfully", "file_name": file_name}, status=status.HTTP_201_CREATED)
+            return Response({"message": "Picture uploaded successfully"}, status=status.HTTP_201_CREATED)
         else:
             return Response({"error": "No picture provided"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1283,6 +1283,6 @@ class UpdatePasswordView(APIView):
             record= end_user.objects.get(email=user)
             record.set_password(new_password)
             record.save()
-            return Response({"message": "Password updated successfully"})
+            return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid data provided"}, status=status.HTTP_400_BAD_REQUEST)
