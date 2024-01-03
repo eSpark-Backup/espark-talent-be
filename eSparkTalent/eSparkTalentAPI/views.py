@@ -15,6 +15,8 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 import datetime
 
 
@@ -730,7 +732,7 @@ class Leave_Request(APIView):
                     type=openapi.TYPE_STRING, enum=["completed", "rejected"]
                 ),
             },
-            required="status",
+            required=["status"],
         ),
         manual_parameters=[
             openapi.Parameter(
@@ -1166,3 +1168,121 @@ class Download_Report(APIView):
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+        
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class UpdateUserNameView(APIView):
+        @swagger_auto_schema(
+        tags=["Oragnization : Settings"],
+        request_body=openapi.Schema(
+         type=openapi.TYPE_OBJECT,
+         properties={
+                'companyName': openapi.Schema(type=openapi.TYPE_STRING),
+                },
+        required=["companyName"],
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful update"),
+            204: openapi.Response(description="No content"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="UnAuthorize"),
+        },
+        operation_summary="Update company name/user name in the database or settings.",
+        operation_id="3",
+    )
+        def patch(self, request):
+            user = request.user
+            new_user_name = request.data.get('companyName')
+            if new_user_name :
+                record= end_user.objects.get(email=user)
+                record.username = new_user_name
+                record.save()
+                return Response(status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Invalid data provided"}, status=status.HTTP_400_BAD_REQUEST)
+            
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class UploadPictureView(APIView):
+    @swagger_auto_schema(
+        tags=["Oragnization : Settings"],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'picture': openapi.Schema(type=openapi.TYPE_FILE),
+            },
+            required=['picture'],
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful upload"),
+            204: openapi.Response(description="No content"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="UnAuthorize"),
+        },
+        operation_summary="Upload a picture.",
+        operation_id="2",
+    )
+    def post(self, request):
+        picture_file = request.data.get('picture')
+        if picture_file:
+            file_name = default_storage.save(picture_file.name, ContentFile(picture_file.read()))
+            return Response({"message": "Picture uploaded successfully"}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({"error": "No picture provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class UpdatePasswordView(APIView):
+    @swagger_auto_schema(
+        tags=["Oragnization : Settings"],
+        request_body=openapi.Schema(
+         type=openapi.TYPE_OBJECT,
+         properties={
+                'password': openapi.Schema(type=openapi.TYPE_STRING),
+                },
+        required=["password"],
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful update"),
+            204: openapi.Response(description="No content"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="UnAuthorize"),
+        },
+        operation_summary="Update new password in the database or settings.",
+        operation_id="1",
+    )
+    def patch(self, request):
+        user = request.user
+        new_password = request.data.get('password')
+        if new_password:
+            record= end_user.objects.get(email=user)
+            record.set_password(new_password)
+            record.save()
+            return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Invalid data provided"}, status=status.HTTP_400_BAD_REQUEST)
