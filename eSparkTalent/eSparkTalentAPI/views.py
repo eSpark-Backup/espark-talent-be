@@ -1193,7 +1193,7 @@ class UpdateUserNameView(APIView):
             200: openapi.Response(description="Successful update"),
             204: openapi.Response(description="No content"),
             400: openapi.Response(description="Bad request"),
-            401: openapi.Response("UnAuthorize"),
+            401: openapi.Response(description="UnAuthorize"),
         },
         operation_summary="Update company name/user name in the database or settings.",
         operation_id="3",
@@ -1234,7 +1234,7 @@ class UploadPictureView(APIView):
             200: openapi.Response(description="Successful upload"),
             204: openapi.Response(description="No content"),
             400: openapi.Response(description="Bad request"),
-            401: openapi.Response("UnAuthorize"),
+            401: openapi.Response(description="UnAuthorize"),
         },
         operation_summary="Upload a picture.",
         operation_id="2",
@@ -1242,8 +1242,6 @@ class UploadPictureView(APIView):
     def post(self, request):
         picture_file = request.data.get('picture')
         if picture_file:
-            # You may want to handle file upload and storage appropriately
-            # For demonstration purposes, I'll store the file name in a variable
             file_name = default_storage.save(picture_file.name, ContentFile(picture_file.read()))
             return Response({"message": "Picture uploaded successfully", "file_name": file_name}, status=status.HTTP_201_CREATED)
         else:
@@ -1273,17 +1271,17 @@ class UpdatePasswordView(APIView):
             200: openapi.Response(description="Successful update"),
             204: openapi.Response(description="No content"),
             400: openapi.Response(description="Bad request"),
-            401: openapi.Response("UnAuthorize"),
+            401: openapi.Response(description="UnAuthorize"),
         },
         operation_summary="Update new password in the database or settings.",
         operation_id="1",
     )
-    def put(self, request):
+    def patch(self, request):
         user = request.user
         new_password = request.data.get('password')
         if new_password:
             record= end_user.objects.get(email=user)
-            record.username = new_password
+            record.set_password(new_password)
             record.save()
             return Response({"message": "Password updated successfully"})
         else:
