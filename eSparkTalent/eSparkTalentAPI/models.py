@@ -227,9 +227,9 @@ class time_sheet(models.Model):
         ('December','December'),
     ]
     employee_id=models.CharField(max_length=15)
-    user_id=models.CharField(max_length=15)
     month=models.CharField(max_length=15, choices=months)
-    record=models.JSONField()    
-    
+    record=models.JSONField()
+    year=models.IntegerField(default=timezone.now().year)
+
     def __str__(self):
-        return f'{self.user_id} - {self.employee_id} - {self.month}'
+        return f'{self.employee_id} - {self.month}'

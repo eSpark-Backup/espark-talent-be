@@ -28,5 +28,5 @@ class TimeSheetSerializer(serializers.ModelSerializer):
 
 class TimeSheetEmployeeSerializer(serializers.ModelSerializer):
     class Meta:
-        model=time_sheet
+        model=onboarding
         fields=['employee_id']

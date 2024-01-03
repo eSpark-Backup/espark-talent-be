@@ -1175,14 +1175,14 @@ class Time_Tracking(APIView):
         user=request.user   
         month=request.query_params.get('month')
         employee_id=request.query_params.get('emp_id')
-        available_employees= time_sheet.objects.filter(user_id=user)
+        available_employees= onboarding.objects.filter(user_id=user, status='active')
         serialized_available_employees = TimeSheetEmployeeSerializer(available_employees, many=True).data
         for record in serialized_available_employees:
             emp_record=employee.objects.get(employee_id=record['employee_id'])
             record['name']=emp_record.first_name+' '+emp_record.last_name
         if month and employee_id:
                 
-            time_sheet_data = time_sheet.objects.filter(user_id=user, month=month, employee_id=employee_id)
+            time_sheet_data = time_sheet.objects.filter(month=month, employee_id=employee_id)
             serialized_time_sheet_data = TimeSheetSerializer(time_sheet_data, many=True).data
             if serialized_time_sheet_data:
                 return Response({"employees":serialized_available_employees,"time_sheet":serialized_time_sheet_data[0]},status=status.HTTP_200_OK)
@@ -1190,4 +1190,4 @@ class Time_Tracking(APIView):
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
         else:
-            return Response(serialized_available_employees, status=status.HTTP_200_OK)
+            return Response({"employees":serialized_available_employees,"time_sheet":{}}, status=status.HTTP_200_OK)
