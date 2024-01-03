@@ -24,7 +24,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
 class TimeSheetSerializer(serializers.ModelSerializer):
     class Meta:
         model=time_sheet
-        fields='__all__'
+        fields=['employee_id', 'record',]
 
 class TimeSheetEmployeeSerializer(serializers.ModelSerializer):
     class Meta:
