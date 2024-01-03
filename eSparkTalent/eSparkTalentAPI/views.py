@@ -1198,7 +1198,7 @@ class UpdateUserNameView(APIView):
         operation_summary="Update company name/user name in the database or settings.",
         operation_id="3",
     )
-        def put(self, request):
+        def patch(self, request):
             user = request.user
             new_user_name = request.data.get('companyName')
             if new_user_name :
