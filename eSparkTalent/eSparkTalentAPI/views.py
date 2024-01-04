@@ -1167,12 +1167,32 @@ class Download_Report(APIView):
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Time_Tracking(APIView):
+    @swagger_auto_schema(
+        tags =["Time : Time Tracking"],
+        operation_summary="Get time tracking data",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter('year', openapi.IN_QUERY, description="Filter by year", type=openapi.TYPE_STRING),
+            openapi.Parameter('month', openapi.IN_QUERY, description="Filter by month", type=openapi.TYPE_STRING),
+            openapi.Parameter('emp_id', openapi.IN_QUERY, description="Filter by employee ID", type=openapi.TYPE_INTEGER),
+        ],
+        responses={
+            200: openapi.Response(description="Successful response with time tracking data"),
+            204: openapi.Response(description="No content"),
+        },
+        operation_id="1",
+    )
     def get(self, request, *args, **kwargs):
         user=request.user   
+        year=request.query_params.get('year')
         month=request.query_params.get('month')
         employee_id=request.query_params.get('emp_id')
         available_employees= onboarding.objects.filter(user_id=user, status='active')
@@ -1180,9 +1200,9 @@ class Time_Tracking(APIView):
         for record in serialized_available_employees:
             emp_record=employee.objects.get(employee_id=record['employee_id'])
             record['name']=emp_record.first_name+' '+emp_record.last_name
-        if month and employee_id:
+        if month and year and employee_id:
                 
-            time_sheet_data = time_sheet.objects.filter(month=month, employee_id=employee_id)
+            time_sheet_data = time_sheet.objects.filter(month=month, year = year ,employee_id=employee_id)
             serialized_time_sheet_data = TimeSheetSerializer(time_sheet_data, many=True).data
             if serialized_time_sheet_data:
                 return Response({"employees":serialized_available_employees,"time_sheet":serialized_time_sheet_data[0]},status=status.HTTP_200_OK)
