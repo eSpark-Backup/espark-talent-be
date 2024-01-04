@@ -1176,7 +1176,7 @@ class Download_Report(APIView):
 @permission_classes([IsAuthenticated])
 class Time_Tracking(APIView):
     @swagger_auto_schema(
-        tags=["Time : Time Tracking"],
+        tags=["Team : Time Tracking"],
         operation_summary="Get time tracking data",
         manual_parameters=[
             openapi.Parameter(
@@ -1223,53 +1223,55 @@ class Time_Tracking(APIView):
                             ),
                         ),
                         "time_sheet": openapi.Schema(
-                            type=openapi.TYPE_OBJECT,
-                            properties={
-                                "1-1-2024": openapi.Schema(
-                                    type=openapi.TYPE_OBJECT,
-                                    properties={
-                                        "check_in": openapi.Schema(
-                                            type=openapi.TYPE_STRING,
-                                            format=openapi.FORMAT_DATETIME,
-                                        ),
-                                        "check_out": openapi.Schema(
-                                            type=openapi.TYPE_STRING,
-                                            format=openapi.FORMAT_DATETIME,
-                                        ),
-                                        "hours_worked": openapi.Schema(
-                                            type=openapi.TYPE_STRING,
-                                            format=openapi.FORMAT_DATETIME,
-                                        ),
-                                        "over_time": openapi.Schema(
-                                            type=openapi.TYPE_STRING,
-                                            format=openapi.FORMAT_DATETIME,
-                                        ),
-                                        "status": openapi.Schema(
-                                            type=openapi.TYPE_OBJECT,
-                                            properties={
-                                                "Present": openapi.Schema(
-                                                    type=openapi.TYPE_BOOLEAN
-                                                ),
-                                                "Missing": openapi.Schema(
-                                                    type=openapi.TYPE_BOOLEAN
-                                                ),
-                                                "Absent": openapi.Schema(
-                                                    type=openapi.TYPE_BOOLEAN
-                                                ),
-                                                "Short Duration": openapi.Schema(
-                                                    type=openapi.TYPE_BOOLEAN
-                                                ),
-                                                "Day Of": openapi.Schema(
-                                                    type=openapi.TYPE_BOOLEAN
-                                                ),
-                                                "Full Leave": openapi.Schema(
-                                                    type=openapi.TYPE_BOOLEAN
-                                                ),
-                                            },
-                                        ),
-                                    },
-                                ),
-                            },
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "date": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATE,
+                                    ),
+                                    "check_in": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATETIME,
+                                    ),
+                                    "check_out": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATETIME,
+                                    ),
+                                    "hours_worked": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATETIME,
+                                    ),
+                                    "over_time": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATETIME,
+                                    ),
+                                    "status": openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            "Present": openapi.Schema(
+                                                type=openapi.TYPE_BOOLEAN
+                                            ),
+                                            "Missing": openapi.Schema(
+                                                type=openapi.TYPE_BOOLEAN
+                                            ),
+                                            "Absent": openapi.Schema(
+                                                type=openapi.TYPE_BOOLEAN
+                                            ),
+                                            "Short Duration": openapi.Schema(
+                                                type=openapi.TYPE_BOOLEAN
+                                            ),
+                                            "Day Of": openapi.Schema(
+                                                type=openapi.TYPE_BOOLEAN
+                                            ),
+                                            "Full Leave": openapi.Schema(
+                                                type=openapi.TYPE_BOOLEAN
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
                         ),
                     },
                 ),
