@@ -1,5 +1,5 @@
 from django.urls import path
-from . views import *
+from .views import *
 
 urlpatterns=[
     path('user_create/',create_user.as_view()),
@@ -17,4 +17,5 @@ urlpatterns=[
     path('c_upduser', UpdateUserNameView.as_view()),
     path('c_updpic', UploadPictureView.as_view()),
     path('c_updpass', UpdatePasswordView.as_view()),
+    path('c_tracktime/', Time_Tracking.as_view()),
 ]

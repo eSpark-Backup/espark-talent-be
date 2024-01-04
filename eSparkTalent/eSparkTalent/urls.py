@@ -23,7 +23,7 @@ from drf_yasg import openapi
 schema_view = get_schema_view(
     openapi.Info(
         title="eSpark Talent APIs",
-        default_version='v1',
+        default_version="v1",
         description="Django Backend APIs",
     ),
     public=True,
@@ -31,7 +31,11 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/', include('eSparkTalentAPI.urls')),
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path("admin/", admin.site.urls),
+    path("api/", include("eSparkTalentAPI.urls")),
+    path(
+        "swagger/",
+        schema_view.with_ui("swagger", cache_timeout=0),
+        name="schema-swagger-ui",
+    ),
 ]

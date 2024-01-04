@@ -27,7 +27,9 @@ class create_user(APIView):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "email": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+                "email": openapi.Schema(
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
+                ),
                 "password": openapi.Schema(type=openapi.TYPE_STRING),
                 "username": openapi.Schema(type=openapi.TYPE_STRING),
                 "role": openapi.Schema(type=openapi.TYPE_STRING),
@@ -159,6 +161,7 @@ class Client_Home(APIView):
         }
 
         return Response(data, status=status.HTTP_200_OK)
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -537,6 +540,7 @@ class Onboarding(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -1286,3 +1290,162 @@ class UpdatePasswordView(APIView):
             return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid data provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Time_Tracking(APIView):
+    @swagger_auto_schema(
+        tags=["Team : Time Tracking"],
+        operation_summary="Get time tracking data",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "year",
+                openapi.IN_QUERY,
+                description="Filter by year",
+                type=openapi.TYPE_INTEGER,
+            ),
+            openapi.Parameter(
+                "month",
+                openapi.IN_QUERY,
+                description="Filter by month",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "emp_id",
+                openapi.IN_QUERY,
+                description="Filter by employee ID",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "employees": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "employee_id": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "name": openapi.Schema(type=openapi.TYPE_STRING),
+                                },
+                            ),
+                        ),
+                        "time_sheet": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "date": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATE,
+                                    ),
+                                    "check_in": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATETIME,
+                                    ),
+                                    "check_out": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATETIME,
+                                    ),
+                                    "hours_worked": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATETIME,
+                                    ),
+                                    "over_time": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATETIME,
+                                    ),
+                                    "status": openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            "Present": openapi.Schema(
+                                                type=openapi.TYPE_BOOLEAN
+                                            ),
+                                            "Missing": openapi.Schema(
+                                                type=openapi.TYPE_BOOLEAN
+                                            ),
+                                            "Absent": openapi.Schema(
+                                                type=openapi.TYPE_BOOLEAN
+                                            ),
+                                            "Short Duration": openapi.Schema(
+                                                type=openapi.TYPE_BOOLEAN
+                                            ),
+                                            "Day Of": openapi.Schema(
+                                                type=openapi.TYPE_BOOLEAN
+                                            ),
+                                            "Full Leave": openapi.Schema(
+                                                type=openapi.TYPE_BOOLEAN
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
+                        ),
+                    },
+                ),
+            ),
+            204: openapi.Response(description="No content"),
+            401: openapi.Response("UnAuthorize"),
+        },
+        operation_id=".",
+    )
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        year = request.query_params.get("year")
+        month = request.query_params.get("month")
+        employee_id = request.query_params.get("emp_id")
+        available_employees = onboarding.objects.filter(user_id=user, status="active")
+        serialized_available_employees = TimeSheetEmployeeSerializer(
+            available_employees, many=True
+        ).data
+        for record in serialized_available_employees:
+            emp_record = employee.objects.get(employee_id=record["employee_id"])
+            record["name"] = emp_record.first_name + " " + emp_record.last_name
+        if month and year and employee_id:
+            time_sheet_data = time_sheet.objects.filter(
+                month=month, year=year, employee_id=employee_id
+            )
+            serialized_time_sheet_data = TimeSheetSerializer(
+                time_sheet_data, many=True
+            ).data
+            if serialized_time_sheet_data:
+                time_sheet_records = []
+                record = serialized_time_sheet_data[0]["record"]
+                keys = record.keys()
+                for key in keys:
+                    dic_record = {}
+                    dic_record["date"] = key
+                    dic_record.update(record[key])
+                    time_sheet_records.append(dic_record)
+
+                if serialized_time_sheet_data:
+                    return Response(
+                        {
+                            "employees": serialized_available_employees,
+                            "time_sheet": time_sheet_records,
+                        },
+                        status=status.HTTP_200_OK,
+                    )
+            else:
+                return Response(
+                    {"employees": serialized_available_employees, "time_sheet": {}},
+                    status=status.HTTP_204_NO_CONTENT,
+                )
+
+        else:
+            return Response(
+                {"employees": serialized_available_employees, "time_sheet": {}},
+                status=status.HTTP_200_OK,
+            )
