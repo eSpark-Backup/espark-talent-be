@@ -1292,7 +1292,6 @@ class Time_Tracking(APIView):
             emp_record = employee.objects.get(employee_id=record["employee_id"])
             record["name"] = emp_record.first_name + " " + emp_record.last_name
         if month and year and employee_id:
-
             time_sheet_data = time_sheet.objects.filter(
                 month=month, year=year, employee_id=employee_id
             )
@@ -1300,15 +1299,28 @@ class Time_Tracking(APIView):
                 time_sheet_data, many=True
             ).data
             if serialized_time_sheet_data:
-                return Response(
-                    {
-                        "employees": serialized_available_employees,
-                        "time_sheet": serialized_time_sheet_data[0],
-                    },
-                    status=status.HTTP_200_OK,
-                )
+                time_sheet_records = []
+                record = serialized_time_sheet_data[0]["record"]
+                keys = record.keys()
+                for key in keys:
+                    dic_record = {}
+                    dic_record["date"] = key
+                    dic_record.update(record[key])
+                    time_sheet_records.append(dic_record)
+
+                if serialized_time_sheet_data:
+                    return Response(
+                        {
+                            "employees": serialized_available_employees,
+                            "time_sheet": time_sheet_records,
+                        },
+                        status=status.HTTP_200_OK,
+                    )
             else:
-                return Response(status=status.HTTP_204_NO_CONTENT)
+                return Response(
+                    {"employees": serialized_available_employees, "time_sheet": {}},
+                    status=status.HTTP_204_NO_CONTENT,
+                )
 
         else:
             return Response(
