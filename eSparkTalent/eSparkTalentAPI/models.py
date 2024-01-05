@@ -138,13 +138,13 @@ class onboarding(models.Model):
 class leave_balance(models.Model):
     id = models.AutoField(primary_key=True)
     onboarding_id = models.ForeignKey(onboarding, on_delete=models.CASCADE, default="")
-    casual_leaves = models.IntegerField()
-    sick_leaves = models.IntegerField()
-    annual_leaves = models.IntegerField()
-    taken = models.IntegerField()
-    balance = models.IntegerField()
-    created_at = models.DateTimeField(auto_now_add=True, null=True)
-    updated_at = models.DateTimeField(auto_now=True, null=True)
+    casual_leaves = models.JSONField()
+    sick_leaves = models.JSONField()
+    annual_leaves = models.JSONField()
+    unpaid_leaves = models.JSONField(null=True)
+    hajj_leaves = models.JSONField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.onboarding_id.user_id} - {self.id}"
@@ -168,8 +168,8 @@ class leave_request(models.Model):
     reason = models.CharField(max_length=200, default="")
     requested_at = models.DateTimeField()
     status = models.CharField(max_length=10, choices=status)
-    created_at = models.DateTimeField(auto_now_add=True, null=True)
-    updated_at = models.DateTimeField(auto_now=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.onboarding_id.user_id} - {self.id}"
@@ -182,18 +182,20 @@ def update_leave_balance(sender, instance, **kwargs):
             onboarding_id=instance.onboarding_id
         )
         if instance.leave_type == "casual":
-            leave_balance_entry.casual_leaves -= instance.count
+            leave_balance_entry.casual_leaves['available'] -= instance.count
+            leave_balance_entry.casual_leaves['availed'] += instance.count
         elif instance.leave_type == "sick":
-            leave_balance_entry.sick_leaves -= instance.count
+            leave_balance_entry.sick_leaves['available'] -= instance.count
+            leave_balance_entry.sick_leaves['availed'] += instance.count
         elif instance.leave_type == "annual":
-            leave_balance_entry.annual_leave -= instance.count
-
-        leave_balance_entry.taken += instance.count
-        leave_balance_entry.balance = (
-            leave_balance_entry.annual_leaves
-            + leave_balance_entry.casual_leaves
-            + leave_balance_entry.sick_leaves
-        )
+            leave_balance_entry.annual_leaves['available'] -= instance.count
+            leave_balance_entry.annual_leaves['availed'] += instance.count
+        elif instance.leave_type == "unpaid":
+            leave_balance_entry.unpaid_leaves['available'] -= instance.count
+            leave_balance_entry.unpaid_leaves['availed'] += instance.count
+        elif instance.leave_type == "hajj":
+            leave_balance_entry.hajj_leaves['available'] -= instance.count
+            leave_balance_entry.hajj_leaves['availed'] += instance.count
 
         leave_balance_entry.save()
 
@@ -212,8 +214,8 @@ class clockinout_request(models.Model):
     date = models.DateField()
     description = models.CharField(max_length=200, default="")
     status = models.CharField(max_length=10, choices=status)
-    created_at = models.DateTimeField(auto_now_add=True, null=True)
-    updated_at = models.DateTimeField(auto_now=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.onboarding_id.user_id} - {self.id}"
@@ -238,8 +240,49 @@ class time_sheet(models.Model):
     month = models.CharField(max_length=15, choices=months)
     record = models.JSONField()
     year = models.IntegerField(default=timezone.now().year)
-    created_at = models.DateTimeField(auto_now_add=True, null=True)
-    updated_at = models.DateTimeField(auto_now=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.employee_id} - {self.month}"
+
+class employee_invoice(models.Model):
+    payment_status=[
+        ('Pending', 'Pending'),
+        ('Processing', 'Processing'),
+        ('Paid', 'Paid'),
+    ]
+    id = models.AutoField(primary_key=True)
+    user_id = models.ForeignKey(end_user, on_delete=models.CASCADE)
+    employee_id=models.CharField(max_length=15)
+    employee_name=models.CharField(max_length=30)
+    invoice_date=models.DateField()
+    due_date=models.DateField()
+    invoice_amount=models.IntegerField()
+    payment_status=models.CharField(max_length=15, choices=payment_status)
+    download=models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user_id} - {self.id}"
+    
+class other_payment(models.Model):
+    payment_status=[
+        ('Pending', 'Pending'),
+        ('Processing', 'Processing'),
+        ('Paid', 'Paid'),
+    ]
+    id = models.AutoField(primary_key=True)
+    user_id = models.ForeignKey(end_user, on_delete=models.CASCADE)
+    invoice_reference=models.CharField(max_length=30)
+    invoice_date=models.DateField()
+    due_date=models.DateField()
+    invoice_amount=models.IntegerField()
+    payment_status=models.CharField(max_length=15, choices=payment_status)
+    download=models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user_id} - {self.id}"

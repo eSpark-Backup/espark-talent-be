@@ -828,11 +828,15 @@ class Leave_Balance(APIView):
 
                 record = {
                     "employee_name": employee_data.get("username", ""),
-                    "casual_leaves": data.casual_leaves,
-                    "sick_leaves": data.sick_leaves,
-                    "annual_leaves": data.annual_leaves,
-                    "taken": data.taken,
-                    "balance": data.balance,
+                    "casual_leaves": data.casual_leaves["balance"],
+                    "sick_leaves": data.sick_leaves["balance"],
+                    "annual_leaves": data.annual_leaves["balance"],
+                    "taken": data.casual_leaves["availed"]
+                    + data.sick_leaves["availed"]
+                    + data.annual_leaves["availed"],
+                    "balance": data.casual_leaves["balance"]
+                    + data.sick_leaves["balance"]
+                    + data.annual_leaves["balance"],
                 }
                 records.append(record)
             return Response(records, status=status.HTTP_200_OK)
@@ -1172,18 +1176,19 @@ class Download_Report(APIView):
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-        
+
+
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class UpdateUserNameView(APIView):
-        @swagger_auto_schema(
+    @swagger_auto_schema(
         tags=["Oragnization : Settings"],
         request_body=openapi.Schema(
-         type=openapi.TYPE_OBJECT,
-         properties={
-                'companyName': openapi.Schema(type=openapi.TYPE_STRING),
-                },
-        required=["companyName"],
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "companyName": openapi.Schema(type=openapi.TYPE_STRING),
+            },
+            required=["companyName"],
         ),
         manual_parameters=[
             openapi.Parameter(
@@ -1202,17 +1207,19 @@ class UpdateUserNameView(APIView):
         operation_summary="Update company name/user name in the database or settings.",
         operation_id="3",
     )
-        def patch(self, request):
-            user = request.user
-            new_user_name = request.data.get('companyName')
-            if new_user_name :
-                record= end_user.objects.get(email=user)
-                record.username = new_user_name
-                record.save()
-                return Response(status=status.HTTP_200_OK)
-            else:
-                return Response({"error": "Invalid data provided"}, status=status.HTTP_400_BAD_REQUEST)
-            
+    def patch(self, request):
+        user = request.user
+        new_user_name = request.data.get("companyName")
+        if new_user_name:
+            record = end_user.objects.get(email=user)
+            record.username = new_user_name
+            record.save()
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(
+                {"error": "Invalid data provided"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -1222,9 +1229,9 @@ class UploadPictureView(APIView):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                'picture': openapi.Schema(type=openapi.TYPE_FILE),
+                "picture": openapi.Schema(type=openapi.TYPE_FILE),
             },
-            required=['picture'],
+            required=["picture"],
         ),
         manual_parameters=[
             openapi.Parameter(
@@ -1244,24 +1251,30 @@ class UploadPictureView(APIView):
         operation_id="2",
     )
     def post(self, request):
-        picture_file = request.data.get('picture')
+        picture_file = request.data.get("picture")
         if picture_file:
-            file_name = default_storage.save(picture_file.name, ContentFile(picture_file.read()))
-            return Response({"message": "Picture uploaded successfully"}, status=status.HTTP_201_CREATED)
+            file_name = default_storage.save(
+                picture_file.name, ContentFile(picture_file.read())
+            )
+            return Response(
+                {"message": "Picture uploaded successfully"},
+                status=status.HTTP_201_CREATED,
+            )
         else:
-            return Response({"error": "No picture provided"}, status=status.HTTP_400_BAD_REQUEST)
-
+            return Response(
+                {"error": "No picture provided"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class UpdatePasswordView(APIView):
     @swagger_auto_schema(
         tags=["Oragnization : Settings"],
         request_body=openapi.Schema(
-         type=openapi.TYPE_OBJECT,
-         properties={
-                'password': openapi.Schema(type=openapi.TYPE_STRING),
-                },
-        required=["password"],
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "password": openapi.Schema(type=openapi.TYPE_STRING),
+            },
+            required=["password"],
         ),
         manual_parameters=[
             openapi.Parameter(
@@ -1282,14 +1295,18 @@ class UpdatePasswordView(APIView):
     )
     def patch(self, request):
         user = request.user
-        new_password = request.data.get('password')
+        new_password = request.data.get("password")
         if new_password:
-            record= end_user.objects.get(email=user)
+            record = end_user.objects.get(email=user)
             record.set_password(new_password)
             record.save()
-            return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Password updated successfully"}, status=status.HTTP_200_OK
+            )
         else:
-            return Response({"error": "Invalid data provided"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid data provided"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 @authentication_classes([JWTAuthentication])
@@ -1396,7 +1413,7 @@ class Time_Tracking(APIView):
                     },
                 ),
             ),
-            204: openapi.Response(description="No content"),
+            206: openapi.Response(description="Partial Content"),
             401: openapi.Response("UnAuthorize"),
         },
         operation_id=".",
@@ -1441,7 +1458,7 @@ class Time_Tracking(APIView):
             else:
                 return Response(
                     {"employees": serialized_available_employees, "time_sheet": {}},
-                    status=status.HTTP_204_NO_CONTENT,
+                    status=status.HTTP_206_PARTIAL_CONTENT,
                 )
 
         else:
@@ -1449,3 +1466,80 @@ class Time_Tracking(APIView):
                 {"employees": serialized_available_employees, "time_sheet": {}},
                 status=status.HTTP_200_OK,
             )
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Invoice_Payments(APIView):
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        pay_status = request.query_params.get("payment_status")
+        no_val = 0
+
+        emp_invoices = employee_invoice.objects.filter(
+            user_id=user, payment_status=pay_status
+        )
+        other_pays = other_payment.objects.filter(
+            user_id=user, payment_status=pay_status
+        )
+        records = {}
+        if emp_invoices:
+            emp_inv_records = []
+            for data in emp_invoices:
+                record = {
+                    "id": data.id,
+                    "employee_name": data.employee_name,
+                    "invoice_date": data.invoice_date,
+                    "due_date": data.due_date,
+                    "invoice_amount": data.invoice_amount,
+                    "payment_status": pay_status,
+                    "download": data.download,
+                }
+                emp_inv_records.append(record)
+            records["employee_invoices"] = emp_inv_records
+        else:
+            no_val += 1
+            records["employee_invoices"] = []
+        if other_pays:
+            other_pays_records = []
+            for data in other_pays:
+                record = {
+                    "id": data.id,
+                    "invoice_reference": data.invoice_reference,
+                    "invoice_date": data.invoice_date,
+                    "due_date": data.due_date,
+                    "invoice_amount": data.invoice_amount,
+                    "payment_status": pay_status,
+                    "download": data.download,
+                }
+            other_pays_records.append(record)
+            records["other_payments"] = other_pays_records
+        else:
+            no_val += 1
+            records["other_payments"] = []
+        if no_val < 2:
+            return Response(records, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def patch(self, request, *args, **kwargs):
+        user = request.user
+        id = request.query_params.get("id")
+        category = request.data["category"]
+        new_pay_status = request.data["payment_status"]
+        if category == "employee_invoice":
+            try:
+                to_update_invoice_payments = employee_invoice.objects.get(id=id)
+                to_update_invoice_payments.payment_status = new_pay_status
+                to_update_invoice_payments.save()
+                return Response(status=status.HTTP_200_OK)
+            except:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+        elif category == "other_payment":
+            try:
+                to_update_invoice_payments = other_payment.objects.get(id=id)
+                to_update_invoice_payments.payment_status = new_pay_status
+                to_update_invoice_payments.save()
+                return Response(status=status.HTTP_200_OK)
+            except:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
