@@ -1396,7 +1396,7 @@ class Time_Tracking(APIView):
                     },
                 ),
             ),
-            204: openapi.Response(description="No content"),
+            206: openapi.Response(description="Partial Content"),
             401: openapi.Response("UnAuthorize"),
         },
         operation_id=".",
@@ -1441,7 +1441,7 @@ class Time_Tracking(APIView):
             else:
                 return Response(
                     {"employees": serialized_available_employees, "time_sheet": {}},
-                    status=status.HTTP_204_NO_CONTENT,
+                    status=status.HTTP_206_PARTIAL_CONTENT,
                 )
 
         else:
