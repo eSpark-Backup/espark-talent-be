@@ -18,7 +18,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import datetime
-
+from rest_framework.parsers import MultiPartParser
 
 class create_user(APIView):
     @swagger_auto_schema(
@@ -1224,21 +1224,21 @@ class UpdateUserNameView(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class UploadPictureView(APIView):
+    parser_classes=(MultiPartParser, )
     @swagger_auto_schema(
         tags=["Oragnization : Settings"],
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "picture": openapi.Schema(type=openapi.TYPE_FILE),
-            },
-            required=["picture"],
-        ),
         manual_parameters=[
             openapi.Parameter(
                 "Authorization",
                 openapi.IN_HEADER,
                 description="Bearer Token",
                 type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="picture",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required=True,
             ),
         ],
         responses={
@@ -1251,7 +1251,7 @@ class UploadPictureView(APIView):
         operation_id="2",
     )
     def post(self, request):
-        picture_file = request.data.get("picture")
+        picture_file = request.FILES.get('picture')
         if picture_file:
             file_name = default_storage.save(
                 picture_file.name, ContentFile(picture_file.read())
