@@ -1481,6 +1481,14 @@ class Invoice_Payments(APIView):
                 description="Bearer Token",
                 type=openapi.TYPE_STRING,
             ),
+            openapi.Parameter(
+                "Payment_Status",
+                in_=openapi.IN_QUERY,
+                description="For other_payment. Use one of: OtherPending, OtherProcessing, OtherPaid.",
+                type=openapi.TYPE_STRING,
+                enum=["Pending", "Processing", "Paid"],
+                required=True,
+            ),
         ],
         responses={
             200: openapi.Response(
@@ -1494,12 +1502,26 @@ class Invoice_Payments(APIView):
                                 type=openapi.TYPE_OBJECT,
                                 properties={
                                     "id": openapi.Schema(type=openapi.TYPE_INTEGER),
-                                    "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
-                                    "invoice_date":openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE) ,
-                                    "due_date": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
-                                    "invoice_amount": openapi.Schema(type=openapi.TYPE_INTEGER),
-                                    "payment_status":openapi.Schema(type=openapi.TYPE_STRING) ,
-                                    "download": openapi.Schema(type=openapi.TYPE_STRING),
+                                    "employee_name": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "invoice_date": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATE,
+                                    ),
+                                    "due_date": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATE,
+                                    ),
+                                    "invoice_amount": openapi.Schema(
+                                        type=openapi.TYPE_INTEGER
+                                    ),
+                                    "payment_status": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "download": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
                                 },
                             ),
                         ),
@@ -1509,12 +1531,26 @@ class Invoice_Payments(APIView):
                                 type=openapi.TYPE_OBJECT,
                                 properties={
                                     "id": openapi.Schema(type=openapi.TYPE_INTEGER),
-                                    "invoice_reference": openapi.Schema(type=openapi.TYPE_STRING),
-                                    "invoice_date":openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE) ,
-                                    "due_date": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
-                                    "invoice_amount": openapi.Schema(type=openapi.TYPE_INTEGER),
-                                    "payment_status":openapi.Schema(type=openapi.TYPE_STRING) ,
-                                    "download": openapi.Schema(type=openapi.TYPE_STRING),
+                                    "invoice_reference": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "invoice_date": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATE,
+                                    ),
+                                    "due_date": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATE,
+                                    ),
+                                    "invoice_amount": openapi.Schema(
+                                        type=openapi.TYPE_INTEGER
+                                    ),
+                                    "payment_status": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "download": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
                                 },
                             ),
                         ),
@@ -1524,9 +1560,8 @@ class Invoice_Payments(APIView):
             206: openapi.Response(description="Partial Content"),
             401: openapi.Response("UnAuthorize"),
         },
-        operation_id="1",     
+        operation_id="1",
     )
-    
     def get(self, request, *args, **kwargs):
         user = request.user
         pay_status = request.query_params.get("payment_status")
@@ -1577,9 +1612,21 @@ class Invoice_Payments(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
     @swagger_auto_schema(
         tags=["Payments : Invoice Payment"],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "category": openapi.Schema(
+                    type=openapi.TYPE_STRING, enum=["employee_invoice", "other_payment"]
+                ),
+                "Payment_Status": openapi.Schema(
+                    type=openapi.TYPE_STRING, enum=["Pending", "Processing", "Paid"]
+                ),
+            },
+            required=["category", "Payment_Status"],
+        ),
         manual_parameters=[
             openapi.Parameter(
                 "Authorization",
@@ -1588,34 +1635,21 @@ class Invoice_Payments(APIView):
                 type=openapi.TYPE_STRING,
             ),
             openapi.Parameter(
-                'id', in_=openapi.IN_QUERY,
-                description='ID of the invoice payment to update',
+                "id",
+                in_=openapi.IN_QUERY,
+                description="ID of the invoice payment to update",
                 type=openapi.TYPE_INTEGER,
                 required=True,
             ),
-            openapi.Parameter(
-                'category', in_=openapi.IN_QUERY,
-                description='Category of the invoice payment',
-                type=openapi.TYPE_STRING,
-                enum=['employee_invoice', 'other_payment'],
-                required=True,
-            ),
-            openapi.Parameter(
-                'Payment_Status', in_=openapi.IN_QUERY,
-                description='For other_payment. Use one of: OtherPending, OtherProcessing, OtherPaid.',
-                type=openapi.TYPE_STRING,
-                enum=['Pending', 'Processing', 'Paid'],
-                required=True,    
-            ),
         ],
         responses={
-            200: openapi.Response('Successfully updated invoice payment status'),
-            400: openapi.Response('Bad request'),
+            200: openapi.Response("Successfully updated invoice payment status"),
+            400: openapi.Response("Bad request"),
         },
         operation_id="2",
     )
     def patch(self, request, *args, **kwargs):
-        
+
         user = request.user
         id = request.query_params.get("id")
         category = request.data["category"]
