@@ -8,6 +8,9 @@ from django.contrib.auth.models import (
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from django.core.validators import FileExtensionValidator
+from django.core.exceptions import ValidationError
+import magic
 
 
 class ClientManager(BaseUserManager):
@@ -65,27 +68,59 @@ class hiring_request(models.Model):
         return f"{self.user_id} - {self.id}"
 
 
-# from django.contrib.auth.hashers import make_password, check_password
+ext_valid=FileExtensionValidator(['png', 'jpg'])
+
+def valid_file_type(file):
+    accept=['image/png', 'image/jpeg']
+    file_type=magic.from_buffer(file.read(1024), mime=True)
+    print(file_type)
+    if file_type not in accept:
+        raise ValidationError("Unsupported file type. Only PNG and JPEG images are allowed.")
+
+
 class employee(models.Model):
     id = models.AutoField(primary_key=True)
     employee_id = models.CharField(max_length=15, unique=True, default="")
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     gender = models.CharField(max_length=7)
-    username = models.CharField(max_length=30)
-    email = models.EmailField(unique=True)
+    dob=models.DateField(null=True)
     phone_no = models.CharField(max_length=11)
-    designation = models.CharField(max_length=30)
+    email = models.EmailField(unique=True)
+    marital_status=models.CharField(max_length=15, null=True)
+    image=models.ImageField(upload_to='profiles/employees/', validators=[ext_valid, valid_file_type], default='')
+    emergency_no=models.CharField(max_length=11, null=True)
+    emergency_contact=models.JSONField(null=True)
     joining_date = models.DateField()
-    company = models.CharField(max_length=30)
+    designation = models.CharField(max_length=30)
     department = models.CharField(max_length=30)
-    benefits = models.JSONField(null=True)
+    company = models.CharField(max_length=30)
+    # benefits = models.JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.employee_id
 
+
+class client(models.Model):
+    id = models.AutoField(primary_key=True)
+    client_id = models.CharField(max_length=15, unique=True, default="")
+    first_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=30)
+    gender = models.CharField(max_length=7)
+    dob=models.DateField(null=True)
+    phone_no = models.CharField(max_length=11)
+    email = models.EmailField(unique=True)
+    marital_status=models.CharField(max_length=15, null=True)
+    image=models.ImageField(upload_to='profiles/clients/', validators=[ext_valid, valid_file_type], default='')
+    company = models.CharField(max_length=30)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.client_id
+    
 
 class interview_schedule(models.Model):
     status = [
