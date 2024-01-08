@@ -1482,9 +1482,8 @@ class Invoice_Payments(APIView):
                 type=openapi.TYPE_STRING,
             ),
             openapi.Parameter(
-                "Payment_Status",
+                "payment_status",
                 in_=openapi.IN_QUERY,
-                description="For other_payment. Use one of: OtherPending, OtherProcessing, OtherPaid.",
                 type=openapi.TYPE_STRING,
                 enum=["Pending", "Processing", "Paid"],
                 required=True,
@@ -1557,8 +1556,8 @@ class Invoice_Payments(APIView):
                     },
                 ),
             ),
-            206: openapi.Response(description="Partial Content"),
-            401: openapi.Response("UnAuthorize"),
+            204: openapi.Response(description="No content"),
+            401: openapi.Response(description = "UnAuthorize"),
         },
         operation_id="1",
     )
@@ -1621,11 +1620,11 @@ class Invoice_Payments(APIView):
                 "category": openapi.Schema(
                     type=openapi.TYPE_STRING, enum=["employee_invoice", "other_payment"]
                 ),
-                "Payment_Status": openapi.Schema(
+                "payment_status": openapi.Schema(
                     type=openapi.TYPE_STRING, enum=["Pending", "Processing", "Paid"]
                 ),
             },
-            required=["category", "Payment_Status"],
+            required=["category", "payment_status"],
         ),
         manual_parameters=[
             openapi.Parameter(
@@ -1645,6 +1644,7 @@ class Invoice_Payments(APIView):
         responses={
             200: openapi.Response("Successfully updated invoice payment status"),
             400: openapi.Response("Bad request"),
+            401: openapi.Response("Un Authorize"),
         },
         operation_id="2",
     )
