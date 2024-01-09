@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.core.validators import FileExtensionValidator
 from django.core.exceptions import ValidationError
 import magic
+import os
 
 
 class ClientManager(BaseUserManager):
@@ -70,12 +71,25 @@ class hiring_request(models.Model):
 
 ext_valid=FileExtensionValidator(['png', 'jpg'])
 
-def valid_file_type(file):
+def valid_imgfile_type(file):
     accept=['image/png', 'image/jpeg']
     file_type=magic.from_buffer(file.read(1024), mime=True)
-    print(file_type)
     if file_type not in accept:
         raise ValidationError("Unsupported file type. Only PNG and JPEG images are allowed.")
+    limit = 2 * 1024 * 1024
+    if file.size > limit:
+        raise ValidationError('File too large. Size should not exceed 2 MB.')
+
+pdf_ext_valid=FileExtensionValidator(['pdf'])
+
+def valid_pdffile_type(file):
+    accept=['application/pdf']
+    file_type=magic.from_buffer(file.read(1024), mime=True)
+    if file_type not in accept:
+        raise ValidationError("Unsupported file type. Only PDFs are allowed.")
+    limit = 2 * 1024 * 1024
+    if file.size > limit:
+        raise ValidationError('File too large. Size should not exceed 2 MB.')
 
 
 class employee(models.Model):
@@ -88,8 +102,9 @@ class employee(models.Model):
     phone_no = models.CharField(max_length=11)
     email = models.EmailField(unique=True)
     marital_status=models.CharField(max_length=15, null=True)
-    image=models.ImageField(upload_to='profiles/employees/', validators=[ext_valid, valid_file_type], default='')
+    image=models.ImageField(upload_to='employees/profiles/', validators=[ext_valid, valid_imgfile_type], default='')
     emergency_no=models.CharField(max_length=11, null=True)
+    resume=models.FileField(upload_to='employees/resumes/', validators=[pdf_ext_valid, valid_pdffile_type], default='')
     emergency_contact=models.JSONField(null=True)
     joining_date = models.DateField()
     designation = models.CharField(max_length=30)
@@ -100,7 +115,20 @@ class employee(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.employee_id
+        return f"{self.employee_id} - {self.id}"
+    
+    def save(self, *args, **kwargs):
+        # Delete the old image when updating
+        try:
+            old_employee = employee.objects.get(id=self.id)
+            if old_employee.image.name != self.image.name:
+                old_image_path = os.path.join('media', old_employee.image.name)
+                if os.path.exists(old_image_path):
+                    os.remove(old_image_path)
+        except employee.DoesNotExist:
+            pass
+
+        super().save(*args, **kwargs)
 
 
 class client(models.Model):
@@ -113,14 +141,26 @@ class client(models.Model):
     phone_no = models.CharField(max_length=11)
     email = models.EmailField(unique=True)
     marital_status=models.CharField(max_length=15, null=True)
-    image=models.ImageField(upload_to='profiles/clients/', validators=[ext_valid, valid_file_type], default='')
+    image=models.ImageField(upload_to='clients/profiles/', validators=[ext_valid, valid_imgfile_type], default='')
     company = models.CharField(max_length=30)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.client_id
+        return f"{self.client_id} - {self.id}"
     
+    def save(self, *args, **kwargs):
+        try:
+            old_client = client.objects.get(id=self.id)
+            if old_client.image.name != self.image.name:
+                old_image_path = os.path.join('media', old_client.image.name)
+                if os.path.exists(old_image_path):
+                    os.remove(old_image_path)
+        except client.DoesNotExist:
+            pass
+
+        super().save(*args, **kwargs)
+
 
 class interview_schedule(models.Model):
     status = [
@@ -133,6 +173,8 @@ class interview_schedule(models.Model):
     employee_id = models.ForeignKey(
         employee, to_field="employee_id", on_delete=models.CASCADE, default=""
     )
+    gender = models.CharField(max_length=15, default='')
+    job_title = models.CharField(max_length=30, default='')
     role_type = models.CharField(max_length=15)
     employment_term = models.CharField(max_length=15)
     interview_date_time = models.DateTimeField()
@@ -281,6 +323,7 @@ class time_sheet(models.Model):
     def __str__(self):
         return f"{self.employee_id} - {self.month}"
 
+
 class employee_invoice(models.Model):
     payment_status=[
         ('Pending', 'Pending'),
@@ -295,7 +338,7 @@ class employee_invoice(models.Model):
     due_date=models.DateField()
     invoice_amount=models.IntegerField()
     payment_status=models.CharField(max_length=15, choices=payment_status)
-    download=models.CharField(max_length=255)
+    invoice=models.FileField(upload_to='invoices/employee_invoices/', validators=[pdf_ext_valid, valid_pdffile_type], default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -315,9 +358,30 @@ class other_payment(models.Model):
     due_date=models.DateField()
     invoice_amount=models.IntegerField()
     payment_status=models.CharField(max_length=15, choices=payment_status)
-    download=models.CharField(max_length=255)
+    invoice=models.FileField(upload_to='invoices/other_payments/', validators=[pdf_ext_valid, valid_pdffile_type], default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.user_id} - {self.id}"
+    
+class company_contract(models.Model):
+    id = models.AutoField(primary_key=True)
+    contract_name=models.CharField(max_length=255)
+    email=models.EmailField(unique=True)
+    date=models.DateField()
+    contract_doc=models.FileField(upload_to='contracts/company/', validators=[pdf_ext_valid, valid_pdffile_type], default='')
+
+class employee_contract(models.Model):
+    id = models.AutoField(primary_key=True)
+    contract_name=models.CharField(max_length=255)
+    email=models.EmailField(unique=True)
+    date=models.DateField()
+    contract_doc=models.FileField(upload_to='contracts/employee/', validators=[pdf_ext_valid, valid_pdffile_type], default='')
+
+class asset(models.Model):
+    id = models.AutoField(primary_key=True)
+    gadget=models.CharField(max_length=50)
+    asset_id=models.CharField(max_length=15)
+    assigned_date= models.DateTimeField()
+    assignee=models.CharField(max_length=30)

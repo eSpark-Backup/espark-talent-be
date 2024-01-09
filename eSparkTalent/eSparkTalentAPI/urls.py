@@ -19,4 +19,6 @@ urlpatterns=[
     path('c_updpass/', UpdatePasswordView.as_view()),
     path('c_tracktime/', Time_Tracking.as_view()),
     path('c_invpay/', Invoice_Payments.as_view()),
+    path('emp/', dummy_employee.as_view()),
+    path('client/', dummy_client.as_view()),
 ]
