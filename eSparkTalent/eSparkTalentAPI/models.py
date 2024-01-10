@@ -50,26 +50,8 @@ class end_user(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
-
-class hiring_request(models.Model):
-    id = models.AutoField(primary_key=True)
-    user_id = models.ForeignKey(end_user, on_delete=models.CASCADE)
-    job_title = models.CharField(max_length=30)
-    role_type = models.CharField(max_length=15)
-    gender = models.CharField(max_length=7)
-    employment_term = models.CharField(max_length=15)
-    salary_range = models.JSONField()
-    country = models.CharField(max_length=30)
-    hiring_start_date = models.DateField()
-    hiring_end_date = models.DateField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.user_id} - {self.id}"
-
-
-ext_valid=FileExtensionValidator(['png', 'jpg'])
+#file format checks
+img_ext_valid=FileExtensionValidator(['png', 'jpg'])
 
 def valid_imgfile_type(file):
     accept=['image/png', 'image/jpeg']
@@ -91,6 +73,17 @@ def valid_pdffile_type(file):
     if file.size > limit:
         raise ValidationError('File too large. Size should not exceed 2 MB.')
 
+ext_valid=FileExtensionValidator(['png', 'jpg', 'pdf'])
+
+def valid_file_type(file):
+    accept=['application/pdf', 'image/png', 'image/jpeg']
+    file_type=magic.from_buffer(file.read(1024), mime=True)
+    if file_type not in accept:
+        raise ValidationError("Unsupported file type. Only PNG JPEG and PDFs are allowed.")
+    limit = 2 * 1024 * 1024
+    if file.size > limit:
+        raise ValidationError('File too large. Size should not exceed 2 MB.')
+
 
 class employee(models.Model):
     id = models.AutoField(primary_key=True)
@@ -102,7 +95,7 @@ class employee(models.Model):
     phone_no = models.CharField(max_length=11)
     email = models.EmailField(unique=True)
     marital_status=models.CharField(max_length=15, null=True)
-    image=models.ImageField(upload_to='employees/profiles/', validators=[ext_valid, valid_imgfile_type], default='')
+    image=models.ImageField(upload_to='employees/profiles/', validators=[img_ext_valid, valid_imgfile_type], default='')
     emergency_no=models.CharField(max_length=11, null=True)
     resume=models.FileField(upload_to='employees/resumes/', validators=[pdf_ext_valid, valid_pdffile_type], default='')
     emergency_contact=models.JSONField(null=True)
@@ -115,7 +108,7 @@ class employee(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.employee_id} - {self.id}"
+        return f"{self.email} - {self.id}"
     
     def save(self, *args, **kwargs):
         # Delete the old image when updating
@@ -141,13 +134,13 @@ class client(models.Model):
     phone_no = models.CharField(max_length=11)
     email = models.EmailField(unique=True)
     marital_status=models.CharField(max_length=15, null=True)
-    image=models.ImageField(upload_to='clients/profiles/', validators=[ext_valid, valid_imgfile_type], default='')
+    image=models.ImageField(upload_to='clients/profiles/', validators=[img_ext_valid, valid_imgfile_type], default='')
     company = models.CharField(max_length=30)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.client_id} - {self.id}"
+        return f"{self.email} - {self.id}"
     
     def save(self, *args, **kwargs):
         try:
@@ -162,6 +155,23 @@ class client(models.Model):
         super().save(*args, **kwargs)
 
 
+class hiring_request(models.Model):
+    id = models.AutoField(primary_key=True)
+    client=models.ForeignKey(client, to_field="email", on_delete=models.CASCADE, default='')
+    job_title = models.CharField(max_length=30)
+    role_type = models.CharField(max_length=15)
+    gender = models.CharField(max_length=7)
+    employment_term = models.CharField(max_length=15)
+    salary_range = models.JSONField()
+    hiring_start_date = models.DateField()
+    hiring_end_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.client} - {self.id}"
+
+
 class interview_schedule(models.Model):
     status = [
         ("Short_list", "Short_list"),
@@ -169,9 +179,9 @@ class interview_schedule(models.Model):
         ("Reject", "Reject"),
     ]
     id = models.AutoField(primary_key=True)
-    user_id = models.ForeignKey(end_user, on_delete=models.CASCADE)
-    employee_id = models.ForeignKey(
-        employee, to_field="employee_id", on_delete=models.CASCADE, default=""
+    client=models.ForeignKey(client, to_field="email", on_delete=models.CASCADE, default='')
+    employee = models.ForeignKey(
+        employee, to_field="email", on_delete=models.CASCADE, default=""
     )
     gender = models.CharField(max_length=15, default='')
     job_title = models.CharField(max_length=30, default='')
@@ -184,7 +194,7 @@ class interview_schedule(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.user_id} - {self.id}"
+        return f"{self.client.email} - {self.employee.email} - {self.id}"
 
 
 class onboarding(models.Model):
@@ -194,10 +204,12 @@ class onboarding(models.Model):
         ("terminated", "terminated"),
     ]
     id = models.AutoField(primary_key=True)
-    user_id = models.ForeignKey(end_user, on_delete=models.CASCADE)
-    employee_id = models.ForeignKey(
-        employee, to_field="employee_id", on_delete=models.CASCADE, default=""
+    client=models.ForeignKey(client, to_field="email", on_delete=models.CASCADE, default='')
+    employee= models.ForeignKey(
+        employee, to_field="email", on_delete=models.CASCADE, default=""
     )
+    gender = models.CharField(max_length=15, default='')
+    job_title = models.CharField(max_length=30, default='')
     country = models.CharField(max_length=30)
     role_type = models.CharField(max_length=15)
     employment_term = models.CharField(max_length=15)
@@ -209,12 +221,12 @@ class onboarding(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.user_id} - {self.id}"
+        return f"{self.client.email} - {self.employee.email} - {self.id}"
 
 
 class leave_balance(models.Model):
     id = models.AutoField(primary_key=True)
-    onboarding_id = models.ForeignKey(onboarding, on_delete=models.CASCADE, default="")
+    onboarding_id = models.ForeignKey(onboarding, to_field='id', on_delete=models.CASCADE, default="")
     casual_leaves = models.JSONField()
     sick_leaves = models.JSONField()
     annual_leaves = models.JSONField()
@@ -224,7 +236,7 @@ class leave_balance(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.onboarding_id.user_id} - {self.id}"
+        return f"{self.onboarding_id.client.email} - {self.onboarding_id.employee.email} - {self.id}"
 
 
 class leave_request(models.Model):
@@ -235,21 +247,19 @@ class leave_request(models.Model):
         ("rejected", "rejected"),
     ]
     id = models.AutoField(primary_key=True)
-    onboarding_id = models.ForeignKey(onboarding, on_delete=models.CASCADE, default="")
+    onboarding_id = models.ForeignKey(onboarding, to_field='id', on_delete=models.CASCADE, default="")
     leave_type = models.CharField(max_length=7, choices=leave_type)
     start_date = models.DateField(default=timezone.now)
     end_date = models.DateField(default=timezone.now)
     count = models.IntegerField(default=1)
-    sandwich_count = models.IntegerField(default=0)
-    total = models.IntegerField(default=1)
     reason = models.CharField(max_length=200, default="")
-    requested_at = models.DateTimeField()
+    attachment=models.FileField(upload_to='employees/leave_requests', validators=[pdf_ext_valid, valid_pdffile_type], default='')
     status = models.CharField(max_length=10, choices=status)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.onboarding_id.user_id} - {self.id}"
+        return f"{self.onboarding_id.client.email} - {self.onboarding_id.employee.email} - {self.id}"
 
 
 @receiver(post_save, sender=leave_request)
@@ -285,7 +295,7 @@ class clockinout_request(models.Model):
         ("rejected", "rejected"),
     ]
     id = models.AutoField(primary_key=True)
-    onboarding_id = models.ForeignKey(onboarding, on_delete=models.CASCADE, default="")
+    onboarding_id = models.ForeignKey(onboarding, to_field='id', on_delete=models.CASCADE, default="")
     punch_type = models.CharField(max_length=10, choices=punch_type)
     punch_time = models.TimeField()
     date = models.DateField()
@@ -295,7 +305,7 @@ class clockinout_request(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.onboarding_id.user_id} - {self.id}"
+        return f"{self.onboarding_id.client.email} - {self.onboarding_id.employee.email} - {self.id}"
 
 
 class time_sheet(models.Model):
@@ -313,7 +323,8 @@ class time_sheet(models.Model):
         ("November", "November"),
         ("December", "December"),
     ]
-    employee_id = models.CharField(max_length=15)
+    id = models.AutoField(primary_key=True)
+    onboarding_id = models.ForeignKey(onboarding, to_field='id', on_delete=models.CASCADE, default="")
     month = models.CharField(max_length=15, choices=months)
     record = models.JSONField()
     year = models.IntegerField(default=timezone.now().year)
@@ -321,7 +332,7 @@ class time_sheet(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.employee_id} - {self.month}"
+        return f"{self.onboarding_id.client} - {self.onboarding_id.employee} - {self.month}"
 
 
 class employee_invoice(models.Model):
@@ -331,9 +342,7 @@ class employee_invoice(models.Model):
         ('Paid', 'Paid'),
     ]
     id = models.AutoField(primary_key=True)
-    user_id = models.ForeignKey(end_user, on_delete=models.CASCADE)
-    employee_id=models.CharField(max_length=15)
-    employee_name=models.CharField(max_length=30)
+    onboarding_id = models.ForeignKey(onboarding, to_field='id', on_delete=models.CASCADE, default="")
     invoice_date=models.DateField()
     due_date=models.DateField()
     invoice_amount=models.IntegerField()
@@ -343,7 +352,7 @@ class employee_invoice(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.user_id} - {self.id}"
+        return f"{self.onboarding_id.client.email} - {self.onboarding_id.employee.email} - {self.id}"
     
 class other_payment(models.Model):
     payment_status=[
@@ -352,7 +361,7 @@ class other_payment(models.Model):
         ('Paid', 'Paid'),
     ]
     id = models.AutoField(primary_key=True)
-    user_id = models.ForeignKey(end_user, on_delete=models.CASCADE)
+    client=models.ForeignKey(client, to_field="email", on_delete=models.CASCADE, default='')
     invoice_reference=models.CharField(max_length=30)
     invoice_date=models.DateField()
     due_date=models.DateField()
@@ -363,25 +372,36 @@ class other_payment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.user_id} - {self.id}"
+        return f"{self.client} - {self.id}"
     
 class company_contract(models.Model):
     id = models.AutoField(primary_key=True)
+    client=models.ForeignKey(client, to_field="email", on_delete=models.CASCADE, default='')
     contract_name=models.CharField(max_length=255)
     email=models.EmailField(unique=True)
     date=models.DateField()
     contract_doc=models.FileField(upload_to='contracts/company/', validators=[pdf_ext_valid, valid_pdffile_type], default='')
 
+    def __str__(self):
+        return f"{self.client} - {self.id}"
+
 class employee_contract(models.Model):
     id = models.AutoField(primary_key=True)
+    onboarding_id = models.ForeignKey(onboarding, to_field='id', on_delete=models.CASCADE, default="")
     contract_name=models.CharField(max_length=255)
     email=models.EmailField(unique=True)
     date=models.DateField()
     contract_doc=models.FileField(upload_to='contracts/employee/', validators=[pdf_ext_valid, valid_pdffile_type], default='')
+
+    def __str__(self):
+        return f"{self.onboarding_id.client.email} - {self.onboarding_id.employee.email} - {self.id}"
 
 class asset(models.Model):
     id = models.AutoField(primary_key=True)
     gadget=models.CharField(max_length=50)
     asset_id=models.CharField(max_length=15)
     assigned_date= models.DateTimeField()
-    assignee=models.CharField(max_length=30)
+    assignee=models.ForeignKey(employee, to_field="email", on_delete=models.CASCADE, default='')
+
+    def __str__(self):
+        return f"{self.assignee} - {self.id}"
