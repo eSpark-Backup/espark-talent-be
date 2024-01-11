@@ -1670,25 +1670,3 @@ class Invoice_Payments(APIView):
                 return Response(status=status.HTTP_200_OK)
             except:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-class dummy_employee(APIView):
-    def get(self, request, *args, **kwargs):
-        id= request.query_params.get('id')
-
-        employee_record=employee.objects.get(id=id)
-        print(employee_record.image.url)
-        return Response(status=status.HTTP_200_OK)
-    
-
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-class dummy_client(APIView):
-    def get(self, request, *args, **kwargs):
-        id= request.query_params.get('id')
-
-        client_record=client.objects.get(id=id)
-        print(client_record.image.name)
-        return Response(status=status.HTTP_200_OK)

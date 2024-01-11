@@ -169,7 +169,7 @@ class hiring_request(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.client} - {self.id}"
+        return f"{self.client.email} - {self.id}"
 
 
 class interview_schedule(models.Model):
@@ -332,7 +332,7 @@ class time_sheet(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.onboarding_id.client} - {self.onboarding_id.employee} - {self.month}"
+        return f"{self.onboarding_id.client.email} - {self.onboarding_id.employee.email} - {self.month}"
 
 
 class employee_invoice(models.Model):
@@ -372,7 +372,7 @@ class other_payment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.client} - {self.id}"
+        return f"{self.client.email} - {self.id}"
     
 class company_contract(models.Model):
     id = models.AutoField(primary_key=True)
@@ -383,7 +383,7 @@ class company_contract(models.Model):
     contract_doc=models.FileField(upload_to='contracts/company/', validators=[pdf_ext_valid, valid_pdffile_type], default='')
 
     def __str__(self):
-        return f"{self.client} - {self.id}"
+        return f"{self.client.email} - {self.id}"
 
 class employee_contract(models.Model):
     id = models.AutoField(primary_key=True)
@@ -404,4 +404,4 @@ class asset(models.Model):
     assignee=models.ForeignKey(employee, to_field="email", on_delete=models.CASCADE, default='')
 
     def __str__(self):
-        return f"{self.assignee} - {self.id}"
+        return f"{self.assignee.email} - {self.id}"
