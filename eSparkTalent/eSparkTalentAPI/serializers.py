@@ -25,6 +25,12 @@ class EmployeeSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class ClientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = client
+        fields = "__all__"
+
+
 class TimeSheetSerializer(serializers.ModelSerializer):
     class Meta:
         model = time_sheet
@@ -35,3 +41,21 @@ class TimeSheetEmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = onboarding
         fields = ["employee_id"]
+
+
+class AssetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = asset
+        fields = "__all__"
+
+
+class EmployeeInvoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = employee_invoice
+        fields = "__all__"
+
+
+class OtherPaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = other_payment
+        fields = "__all__"
