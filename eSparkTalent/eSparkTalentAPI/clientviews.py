@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from .models import *
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -88,6 +89,7 @@ class Client_Home(APIView):
                         ),
                         "onboarding_count": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "active_employee": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "Client_image": openapi.Schema(type=openapi.TYPE_FILE),
                     },
                 ),
             ),
@@ -106,16 +108,27 @@ class Client_Home(APIView):
     )
     def get(self, request, *args, **kwargs):
         user = request.user
-        hiring_request_count = hiring_request.objects.filter(user_id=user).count()
+        hiring_request_count = hiring_request.objects.filter(client__email=user).count()
         interview_schedule_count = interview_schedule.objects.filter(
-            user_id=user
+            client__email=user
         ).count()
         onboarding_count = onboarding.objects.filter(
-            user_id=user, status="onboard"
+            client__email=user, status="onboard"
         ).count()
         active_employee = onboarding.objects.filter(
-            user_id=user, status="active"
+            client__email=user, status="active"
         ).count()
+
+        try:
+            client_instance = client.objects.get(email=user)
+            image_path = client_instance.image.path
+
+            # # Open the image file
+            # with open(image_path, "rb") as image_file:
+            #     # Convert the image to base64
+            #     image_data = base64.b64encode(image_file.read()).decode("utf-8")
+        except client.DoesNotExist:
+            image_path = None
 
         data = {
             "username": user.username,
@@ -123,6 +136,7 @@ class Client_Home(APIView):
             "interview_schedule_count": interview_schedule_count,
             "onboarding_count": onboarding_count,
             "active_employee": active_employee,
+            "client_image": image_path,
         }
 
         return Response(data, status=status.HTTP_200_OK)
@@ -147,7 +161,7 @@ class Start_Hiring(APIView):
                         "maximum": openapi.Schema(type=openapi.TYPE_INTEGER),
                     },
                 ),
-                "country": openapi.Schema(type=openapi.TYPE_STRING),
+                # "country": openapi.Schema(type=openapi.TYPE_STRING),
                 "hiring_start_date": openapi.Schema(
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                 ),
@@ -176,15 +190,16 @@ class Start_Hiring(APIView):
     def post(self, request, *args, **kwargs):
         serializer = hiring_requestSerializer(data=request.data)
         if serializer.is_valid():
+
             print(request.data)
             hiring_request.objects.create(
-                user_id=request.user,
+                client__email=request.user,
                 job_title=serializer.validated_data["job_title"],
                 role_type=serializer.validated_data["role_type"],
                 gender=serializer.validated_data["gender"],
                 employment_term=serializer.validated_data["employment_term"],
                 salary_range=serializer.validated_data["salary_range"],
-                country=serializer.validated_data["country"],
+                # country=serializer.validated_data["country"],
                 hiring_start_date=serializer.validated_data["hiring_start_date"],
                 hiring_end_date=serializer.validated_data["hiring_end_date"],
             )
