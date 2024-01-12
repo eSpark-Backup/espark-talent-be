@@ -163,6 +163,7 @@ class hiring_request(models.Model):
     gender = models.CharField(max_length=7)
     employment_term = models.CharField(max_length=15)
     salary_range = models.JSONField()
+    country=models.CharField(max_length=30, default='')
     hiring_start_date = models.DateField()
     hiring_end_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
