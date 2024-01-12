@@ -20,41 +20,6 @@ from django.core.files.base import ContentFile
 import datetime
 from rest_framework.parsers import MultiPartParser
 
-class create_user(APIView):
-    @swagger_auto_schema(
-        operation_id=".",
-        tags=["Creat Dummy User"],
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "email": openapi.Schema(
-                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
-                ),
-                "password": openapi.Schema(type=openapi.TYPE_STRING),
-                "username": openapi.Schema(type=openapi.TYPE_STRING),
-                "role": openapi.Schema(type=openapi.TYPE_STRING),
-            },
-            required=["email", "password", "username", "role"],
-        ),
-        responses={
-            201: openapi.Response(description="Successful created"),
-            400: openapi.Response(description="Bad request"),
-        },
-        operation_summary="Endpoint for user create.",
-    )
-    def post(self, request, *args, **kwargs):
-        serializer = userSerializer(data=request.data)
-        if serializer.is_valid():
-            # Use the custom manager to create a user
-            end_user.objects.create_user(
-                email=serializer.validated_data["email"],
-                password=serializer.validated_data["password"],
-                username=serializer.validated_data["username"],
-                role=serializer.validated_data["role"],
-            )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class LoginView(APIView):
     @swagger_auto_schema(

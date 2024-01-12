@@ -1,19 +1,3 @@
-"""
-URL configuration for eSparkTalent project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework import permissions
@@ -22,22 +6,72 @@ from drf_yasg import openapi
 from django.conf import settings
 from django.conf.urls.static import static
 
-schema_view = get_schema_view(
+schema_url_patterns1 = [
+    path('api/', include('eSparkTalentAPI.clienturls')),
+]
+
+schema_view1 = get_schema_view(
     openapi.Info(
         title="eSpark Talent APIs",
         default_version="v1",
-        description="Django Backend APIs",
+        description="Client Dashboard APIs",
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
+    url='http://127.0.0.1:8000/api/',
+    patterns=schema_url_patterns1,
+)
+
+schema_url_patterns2 = [
+    path('api/', include('eSparkTalentAPI.employeeurls')),
+]
+
+schema_view2 = get_schema_view(
+    openapi.Info(
+        title="eSpark Talent APIs",
+        default_version="v1",
+        description="Employee Dashboard APIs",
+    ),
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+    url='http://127.0.0.1:8000/api/',
+    patterns=schema_url_patterns2,
+)
+
+schema_url_patterns3 = [
+    path('api/', include('eSparkTalentAPI.hrurls')),
+]
+
+schema_view3 = get_schema_view(
+    openapi.Info(
+        title="eSpark Talent APIs",
+        default_version="v1",
+        description="HR Dashboard APIs",
+    ),
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+    url='http://127.0.0.1:8000/api/',
+    patterns=schema_url_patterns3,
 )
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/", include("eSparkTalentAPI.urls")),
+    path("api/", include("eSparkTalentAPI.clienturls")),
+    path("api/", include("eSparkTalentAPI.employeeurls")),
+    path("api/", include("eSparkTalentAPI.hrurls")),
     path(
-        "swagger/",
-        schema_view.with_ui("swagger", cache_timeout=0),
+        "client_swagger/",
+        schema_view1.with_ui("swagger", cache_timeout=0),
+        name="schema-swagger-ui",
+    ),
+    path(
+        "employee_swagger/",
+        schema_view2.with_ui("swagger", cache_timeout=0),
+        name="schema-swagger-ui",
+    ),
+    path(
+        "hr_swagger/",
+        schema_view3.with_ui("swagger", cache_timeout=0),
         name="schema-swagger-ui",
     ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

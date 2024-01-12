@@ -48,7 +48,7 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = "eSparkTalentAPI.end_user"
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),  # Set the expiration time as needed
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=5),  # Set the expiration time as needed
     # other configurations...
 }
 
