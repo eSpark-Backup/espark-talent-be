@@ -190,10 +190,15 @@ class Start_Hiring(APIView):
     def post(self, request, *args, **kwargs):
         serializer = hiring_requestSerializer(data=request.data)
         if serializer.is_valid():
+            client_email = request.user.email  # Assuming request.user is a User instance with an email field
+
+            # Retrieve or create the Client instance based on the email
+            client_1, created = client.objects.get_or_create(email=client_email)
 
             print(request.data)
             hiring_request.objects.create(
-                client__email=request.user,
+                client=client_1,
+                # client_email=request.user,
                 job_title=serializer.validated_data["job_title"],
                 role_type=serializer.validated_data["role_type"],
                 gender=serializer.validated_data["gender"],
@@ -265,7 +270,7 @@ class Hiring_Resquest(APIView):
     )
     def get(self, request, *args, **kwargs):
         user = request.user
-        hiring_requests = hiring_request.objects.filter(user_id=user)
+        hiring_requests = hiring_request.objects.filter(client__email=user)
 
         if hiring_requests:
             records = []
@@ -376,15 +381,15 @@ class Interview_Schedule(APIView):
     )
     def get(self, request, *args, **kwargs):
         user = request.user
-        interview_schedules = interview_schedule.objects.filter(user_id=user)
+        interview_schedules = interview_schedule.objects.filter(client__email=user)
         records = []
         if interview_schedules:
             for data in interview_schedules:
                 record = {
                     "id": data.id,
-                    "employee_name": data.employee_id.username,
-                    "gender": data.employee_id.gender,
-                    "job_title": data.employee_id.designation,
+                    "employee_name": data.employee.first_name + " " + data.employee.last_name,
+                    "gender": data.gender,
+                    "job_title": data.job_title,
                     "role_type": data.role_type,
                     "employment_term": data.employment_term,
                     "interview_date_time": data.interview_date_time,
@@ -431,12 +436,15 @@ class Interview_Schedule(APIView):
         operation_summary="Endpoint to update the status of an interview schedule.",
         operation_id="4",
     )
+
+    ## on error
+
     def patch(self, request, *args, **kwargs):
         user = request.user
         request_id = request.query_params.get("id")
         to_update_status = request.data["status"]
         try:
-            to_update_interview_status = interview_schedule.objects.get(id=request_id)
+            to_update_interview_status = interview_schedule.objects.get(id=request_id ,client__email=user)
             if to_update_interview_status:
                 to_update_interview_status.status = to_update_status
                 to_update_interview_status.save()
@@ -501,15 +509,18 @@ class Onboarding(APIView):
     )
     def get(self, request, *args, **kwargs):
         user = request.user
-        onboardings = onboarding.objects.filter(user_id=user, status="onboard")
+        onboardings = onboarding.objects.filter(client__email=user, status="onboard")
         records = []
         if onboardings:
             for data in onboardings:
+                # employee_data = employee.objects.get(email = data.employee.email)
+                
                 record = {
-                    "employee_name": data.employee_id.username,
-                    "gender": data.employee_id.gender,
+                    
+                    "employee_name": data.employee.first_name +" "+ data.employee.last_name,
+                    "gender": data.gender,
                     "country": data.country,
-                    "job_title": data.employee_id.designation,
+                    "job_title": data.job_title,
                     "role_type": data.role_type,
                     "employment_term": data.employment_term,
                     "joining_date": data.joining_date,
@@ -587,19 +598,19 @@ class Team_Memeber(APIView):
             or get_status == "onboard"
             or get_status == "terminated"
         ):
-            onboardings = onboarding.objects.filter(user_id=user, status=get_status)
+            onboardings = onboarding.objects.filter(client__email=user, status=get_status)
         elif get_status == "all":
-            onboardings = onboarding.objects.filter(user_id=user)
+            onboardings = onboarding.objects.filter(client__email=user)
         records = []
         if onboardings:
             for data in onboardings:
                 record = {
-                    "employee_name": data.employee_id.username,
+                    "employee_name": data.employee.first_name + " " + data.employee.last_name,
                     "country": data.country,
-                    "job_title": data.employee_id.designation,
+                    "job_title": data.job_title,
                     "employment_term": data.employment_term,
                     "joining_date": data.joining_date,
-                    "benefits": data.employee_id.benefits,
+                    "benefits": data.employee.benefits,
                 }
                 records.append(record)
             return Response(records, status=status.HTTP_200_OK)
@@ -675,31 +686,29 @@ class Leave_Request(APIView):
             or get_status == "rejected"
         ):
             leave_requests = leave_request.objects.filter(
-                onboarding_id__user_id=user, status=get_status
+                onboarding_id__client__email=user.email, status=get_status
             )
         elif get_status == "all":
-            leave_requests = leave_request.objects.filter(onboarding_id__user_id=user)
+             leave_requests = leave_request.objects.filter(onboarding_id__client__email=user.email)
         records = []
 
         if leave_requests:
             for data in leave_requests:
-                employee_serializer = EmployeeSerializer(data.onboarding_id.employee_id)
+                employee_serializer = EmployeeSerializer(data.onboarding_id.employee)
                 employee_data = employee_serializer.data
 
                 record = {
                     "id": data.id,
                     "employee_id": employee_data.get("employee_id", ""),
-                    "employee_name": employee_data.get("username", ""),
+                    "employee_name": employee_data.get("first_name", " "),
                     "country": data.onboarding_id.country,
                     "department": employee_data.get("department", ""),
                     "leave_type": data.leave_type,
                     "start_date": data.start_date,
                     "end_date": data.end_date,
                     "count": data.count,
-                    "sandwich_count": data.sandwich_count,
-                    "total": data.total,
                     "reason": data.reason,
-                    "requested_at": data.requested_at,
+                    "requested_at": data.created_at,
                     "status": data.status,
                 }
                 records.append(record)
@@ -742,6 +751,7 @@ class Leave_Request(APIView):
         operation_summary="Endpoint to update the status of a leave request.",
         operation_id="2",
     )
+    # on error
     def patch(self, request, *args, **kwargs):
         user = request.user
         request_id = request.query_params.get("id")
@@ -749,7 +759,7 @@ class Leave_Request(APIView):
         try:
             to_update_leave_request = leave_request.objects.get(id=request_id)
             if to_update_leave_request:
-                to_update_leave_request.status = to_update_status
+                to_update_leave_request.status(to_update_status)
                 to_update_leave_request.save()
 
                 return Response(status=status.HTTP_200_OK)
@@ -798,16 +808,20 @@ class Leave_Balance(APIView):
     )
     def get(self, request, *args, **kwargs):
         user = request.user
-        leave_balances = leave_balance.objects.filter(onboarding_id__user_id=user)
+        leave_balances = leave_balance.objects.filter(onboarding_id__client__email=user)
+        print(leave_balances)
         records = []
 
         if leave_balances:
             for data in leave_balances:
-                employee_serializer = EmployeeSerializer(data.onboarding_id.employee_id)
+                employee_serializer = EmployeeSerializer(data.onboarding_id.employee)
+                # print(employee_serializer)
                 employee_data = employee_serializer.data
+                print(employee_data)
+                employee_name = f"{employee_data.get('first_name', '')} {employee_data.get('last_name', '')}"
 
                 record = {
-                    "employee_name": employee_data.get("username", ""),
+                    "employee_name": employee_name,
                     "casual_leaves": data.casual_leaves["balance"],
                     "sick_leaves": data.sick_leaves["balance"],
                     "annual_leaves": data.annual_leaves["balance"],
@@ -884,17 +898,17 @@ class ClockInOut_Request(APIView):
             or get_status == "rejected"
         ):
             clockinout_requests = clockinout_request.objects.filter(
-                onboarding_id__user_id=user, status=get_status
+                onboarding_id__client__email=user, status=get_status
             )
         elif get_status == "all":
             clockinout_requests = clockinout_request.objects.filter(
-                onboarding_id__user_id=user
+                onboarding_id__client__email=user
             )
         records = []
 
         if clockinout_requests:
             for data in clockinout_requests:
-                employee_serializer = EmployeeSerializer(data.onboarding_id.employee_id)
+                employee_serializer = EmployeeSerializer(data.onboarding_id.employee)
                 employee_data = employee_serializer.data
 
                 record = {
