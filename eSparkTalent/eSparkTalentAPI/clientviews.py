@@ -142,8 +142,8 @@ class Client_Home(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
+# @authentication_classes([JWTAuthentication])
+# @permission_classes([IsAuthenticated])
 class Start_Hiring(APIView):
     @swagger_auto_schema(
         tags=["Hire & Onboard : Start Hiring"],
@@ -190,21 +190,15 @@ class Start_Hiring(APIView):
     def post(self, request, *args, **kwargs):
         serializer = hiring_requestSerializer(data=request.data)
         if serializer.is_valid():
-            client_email = request.user.email  # Assuming request.user is a User instance with an email field
-
-            # Retrieve or create the Client instance based on the email
-            client_1, created = client.objects.get_or_create(email=client_email)
-
-            print(request.data)
+            client_1= client.objects.get(email=request.user)
             hiring_request.objects.create(
                 client=client_1,
-                # client_email=request.user,
                 job_title=serializer.validated_data["job_title"],
                 role_type=serializer.validated_data["role_type"],
                 gender=serializer.validated_data["gender"],
                 employment_term=serializer.validated_data["employment_term"],
                 salary_range=serializer.validated_data["salary_range"],
-                # country=serializer.validated_data["country"],
+                # country=serializer.validated_data["country"], # included in client's hiring form not in hr's form
                 hiring_start_date=serializer.validated_data["hiring_start_date"],
                 hiring_end_date=serializer.validated_data["hiring_end_date"],
             )
@@ -535,7 +529,7 @@ class Onboarding(APIView):
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-class Team_Memeber(APIView):
+class Team_Member(APIView):
     @swagger_auto_schema(
         tags=["Team : Team Member"],
         manual_parameters=[
@@ -686,10 +680,10 @@ class Leave_Request(APIView):
             or get_status == "rejected"
         ):
             leave_requests = leave_request.objects.filter(
-                onboarding_id__client__email=user.email, status=get_status
+                onboarding_id__client__email=user, status=get_status
             )
         elif get_status == "all":
-             leave_requests = leave_request.objects.filter(onboarding_id__client__email=user.email)
+             leave_requests = leave_request.objects.filter(onboarding_id__client__email=user)
         records = []
 
         if leave_requests:
@@ -809,7 +803,6 @@ class Leave_Balance(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user
         leave_balances = leave_balance.objects.filter(onboarding_id__client__email=user)
-        print(leave_balances)
         records = []
 
         if leave_balances:
@@ -1018,7 +1011,7 @@ class Download_Report(APIView):
 
         try:
             if get_tab == "lr":
-                records = leave_request.objects.filter(onboarding_id__user_id=user)
+                records = leave_request.objects.filter(onboarding_id__client__email=user)
                 current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
                 filename = f"leaveRequestReport_{current_datetime}.pdf"
                 table_headers = [
@@ -1036,7 +1029,7 @@ class Download_Report(APIView):
                 raw_data = []
                 for data in records:
                     employee_serializer = EmployeeSerializer(
-                        data.onboarding_id.employee_id
+                        data.onboarding_id.employee
                     )
                     employee_data = employee_serializer.data
 
@@ -1047,14 +1040,14 @@ class Download_Report(APIView):
                         str(employee_data.get("department", "")),
                         str(data.leave_type),
                         str(data.count),
-                        str(data.requested_at),
+                        # str(data.requested_at),
                         str(data.status),
                     ]
                     table_data.append(row_data)
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
                 col_widths = [65, 80, 70, 70, 60, 35, 150, 60]
             elif get_tab == "cio":
-                records = clockinout_request.objects.filter(onboarding_id__user_id=user)
+                records = clockinout_request.objects.filter(onboarding_id__client__email=user)
                 current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
                 filename = f"ClockInOutReport{current_datetime}.pdf"
                 table_headers = [
@@ -1070,7 +1063,7 @@ class Download_Report(APIView):
                 raw_data = []
                 for data in records:
                     employee_serializer = EmployeeSerializer(
-                        data.onboarding_id.employee_id
+                        data.onboarding_id.employee
                     )
                     employee_data = employee_serializer.data
 
@@ -1086,7 +1079,7 @@ class Download_Report(APIView):
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
                 col_widths = [100, 100, 80, 80, 80, 80]
             elif get_tab == "lb":
-                records = leave_balance.objects.filter(onboarding_id__user_id=user)
+                records = leave_balance.objects.filter(onboarding_id__client__email=user)
                 current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
                 filename = f"leaveBalanceReport{current_datetime}.pdf"
                 table_headers = [
@@ -1102,7 +1095,7 @@ class Download_Report(APIView):
                 raw_data = []
                 for data in records:
                     employee_serializer = EmployeeSerializer(
-                        data.onboarding_id.employee_id
+                        data.onboarding_id.employee
                     )
                     employee_data = employee_serializer.data
 
@@ -1111,8 +1104,8 @@ class Download_Report(APIView):
                         str(data.casual_leaves),
                         str(data.sick_leaves),
                         str(data.annual_leaves),
-                        str(data.taken),
-                        str(data.balance),
+                        # str(data.taken),
+                        # str(data.balance),
                     ]
                     table_data.append(row_data)
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
@@ -1417,16 +1410,16 @@ class Time_Tracking(APIView):
         year = request.query_params.get("year")
         month = request.query_params.get("month")
         employee_id = request.query_params.get("emp_id")
-        available_employees = onboarding.objects.filter(user_id=user, status="active")
+        available_employees = onboarding.objects.filter(client__email=user, status="active")
         serialized_available_employees = TimeSheetEmployeeSerializer(
             available_employees, many=True
         ).data
         for record in serialized_available_employees:
-            emp_record = employee.objects.get(employee_id=record["employee_id"])
+            emp_record = employee.objects.get(email=record["employee_id"])
             record["name"] = emp_record.first_name + " " + emp_record.last_name
         if month and year and employee_id:
             time_sheet_data = time_sheet.objects.filter(
-                month=month, year=year, employee_id=employee_id
+                month=month, year=year, onboarding_id__employee__employee_id=employee_id
             )
             serialized_time_sheet_data = TimeSheetSerializer(
                 time_sheet_data, many=True
@@ -1561,10 +1554,10 @@ class Invoice_Payments(APIView):
         no_val = 0
 
         emp_invoices = employee_invoice.objects.filter(
-            user_id=user, payment_status=pay_status
+            onboarding_id__client__email=user, payment_status=pay_status
         )
         other_pays = other_payment.objects.filter(
-            user_id=user, payment_status=pay_status
+           client__email=user, payment_status=pay_status
         )
         records = {}
         if emp_invoices:
@@ -1572,12 +1565,12 @@ class Invoice_Payments(APIView):
             for data in emp_invoices:
                 record = {
                     "id": data.id,
-                    "employee_name": data.employee_name,
+                    "employee_name": data.onboarding_id.employee.first_name + " " + data.onboarding_id.employee.last_name,
                     "invoice_date": data.invoice_date,
                     "due_date": data.due_date,
                     "invoice_amount": data.invoice_amount,
                     "payment_status": pay_status,
-                    "download": data.download,
+                    "download": data.invoice,
                 }
                 emp_inv_records.append(record)
             records["employee_invoices"] = emp_inv_records
@@ -1594,7 +1587,7 @@ class Invoice_Payments(APIView):
                     "due_date": data.due_date,
                     "invoice_amount": data.invoice_amount,
                     "payment_status": pay_status,
-                    "download": data.download,
+                    "download": data.invoice,
                 }
             other_pays_records.append(record)
             records["other_payments"] = other_pays_records
