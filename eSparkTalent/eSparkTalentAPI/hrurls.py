@@ -7,6 +7,6 @@ urlpatterns=[
     path('hr_add_emp/', Add_Employee.as_view()),
     path('hr_add_client/', Add_Client.as_view()),
     path('hr_add_asset/', Add_Asset.as_view()),
-    path('hr_upload_empinv/', Upload_Employee_Invoice.as_view()),
-    path('hr_upload_otherpay/', Upload_Other_Payment.as_view()),
+    path('hr_empinv/', Employee_Invoice.as_view()),
+    path('hr_otherpay/', Other_Payment.as_view()),
 ]

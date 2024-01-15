@@ -37,7 +37,7 @@ class Add_Employee(APIView):
                     benefits=serializer.validated_data["benefits"],
                 )
 
-                end_user.objects.create(
+                end_user.objects.create_user(
                     username=serializer.validated_data["first_name"]+' '+serializer.validated_data["last_name"],
                     role="Employee",
                     email=serializer.validated_data["email"],
@@ -75,7 +75,7 @@ class Add_Client(APIView):
                     company=serializer.validated_data["company"],
                 )
     
-                end_user.objects.create(
+                end_user.objects.create_user(
                     username=serializer.validated_data["first_name"]+' '+serializer.validated_data["last_name"],
                     role="Client",
                     email=serializer.validated_data["email"],
@@ -111,7 +111,7 @@ class Add_Asset(APIView):
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-class Upload_Employee_Invoice(APIView):
+class Employee_Invoice(APIView):
     def post(self, request, *args, **kwargs):
         posted_data=request.data
         employee_mail=posted_data.pop("employee_email", None)[0]
@@ -137,11 +137,26 @@ class Upload_Employee_Invoice(APIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+
+
+    def patch(self, request, *args, **kwargs):
+        request_id = request.query_params.get("id")
+        to_update_status = request.data["payment_status"]
+        try:
+            to_update_emp_inv = employee_invoice.objects.get(id=request_id)
+            if to_update_emp_inv:
+                to_update_emp_inv.payment_status = to_update_status
+                to_update_emp_inv.save()
+
+                return Response(status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-class Upload_Other_Payment(APIView):
+class Other_Payment(APIView):
     def post(self, request, *args, **kwargs):
         serializer = OtherPaymentSerializer(data=request.data)
         if serializer.is_valid():
@@ -159,3 +174,19 @@ class Upload_Other_Payment(APIView):
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+    def patch(self, request, *args, **kwargs):
+        request_id = request.query_params.get("id")
+        to_update_status = request.data["payment_status"]
+        try:
+            to_update_otherpay = other_payment.objects.get(id=request_id)
+            if to_update_otherpay:
+                to_update_otherpay.payment_status = to_update_status
+                to_update_otherpay.save()
+
+                return Response(status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
