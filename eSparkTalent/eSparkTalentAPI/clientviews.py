@@ -142,8 +142,8 @@ class Client_Home(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 
-# @authentication_classes([JWTAuthentication])
-# @permission_classes([IsAuthenticated])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 class Start_Hiring(APIView):
     @swagger_auto_schema(
         tags=["Hire & Onboard : Start Hiring"],
