@@ -39,7 +39,7 @@ class Add_Employee(APIView):
 
                 end_user.objects.create_user(
                     username=serializer.validated_data["first_name"]+' '+serializer.validated_data["last_name"],
-                    role="Employee",
+                    role="employee",
                     email=serializer.validated_data["email"],
                     password=password
                 )
@@ -77,7 +77,7 @@ class Add_Client(APIView):
     
                 end_user.objects.create_user(
                     username=serializer.validated_data["first_name"]+' '+serializer.validated_data["last_name"],
-                    role="Client",
+                    role="client",
                     email=serializer.validated_data["email"],
                     password=password
                 )
