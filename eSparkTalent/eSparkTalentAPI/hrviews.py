@@ -6,15 +6,17 @@ from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from .serializers import *
+import datetime
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Add_Employee(APIView):
     def post(self, request, *args, **kwargs):
-        posted_data=request.data
-        password=posted_data.pop("password", None)[0]
-        confirm_password=posted_data.pop("confirm_password", None)[0]
-        if password==confirm_password:
+        posted_data = request.data
+        password = posted_data.pop("password", None)[0]
+        confirm_password = posted_data.pop("confirm_password", None)[0]
+        if password == confirm_password:
             serializer = EmployeeSerializer(data=posted_data)
             if serializer.is_valid():
                 employee.objects.create(
@@ -38,10 +40,12 @@ class Add_Employee(APIView):
                 )
 
                 end_user.objects.create_user(
-                    username=serializer.validated_data["first_name"]+' '+serializer.validated_data["last_name"],
+                    username=serializer.validated_data["first_name"]
+                    + " "
+                    + serializer.validated_data["last_name"],
                     role="employee",
                     email=serializer.validated_data["email"],
-                    password=password
+                    password=password,
                 )
                 return Response(
                     {"message": "Resquest created"}, status=status.HTTP_201_CREATED
@@ -49,17 +53,19 @@ class Add_Employee(APIView):
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"error":"Incorrect Password"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Incorrect Password"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Add_Client(APIView):
     def post(self, request, *args, **kwargs):
-        posted_data=request.data
-        password=posted_data.pop("password", None)[0]
-        confirm_password=posted_data.pop("confirm_password", None)[0]
-        if password==confirm_password:
+        posted_data = request.data
+        password = posted_data.pop("password", None)[0]
+        confirm_password = posted_data.pop("confirm_password", None)[0]
+        if password == confirm_password:
             serializer = ClientSerializer(data=posted_data)
             if serializer.is_valid():
                 client.objects.create(
@@ -74,12 +80,14 @@ class Add_Client(APIView):
                     image=serializer.validated_data["image"],
                     company=serializer.validated_data["company"],
                 )
-    
+
                 end_user.objects.create_user(
-                    username=serializer.validated_data["first_name"]+' '+serializer.validated_data["last_name"],
+                    username=serializer.validated_data["first_name"]
+                    + " "
+                    + serializer.validated_data["last_name"],
                     role="client",
                     email=serializer.validated_data["email"],
-                    password=password
+                    password=password,
                 )
                 return Response(
                     {"message": "Resquest created"}, status=status.HTTP_201_CREATED
@@ -87,7 +95,9 @@ class Add_Client(APIView):
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"error":"Incorrect Password"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Incorrect Password"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 @authentication_classes([JWTAuthentication])
@@ -113,13 +123,15 @@ class Add_Asset(APIView):
 @permission_classes([IsAuthenticated])
 class Employee_Invoice(APIView):
     def post(self, request, *args, **kwargs):
-        posted_data=request.data
-        employee_mail=posted_data.pop("employee_email", None)[0]
-        client_mail=posted_data.pop("client_email", None)[0]
+        posted_data = request.data
+        employee_mail = posted_data.pop("employee_email", None)[0]
+        client_mail = posted_data.pop("client_email", None)[0]
         try:
-            onboards=onboarding.objects.get(client=client_mail,employee=employee_mail)
-            onboard_id=onboards.id
-            posted_data["onboarding_id"]=onboard_id
+            onboards = onboarding.objects.get(
+                client=client_mail, employee=employee_mail
+            )
+            onboard_id = onboards.id
+            posted_data["onboarding_id"] = onboard_id
             serializer = EmployeeInvoiceSerializer(data=posted_data)
             if serializer.is_valid():
                 employee_invoice.objects.create(
@@ -138,7 +150,6 @@ class Employee_Invoice(APIView):
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-
     def patch(self, request, *args, **kwargs):
         request_id = request.query_params.get("id")
         to_update_status = request.data["payment_status"]
@@ -153,6 +164,7 @@ class Employee_Invoice(APIView):
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -175,7 +187,6 @@ class Other_Payment(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
     def patch(self, request, *args, **kwargs):
         request_id = request.query_params.get("id")
         to_update_status = request.data["payment_status"]
@@ -189,4 +200,193 @@ class Other_Payment(APIView):
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Hr_Home(APIView):
+    def get(self, request, *args, **kwargs):
+        user = request.user.username
+        record = {
+            "user": user,
+            "employees": employee.objects.all().count(),
+            "clients": client.objects.all().count(),
+            "hiring_requests": hiring_request.objects.all().count(),
+            "interview_schedules": interview_schedule.objects.all().count(),
+        }
+        return Response(record, status=status.HTTP_200_OK)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Hr_Employees(APIView):
+    def get(self, request, *args, **kwargs):
+        get_status = request.query_params.get("status")
+        if get_status:
+            if get_status == "active":
+                employees = employee.objects.all()
+                records = []
+                for emp in employees:
+                    try:
+                        e_user = end_user.objects.get(email=emp.email)
+                        if e_user and e_user.is_active:
+                            record = {
+                                "id": emp.id,
+                                "name": emp.first_name + " " + emp.last_name,
+                                "image": emp.image.url,
+                                "designation": emp.designation,
+                            }
+                            records.append(record)
+                    except:
+                        continue
+                if len(records) > 0:
+                    return Response(records, status=status.HTTP_200_OK)
+                else:
+                    return Response(status=status.HTTP_204_NO_CONTENT)
+            elif get_status == "inactive":
+                employees = employee.objects.all()
+                records = []
+                for emp in employees:
+                    try:
+                        e_user = end_user.objects.get(email=emp.email)
+                        if e_user and not e_user.is_active:
+                            record = {
+                                "id": emp.id,
+                                "name": emp.first_name + " " + emp.last_name,
+                                "image": emp.image.url,
+                                "designation": emp.designation,
+                            }
+                            records.append(record)
+                    except:
+                        continue
+                if len(records) > 0:
+                    return Response(records, status=status.HTTP_200_OK)
+                else:
+                    return Response(status=status.HTTP_204_NO_CONTENT)
+
+        else:
+            employees = employee.objects.all()
+            if employees:
+                records = []
+                for emp in employees:
+                    record = {
+                        "id": emp.id,
+                        "name": emp.first_name + " " + emp.last_name,
+                        "image": emp.image.url,
+                        "designation": emp.designation,
+                    }
+                    records.append(record)
+                return Response(records, status=status.HTTP_200_OK)
+
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Hr_Employee(APIView):
+    def get(self, request, *args, **kwargs):
+        get_id = request.query_params.get("id")
+        get_tab = request.query_params.get("tab")
+        if get_tab == "client":
+            onboards = onboarding.objects.filter(employee__id=get_id)
+            if onboards:
+                records = []
+                for rec in onboards:
+                    record = {
+                        "client_name": rec.client.first_name
+                        + " "
+                        + rec.client.last_name,
+                        "client_id": rec.client.email,
+                        "job_title": rec.job_title,
+                        "employeement_term": rec.employment_term,
+                    }
+                    records.append(record)
+                if len(records) > 0:
+                    return Response(records, status=status.HTTP_200_OK)
+
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+        elif get_tab == "contract":
+            contract = employee_contract.objects.filter(
+                onboarding_id__employee__id=get_id
+            )
+            if contract:
+                records = []
+                for rec in contract:
+                    record = {
+                        "contract_name": rec.contract_name,
+                        "email": rec.email,
+                        "date": rec.date,
+                        "contract": rec.contract_doc.url,
+                    }
+                    records.append(record)
+                if len(records) > 0:
+                    return Response(records, status=status.HTTP_200_OK)
+
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+        elif get_tab == "assets":
+            assets = asset.objects.filter(assignee__id=get_id)
+            if assets:
+                records = []
+                for rec in assets:
+                    record = {
+                        "gadget": rec.gadget,
+                        "asset_id": rec.asset_id,
+                        "assigned_date": rec.assigned_date,
+                        "assignee_name": rec.assignee.first_name
+                        + " "
+                        + rec.assignee.last_name,
+                    }
+                    records.append(record)
+                if len(records) > 0:
+                    return Response(records, status=status.HTTP_200_OK)
+
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+        elif get_tab == "timesheet":
+            try:
+                get_month = datetime.datetime.now().strftime("%B")
+                get_year = datetime.datetime.now().year
+                time_sheet_data = time_sheet.objects.filter(
+                    month=get_month, year=get_year
+                )
+                return Response(time_sheet_data[0].record, status=status.HTTP_200_OK)
+
+            except:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        elif not get_tab:
+            try:
+                emp_record = employee.objects.get(id=get_id)
+                record = {
+                    "id": emp_record.id,
+                    "employee_id": emp_record.employee_id,
+                    "first_name": emp_record.first_name,
+                    "last_name": emp_record.last_name,
+                    "gender": emp_record.gender,
+                    "dob": emp_record.dob,
+                    "phone_no": emp_record.phone_no,
+                    "email": emp_record.email,
+                    "marital_status": emp_record.marital_status,
+                    "image": emp_record.image.url,
+                    "emergency_no": emp_record.emergency_no,
+                    "resume": emp_record.resume.url,
+                    "emergency_contact": emp_record.emergency_contact,
+                    "joining_date": emp_record.joining_date,
+                    "designation": emp_record.designation,
+                    "department": emp_record.department,
+                    "company": emp_record.company,
+                    "benefits": emp_record.benefits,
+                }
+                return Response(record, status=status.HTTP_200_OK)
+            except:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        else:
             return Response(status=status.HTTP_400_BAD_REQUEST)

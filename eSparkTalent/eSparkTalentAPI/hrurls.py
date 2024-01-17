@@ -9,4 +9,7 @@ urlpatterns=[
     path('hr_add_asset/', Add_Asset.as_view()),
     path('hr_empinv/', Employee_Invoice.as_view()),
     path('hr_otherinv/', Other_Payment.as_view()),
+    path('hr_home/', Hr_Home.as_view()),
+    path('hr_emps/', Hr_Employees.as_view()),
+    path('hr_emp_prof/', Hr_Employee.as_view()),
 ]
