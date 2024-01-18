@@ -287,10 +287,10 @@ class Hr_Employees(APIView):
 @permission_classes([IsAuthenticated])
 class Hr_Employee(APIView):
     def get(self, request, *args, **kwargs):
-        get_id = request.query_params.get("id")
-        get_tab = request.query_params.get("tab")
-        if get_tab == "client":
-            onboards = onboarding.objects.filter(employee__id=get_id)
+        record_id = request.query_params.get("id")
+        tab = request.query_params.get("tab")
+        if tab == "client":
+            onboards = onboarding.objects.filter(employee__id=record_id)
             if onboards:
                 records = []
                 for rec in onboards:
@@ -309,9 +309,9 @@ class Hr_Employee(APIView):
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-        elif get_tab == "contract":
+        elif tab == "contract":
             contract = employee_contract.objects.filter(
-                onboarding_id__employee__id=get_id
+                onboarding_id__employee__id=record_id
             )
             if contract:
                 records = []
@@ -329,8 +329,8 @@ class Hr_Employee(APIView):
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-        elif get_tab == "assets":
-            assets = asset.objects.filter(assignee__id=get_id)
+        elif tab == "assets":
+            assets = asset.objects.filter(assignee__id=record_id)
             if assets:
                 records = []
                 for rec in assets:
@@ -349,7 +349,7 @@ class Hr_Employee(APIView):
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-        elif get_tab == "timesheet":
+        elif tab == "timesheet":
             try:
                 get_month = datetime.datetime.now().strftime("%B")
                 get_year = datetime.datetime.now().year
@@ -361,9 +361,9 @@ class Hr_Employee(APIView):
             except:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        elif not get_tab:
+        elif not tab:
             try:
-                emp_record = employee.objects.get(id=get_id)
+                emp_record = employee.objects.get(id=record_id)
                 record = {
                     "id": emp_record.id,
                     "employee_id": emp_record.employee_id,
@@ -390,3 +390,54 @@ class Hr_Employee(APIView):
 
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Update_Emp_Person_Info(APIView):
+    def patch(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        updates=request.data
+        try:
+            emp_record=employee.objects.get(id=record_id)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        for key in updates:
+            setattr(emp_record, key, updates[key])
+        emp_record.save()
+        return Response(status=status.HTTP_200_OK)
+    
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Update_Emp_Emerg_Info(APIView):
+    def patch(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        updates=request.data
+        try:
+            emp_record=employee.objects.get(id=record_id)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        for key in updates:
+            setattr(emp_record, key, updates[key])
+        emp_record.save()
+        return Response(status=status.HTTP_200_OK)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Update_Emp_Profile_Pic(APIView):
+    def patch(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        updates=request.data
+        try:
+            emp_record=employee.objects.get(id=record_id)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        for key in updates:
+            setattr(emp_record, key, updates[key])
+        emp_record.save()
+        return Response(status=status.HTTP_200_OK)
