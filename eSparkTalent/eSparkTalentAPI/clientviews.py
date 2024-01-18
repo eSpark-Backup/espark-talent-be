@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404
+
 from .models import *
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -438,7 +438,7 @@ class Interview_Schedule(APIView):
         request_id = request.query_params.get("id")
         to_update_status = request.data["status"]
         try:
-            to_update_interview_status = interview_schedule.objects.get(id=request_id ,client__email=user)
+            to_update_interview_status = interview_schedule.objects.get(id=request_id)
             if to_update_interview_status:
                 to_update_interview_status.status = to_update_status
                 to_update_interview_status.save()
@@ -745,7 +745,6 @@ class Leave_Request(APIView):
         operation_summary="Endpoint to update the status of a leave request.",
         operation_id="2",
     )
-    # on error
     def patch(self, request, *args, **kwargs):
         user = request.user
         request_id = request.query_params.get("id")
