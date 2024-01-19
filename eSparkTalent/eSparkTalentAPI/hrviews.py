@@ -8,69 +8,161 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from .serializers import *
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from rest_framework.parsers import MultiPartParser
 
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Add_Employee(APIView):
+    parser_classes = (MultiPartParser,)
+
     @swagger_auto_schema(
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "employee_id": openapi.Schema(type=openapi.TYPE_INTEGER),
-                "first_name": openapi.Schema(type=openapi.TYPE_STRING),
-                "last_name": openapi.Schema(type=openapi.TYPE_STRING),
-                "gender": openapi.Schema(type=openapi.TYPE_STRING),
-                "dob": openapi.Schema(
-                    type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
-                ),
-                "phone_no": openapi.Schema(type=openapi.TYPE_INTEGER),
-                "email": openapi.Schema(type=openapi.TYPE_STRING),
-                "marital_status": openapi.Schema(type=openapi.TYPE_STRING),
-                "image": openapi.Schema(type=openapi.TYPE_STRING),
-                "emergency_no": openapi.Schema(type=openapi.TYPE_STRING),
-                "resume": openapi.Schema(type=openapi.TYPE_FILE),
-                "emergency_contact": openapi.Schema(type=openapi.TYPE_STRING),
-                "joining_date": openapi.Schema(type=openapi.TYPE_STRING),
-                "designation": openapi.Schema(type=openapi.TYPE_STRING),
-                "department": openapi.Schema(type=openapi.TYPE_STRING),
-                "company": openapi.Schema(type=openapi.TYPE_STRING),
-                "benefits": openapi.Schema(type=openapi.TYPE_STRING),
-                "password": openapi.Schema(type=openapi.TYPE_STRING),
-                "confirm_password": openapi.Schema(type=openapi.TYPE_STRING),
-            },
-            required=[
-                "employee_id",
-                "first_name",
-                "last_name",
-                "password",
-                "confirm_password",
-            ],
-        ),
+        tags=["Employee : Add employee"],
         responses={
             201: "Request created",
             400: "Bad Request",
             401: "Unauthorized",
         },
         manual_parameters=[
-            # openapi.Parameter(
-            #     name='password', in_=openapi.IN_FORM,
-            #       type=openapi.TYPE_STRING, description='User password',
-            #         format='password'),
-            # openapi.Parameter(
-            #     name='confirm_password',
-            #       in_=openapi.IN_FORM,
-            #         type=openapi.TYPE_STRING, description='Confirm password',
-            #         format='password'),
             openapi.Parameter(
                 "Authorization",
                 openapi.IN_HEADER,
                 description="Bearer Token",
                 type=openapi.TYPE_STRING,
             ),
+            openapi.Parameter(
+                name="employee_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="first_name",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="last_name",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="gender",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="dob",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="phone_no",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="email",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="marital_status",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="image",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="emergency_no",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="resume",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="emergency_contact",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_OBJECT,
+                default={
+                    "primary": {
+                        "name": "Rehman",
+                        "relation": "Father",
+                        "phone_number": "03323212345",
+                    },
+                    "secondary": {
+                        "name": "Raheel",
+                        "relation": "Brother",
+                        "phone_number": "03323219087",
+                    },
+                },
+                required=True,
+            ),
+            openapi.Parameter(
+                name="joining_date",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="designation",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="department",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="company",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="benefits",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_OBJECT,
+                default={"health": True, "fuel": False},
+                required=True,
+            ),
+            openapi.Parameter(
+                name="password",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="confirm_password",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
         ],
         operation_summary="Add a new employee",
-        operation_description="This endpoint allows you to add a new employee.",
+        operation_id=".",
     )
     def post(self, request, *args, **kwargs):
         posted_data = request.data
