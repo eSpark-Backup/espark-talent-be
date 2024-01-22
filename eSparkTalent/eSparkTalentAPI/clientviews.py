@@ -121,11 +121,6 @@ class Client_Home(APIView):
         try:
             client_instance = client.objects.get(email=user)
             image_path = client_instance.image.path
-
-            # # Open the image file
-            # with open(image_path, "rb") as image_file:
-            #     # Convert the image to base64
-            #     image_data = base64.b64encode(image_file.read()).decode("utf-8")
         except client.DoesNotExist:
             image_path = None
 
@@ -160,7 +155,7 @@ class Start_Hiring(APIView):
                         "maximum": openapi.Schema(type=openapi.TYPE_INTEGER),
                     },
                 ),
-                # "country": openapi.Schema(type=openapi.TYPE_STRING),
+                "country": openapi.Schema(type=openapi.TYPE_STRING),
                 "hiring_start_date": openapi.Schema(
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                 ),
@@ -197,7 +192,7 @@ class Start_Hiring(APIView):
                 gender=serializer.validated_data["gender"],
                 employment_term=serializer.validated_data["employment_term"],
                 salary_range=serializer.validated_data["salary_range"],
-                # country=serializer.validated_data["country"], # included in client's hiring form not in hr's form
+                country=serializer.validated_data["country"],
                 hiring_start_date=serializer.validated_data["hiring_start_date"],
                 hiring_end_date=serializer.validated_data["hiring_end_date"],
             )
@@ -508,8 +503,6 @@ class Onboarding(APIView):
         records = []
         if onboardings:
             for data in onboardings:
-                # employee_data = employee.objects.get(email = data.employee.email)
-
                 record = {
                     "employee_name": data.employee.first_name
                     + " "
@@ -815,7 +808,6 @@ class Leave_Balance(APIView):
         if leave_balances:
             for data in leave_balances:
                 employee_serializer = EmployeeSerializer(data.onboarding_id.employee)
-                # print(employee_serializer)
                 employee_data = employee_serializer.data
                 print(employee_data)
                 employee_name = f"{employee_data.get('first_name', '')} {employee_data.get('last_name', '')}"
@@ -1049,7 +1041,7 @@ class Download_Report(APIView):
                         str(employee_data.get("department", "")),
                         str(data.leave_type),
                         str(data.count),
-                        # str(data.requested_at),
+                        str(data.created_at),
                         str(data.status),
                     ]
                     table_data.append(row_data)
@@ -1114,11 +1106,19 @@ class Download_Report(APIView):
 
                     row_data = [
                         str(employee_data.get("username", "")),
-                        str(data.casual_leaves),
-                        str(data.sick_leaves),
-                        str(data.annual_leaves),
-                        # str(data.taken),
-                        # str(data.balance),
+                        str(data.casual_leaves["balance"]),
+                        str(data.sick_leaves["balance"]),
+                        str(data.annual_leaves["balance"]),
+                        str(
+                            data.casual_leaves["availed"]
+                            + data.sick_leaves["availed"]
+                            + data.annual_leaves["availed"],
+                        ),
+                        str(
+                            data.casual_leaves["balance"]
+                            + data.sick_leaves["balance"]
+                            + data.annual_leaves["balance"],
+                        ),
                     ]
                     table_data.append(row_data)
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
