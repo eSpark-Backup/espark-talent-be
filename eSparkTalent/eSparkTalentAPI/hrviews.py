@@ -378,8 +378,8 @@ class Add_Asset(APIView):
                 type=openapi.TYPE_STRING,
             ),
         ],
-        operation_summary=".",
-        operation_description="This endpoint allows you to add a new asset.",
+        operation_summary="Add new asset",
+        operation_id=".",
     )
     def post(self, request, *args, **kwargs):
         serializer = AssetSerializer(data=request.data)
@@ -397,7 +397,6 @@ class Add_Asset(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# on error
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Employee_Invoice(APIView):
@@ -502,20 +501,17 @@ class Employee_Invoice(APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
-        tags=["Client : OEmployee Invoice"],
-        responses={
-            201: "Request created",
-            400: "Bad Request",
-            401: "Unauthorized",
-        },
+        tags=["Client : Employee Invoice"],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "payment_status": openapi.Schema(
+                    type=openapi.TYPE_STRING, enum=["Pending", "Processing", "Paid"]
+                ),
+            },
+            required=["payment_status"],
+        ),
         manual_parameters=[
-            openapi.Parameter(
-                "payment_status",
-                openapi.IN_FORM,
-                type=openapi.TYPE_STRING,
-                enum=["Paid", "Pending", "Processing"],
-                required=True,
-            ),
             openapi.Parameter(
                 "id",
                 openapi.IN_QUERY,
@@ -530,6 +526,11 @@ class Employee_Invoice(APIView):
                 type=openapi.TYPE_STRING,
             ),
         ],
+        responses={
+            201: "Request created",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
         operation_summary="Employee Invoice",
         operation_id=".",
     )
@@ -637,19 +638,16 @@ class Other_Payment(APIView):
 
     @swagger_auto_schema(
         tags=["Client : Other Invoice/payment"],
-        responses={
-            201: "Request created",
-            400: "Bad Request",
-            401: "Unauthorized",
-        },
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "payment_status": openapi.Schema(
+                    type=openapi.TYPE_STRING, enum=["Pending", "Processing", "Paid"]
+                ),
+            },
+            required=["payment_status"],
+        ),
         manual_parameters=[
-            openapi.Parameter(
-                "payment_status",
-                openapi.IN_QUERY,
-                type=openapi.TYPE_STRING,
-                enum=["Paid", "Pending", "Processing"],
-                required=True,
-            ),
             openapi.Parameter(
                 "id",
                 openapi.IN_QUERY,
@@ -664,6 +662,11 @@ class Other_Payment(APIView):
                 type=openapi.TYPE_STRING,
             ),
         ],
+        responses={
+            201: "Request created",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
         operation_summary="Other Invoice/payment",
         operation_id=".",
     )
