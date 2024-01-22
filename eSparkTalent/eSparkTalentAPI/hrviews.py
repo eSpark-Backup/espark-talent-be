@@ -350,7 +350,7 @@ class Add_Client(APIView):
 @permission_classes([IsAuthenticated])
 class Add_Asset(APIView):
     @swagger_auto_schema(
-        tags=["Employee: Profil: Add Asset"],
+        tags=["Employee: Add Asset"],
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -363,7 +363,7 @@ class Add_Asset(APIView):
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
                 ),
             },
-            required=["asset_id", "assignee"],
+            required=["asset_id", "assignee", "gadget" , "assigned_date"],
         ),
         responses={
             201: "Request created",
