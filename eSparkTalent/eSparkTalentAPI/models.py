@@ -127,15 +127,16 @@ class employee(models.Model):
 
 class client(models.Model):
     id = models.AutoField(primary_key=True)
-    client_id = models.CharField(max_length=15, unique=True, default="")
+    client_id = models.CharField(max_length=15, unique=True)
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
-    comapny_name = models.CharField(max_length=30)
-    phone_no = models.CharField(max_length=11)
+    company_name = models.CharField(max_length=30)
+    phone_number = models.CharField(max_length=11)
     email = models.EmailField(unique=True)
     country=models.CharField(max_length=15, null=True)
     image=models.ImageField(upload_to='clients/profiles/', validators=[img_ext_valid, valid_imgfile_type], default='')
-    address = models.CharField(max_length=100)
+    address = models.CharField(max_length=100, default="")
+    join_date = models.DateField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -189,7 +190,7 @@ class interview_schedule(models.Model):
     employment_term = models.CharField(max_length=15)
     interview_date_time = models.DateTimeField()
     country = models.CharField(max_length=30)
-    status = models.CharField(max_length=15, choices=status)
+    status = models.CharField(max_length=15, choices=status, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -304,7 +305,7 @@ class time_sheet(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.onboarding_id.client.email} - {self.onboarding_id.employee.email} - {self.month}"
+        return f"{self.client_id} - {self.employee_id} - {self.month}"
 
 
 class employee_invoice(models.Model):
@@ -370,14 +371,15 @@ class employee_contract(models.Model):
 
 class asset(models.Model):
     id = models.AutoField(primary_key=True)
-    employee_id = models.EmailField()
+    employee_id = models.EmailField(null=True)
     gadget=models.CharField(max_length=50)
     asset_id=models.CharField(max_length=15)
     assigned_date= models.DateTimeField()
-    assignee=models.ForeignKey(employee, to_field="email", on_delete=models.CASCADE, default='')
+    assignee_name=models.CharField(max_length=15, null=True)
+    assignee_email=models.EmailField(null=True)
 
     def __str__(self):
-        return f"{self.assignee.email} - {self.id}"
+        return f"{self.employee_id} - {self.id}"
     
 class outsource_employees(models.Model):
     id = models.AutoField(primary_key=True)
@@ -390,6 +392,7 @@ class outsource_employees(models.Model):
     joining_date = models.DateField()
     salary = models.IntegerField()
     benefits = models.JSONField()
+    status = models.CharField(max_length=15, default='active')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
