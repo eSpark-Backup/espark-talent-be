@@ -149,6 +149,49 @@ class Add_Employee(APIView):
                 required=True,
             ),
             openapi.Parameter(
+                name="punch_time",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_OBJECT,
+                default={"check_in": "10:00", "check_out": "19:00"},
+                required=True,
+            ),
+            openapi.Parameter(
+                name="casual_leaves",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="sick_leaves",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="annual_leaves",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="hajj_leaves",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="paid_leaves",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="unpaid_leaves",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
                 name="password",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
@@ -168,6 +211,12 @@ class Add_Employee(APIView):
         posted_data = request.data
         password = posted_data.pop("password", None)[0]
         confirm_password = posted_data.pop("confirm_password", None)[0]
+        casual_leaves = posted_data.pop("casual_leaves", None)[0]
+        sick_leaves = posted_data.pop("sick_leaves", None)[0]
+        annual_leaves = posted_data.pop("annual_leaves", None)[0]
+        hajj_leaves = posted_data.pop("hajj_leaves", None)[0]
+        paid_leaves = posted_data.pop("paid_leaves", None)[0]
+        unpaid_leaves = posted_data.pop("unpaid_leaves", None)[0]
         if password == confirm_password:
             serializer = EmployeeSerializer(data=posted_data)
             if serializer.is_valid():
@@ -189,6 +238,7 @@ class Add_Employee(APIView):
                     department=serializer.validated_data["department"],
                     company=serializer.validated_data["company"],
                     benefits=serializer.validated_data["benefits"],
+                    punch_time=serializer.validated_data["punch_time"],
                 )
 
                 end_user.objects.create_user(
@@ -198,6 +248,16 @@ class Add_Employee(APIView):
                     role="employee",
                     email=serializer.validated_data["email"],
                     password=password,
+                )
+                
+                leave_balance.objects.create(
+                    employee_id = serializer.validated_data["email"],
+                    casual_leaves = {"total": casual_leaves, "avail": 0, "balance":casual_leaves},
+                    sick_leaves = {"total": sick_leaves, "avail": 0, "balance":sick_leaves},
+                    annual_leaves = {"total": annual_leaves, "avail": 0, "balance":annual_leaves},
+                    unpaid_leaves = {"total": unpaid_leaves, "avail": 0, "balance":unpaid_leaves},
+                    hajj_leaves = {"total": hajj_leaves, "avail": 0, "balance":hajj_leaves},
+                    paid_leaves = {"total": paid_leaves, "avail": 0, "balance":paid_leaves},
                 )
                 return Response(
                     {"message": "Resquest created"}, status=status.HTTP_201_CREATED
