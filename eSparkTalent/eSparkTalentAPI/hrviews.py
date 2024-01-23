@@ -6,6 +6,7 @@ from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from .serializers import *
+import datetime
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.parsers import MultiPartParser
@@ -594,6 +595,7 @@ class Employee_Invoice(APIView):
         operation_summary="Employee Invoice",
         operation_id=".",
     )
+
     def patch(self, request, *args, **kwargs):
         request_id = request.query_params.get("id")
         to_update_status = request.data["payment_status"]
@@ -696,6 +698,7 @@ class Other_Payment(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
     @swagger_auto_schema(
         tags=["Client : Other Invoice/payment"],
         request_body=openapi.Schema(
@@ -744,3 +747,244 @@ class Other_Payment(APIView):
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Hr_Home(APIView):
+    def get(self, request, *args, **kwargs):
+        user = request.user.username
+        record = {
+            "user": user,
+            "employees": employee.objects.all().count(),
+            "clients": client.objects.all().count(),
+            "hiring_requests": hiring_request.objects.all().count(),
+            "interview_schedules": interview_schedule.objects.all().count(),
+        }
+        return Response(record, status=status.HTTP_200_OK)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Hr_Employees(APIView):
+    def get(self, request, *args, **kwargs):
+        get_status = request.query_params.get("status")
+        if get_status:
+            if get_status == "active":
+                employees = employee.objects.all()
+                records = []
+                for emp in employees:
+                    try:
+                        e_user = end_user.objects.get(email=emp.email)
+                        if e_user and e_user.is_active:
+                            record = {
+                                "id": emp.id,
+                                "name": emp.first_name + " " + emp.last_name,
+                                "image": emp.image.url,
+                                "designation": emp.designation,
+                            }
+                            records.append(record)
+                    except:
+                        continue
+                if len(records) > 0:
+                    return Response(records, status=status.HTTP_200_OK)
+                else:
+                    return Response(status=status.HTTP_204_NO_CONTENT)
+            elif get_status == "inactive":
+                employees = employee.objects.all()
+                records = []
+                for emp in employees:
+                    try:
+                        e_user = end_user.objects.get(email=emp.email)
+                        if e_user and not e_user.is_active:
+                            record = {
+                                "id": emp.id,
+                                "name": emp.first_name + " " + emp.last_name,
+                                "image": emp.image.url,
+                                "designation": emp.designation,
+                            }
+                            records.append(record)
+                    except:
+                        continue
+                if len(records) > 0:
+                    return Response(records, status=status.HTTP_200_OK)
+                else:
+                    return Response(status=status.HTTP_204_NO_CONTENT)
+
+        else:
+            employees = employee.objects.all()
+            if employees:
+                records = []
+                for emp in employees:
+                    record = {
+                        "id": emp.id,
+                        "name": emp.first_name + " " + emp.last_name,
+                        "image": emp.image.url,
+                        "designation": emp.designation,
+                    }
+                    records.append(record)
+                return Response(records, status=status.HTTP_200_OK)
+
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Hr_Employee(APIView):
+    def get(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        tab = request.query_params.get("tab")
+        if tab == "client":
+            onboards = onboarding.objects.filter(employee__id=record_id)
+            if onboards:
+                records = []
+                for rec in onboards:
+                    record = {
+                        "client_name": rec.client.first_name
+                        + " "
+                        + rec.client.last_name,
+                        "client_id": rec.client.email,
+                        "job_title": rec.job_title,
+                        "employeement_term": rec.employment_term,
+                    }
+                    records.append(record)
+                if len(records) > 0:
+                    return Response(records, status=status.HTTP_200_OK)
+
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+        elif tab == "contract":
+            contract = employee_contract.objects.filter(
+                onboarding_id__employee__id=record_id
+            )
+            if contract:
+                records = []
+                for rec in contract:
+                    record = {
+                        "contract_name": rec.contract_name,
+                        "email": rec.email,
+                        "date": rec.date,
+                        "contract": rec.contract_doc.url,
+                    }
+                    records.append(record)
+                if len(records) > 0:
+                    return Response(records, status=status.HTTP_200_OK)
+
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+        elif tab == "assets":
+            assets = asset.objects.filter(assignee__id=record_id)
+            if assets:
+                records = []
+                for rec in assets:
+                    record = {
+                        "gadget": rec.gadget,
+                        "asset_id": rec.asset_id,
+                        "assigned_date": rec.assigned_date,
+                        "assignee_name": rec.assignee.first_name
+                        + " "
+                        + rec.assignee.last_name,
+                    }
+                    records.append(record)
+                if len(records) > 0:
+                    return Response(records, status=status.HTTP_200_OK)
+
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+        elif tab == "timesheet":
+            try:
+                get_month = datetime.datetime.now().strftime("%B")
+                get_year = datetime.datetime.now().year
+                time_sheet_data = time_sheet.objects.filter(
+                    month=get_month, year=get_year
+                )
+                return Response(time_sheet_data[0].record, status=status.HTTP_200_OK)
+
+            except:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        elif not tab:
+            try:
+                emp_record = employee.objects.get(id=record_id)
+                record = {
+                    "id": emp_record.id,
+                    "employee_id": emp_record.employee_id,
+                    "first_name": emp_record.first_name,
+                    "last_name": emp_record.last_name,
+                    "gender": emp_record.gender,
+                    "dob": emp_record.dob,
+                    "phone_no": emp_record.phone_no,
+                    "email": emp_record.email,
+                    "marital_status": emp_record.marital_status,
+                    "image": emp_record.image.url,
+                    "emergency_no": emp_record.emergency_no,
+                    "resume": emp_record.resume.url,
+                    "emergency_contact": emp_record.emergency_contact,
+                    "joining_date": emp_record.joining_date,
+                    "designation": emp_record.designation,
+                    "department": emp_record.department,
+                    "company": emp_record.company,
+                    "benefits": emp_record.benefits,
+                }
+                return Response(record, status=status.HTTP_200_OK)
+            except:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Update_Emp_Person_Info(APIView):
+    def patch(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        updates=request.data
+        try:
+            emp_record=employee.objects.get(id=record_id)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        for key in updates:
+            setattr(emp_record, key, updates[key])
+        emp_record.save()
+        return Response(status=status.HTTP_200_OK)
+    
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Update_Emp_Emerg_Info(APIView):
+    def patch(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        updates=request.data
+        try:
+            emp_record=employee.objects.get(id=record_id)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        for key in updates:
+            setattr(emp_record, key, updates[key])
+        emp_record.save()
+        return Response(status=status.HTTP_200_OK)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Update_Emp_Profile_Pic(APIView):
+    def patch(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        updates=request.data
+        try:
+            emp_record=employee.objects.get(id=record_id)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        for key in updates:
+            setattr(emp_record, key, updates[key])
+        emp_record.save()
+        return Response(status=status.HTTP_200_OK)
+
