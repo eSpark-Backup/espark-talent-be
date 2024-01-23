@@ -18,6 +18,11 @@ class hiring_requestSerializer(serializers.ModelSerializer):
         fields = "__all__"
         depth = 1
 
+class interview_requestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = interview_schedule
+        fields = "__all__"
+        depth = 1
 
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -39,7 +44,7 @@ class TimeSheetSerializer(serializers.ModelSerializer):
 
 class TimeSheetEmployeeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = onboarding
+        model = outsource_employees
         fields = ["employee_id"]
 
 
