@@ -250,27 +250,51 @@ class Add_Employee(APIView):
                     email=serializer.validated_data["email"],
                     password=password,
                 )
-                
+
                 leave_balance.objects.create(
-                    employee_id = serializer.validated_data["email"],
-                    casual_leaves = {"total": casual_leaves, "availed": 0, "balance":casual_leaves},
-                    sick_leaves = {"total": sick_leaves, "availed": 0, "balance":sick_leaves},
-                    annual_leaves = {"total": annual_leaves, "availed": 0, "balance":annual_leaves},
-                    unpaid_leaves = {"total": unpaid_leaves, "availed": 0, "balance":unpaid_leaves},
-                    hajj_leaves = {"total": hajj_leaves, "availed": 0, "balance":hajj_leaves},
-                    paid_leaves = {"total": paid_leaves, "availed": 0, "balance":paid_leaves},
+                    employee_id=serializer.validated_data["email"],
+                    casual_leaves={
+                        "total": casual_leaves,
+                        "availed": 0,
+                        "balance": casual_leaves,
+                    },
+                    sick_leaves={
+                        "total": sick_leaves,
+                        "availed": 0,
+                        "balance": sick_leaves,
+                    },
+                    annual_leaves={
+                        "total": annual_leaves,
+                        "availed": 0,
+                        "balance": annual_leaves,
+                    },
+                    unpaid_leaves={
+                        "total": unpaid_leaves,
+                        "availed": 0,
+                        "balance": unpaid_leaves,
+                    },
+                    hajj_leaves={
+                        "total": hajj_leaves,
+                        "availed": 0,
+                        "balance": hajj_leaves,
+                    },
+                    paid_leaves={
+                        "total": paid_leaves,
+                        "availed": 0,
+                        "balance": paid_leaves,
+                    },
                 )
-                
+
                 outsource_employees.objects.create(
-                    client_id = "talent@esparkconsultants.com",
-                    employee_id = serializer.validated_data["email"],
-                    job_title = serializer.validated_data["designation"],
-                    country = "Pakistan",
-                    role_type = "",
-                    employment_term = "",
-                    joining_date = serializer.validated_data["joining_date"],
-                    salary = "",
-                    benefits = {}
+                    client_id="talent@esparkconsultants.com",
+                    employee_id=serializer.validated_data["email"],
+                    job_title=serializer.validated_data["designation"],
+                    country="Pakistan",
+                    role_type="",
+                    employment_term="",
+                    joining_date=serializer.validated_data["joining_date"],
+                    salary="",
+                    benefits={},
                 )
                 return Response(
                     {"message": "Resquest created"}, status=status.HTTP_201_CREATED
@@ -431,14 +455,19 @@ class Add_Asset(APIView):
                 "assigned_date": openapi.Schema(
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                 ),
-                "assignee_name": openapi.Schema(
-                    type=openapi.TYPE_STRING
-                ),
+                "assignee_name": openapi.Schema(type=openapi.TYPE_STRING),
                 "assignee_email": openapi.Schema(
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
                 ),
             },
-            required=["asset_id", "assignee_name", "gadget" , "assigned_date", "employee_id", "assignee_email"],
+            required=[
+                "asset_id",
+                "assignee_name",
+                "gadget",
+                "assigned_date",
+                "employee_id",
+                "assignee_email",
+            ],
         ),
         responses={
             201: "Request created",
@@ -461,7 +490,7 @@ class Add_Asset(APIView):
         if serializer.is_valid():
             asset.objects.create(
                 asset_id=serializer.validated_data["asset_id"],
-                employee_id = serializer.validated_data["employee_id"],
+                employee_id=serializer.validated_data["employee_id"],
                 gadget=serializer.validated_data["gadget"],
                 assigned_date=serializer.validated_data["assigned_date"],
                 assignee_name=serializer.validated_data["assignee_name"],
@@ -793,7 +822,7 @@ class Hr_Employees(APIView):
                     try:
                         e_user = employee.objects.get(email=emp.employee_id)
                         c_user = client.objects.get(email=emp.client_id)
-                        if e_user :
+                        if e_user:
                             record = {
                                 "id": e_user.id,
                                 "employee_id": e_user.employee_id,
@@ -801,7 +830,7 @@ class Hr_Employees(APIView):
                                 "image": e_user.image.url,
                                 "designation": e_user.designation,
                                 "company": c_user.company_name,
-                                "active": True
+                                "active": True,
                             }
                             records.append(record)
                     except:
@@ -824,7 +853,7 @@ class Hr_Employees(APIView):
                                 "image": emp.image.url,
                                 "designation": emp.designation,
                                 "company": emp.company,
-                                "active": False
+                                "active": False,
                             }
                             records.append(record)
                     except:
@@ -847,7 +876,7 @@ class Hr_Employees(APIView):
                         c_user = client.objects.get(email=e_user.client_id)
                         company = c_user.company_name
                         active = True
-                        
+
                     record = {
                         "id": emp.id,
                         "employee_id": emp.employee_id,
@@ -855,7 +884,7 @@ class Hr_Employees(APIView):
                         "image": emp.image.url,
                         "designation": emp.designation,
                         "company": company,
-                        "active": active
+                        "active": active,
                     }
                     records.append(record)
                 return Response(records, status=status.HTTP_200_OK)
@@ -875,8 +904,12 @@ class Hr_Employee(APIView):
             active_clients = []
             terminated_clients = []
             contracts = []
-            active = outsource_employees.objects.filter(employee_id=employee_data.email,status='active')
-            terminated = outsource_employees.objects.filter(employee_id=employee_data.email,status='terminated')
+            active = outsource_employees.objects.filter(
+                employee_id=employee_data.email, status="active"
+            )
+            terminated = outsource_employees.objects.filter(
+                employee_id=employee_data.email, status="terminated"
+            )
             contract = employee_contract.objects.filter(employee_id=employee_data.email)
             if active and terminated and contract:
                 for rec in active:
@@ -911,17 +944,19 @@ class Hr_Employee(APIView):
                             "download": rec.contract_doc.url,
                         }
                         contracts.append(record)
-                
-                data = {"active_clients": active_clients, "terminated_clients":terminated_clients, "contract_signed": contracts}
+
+                data = {
+                    "active_clients": active_clients,
+                    "terminated_clients": terminated_clients,
+                    "contract_signed": contracts,
+                }
                 return Response(data, status=status.HTTP_200_OK)
 
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
         elif tab == "contract":
-            contract = employee_contract.objects.filter(
-                employee_id=employee_data.email
-            )
+            contract = employee_contract.objects.filter(employee_id=employee_data.email)
             if contract:
                 records = []
                 for rec in contract:
@@ -995,9 +1030,9 @@ class Hr_Employee(APIView):
 class Update_Emp_Person_Info(APIView):
     def patch(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
-        updates=request.data
+        updates = request.data
         try:
-            emp_record=employee.objects.get(id=record_id)
+            emp_record = employee.objects.get(id=record_id)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -1005,16 +1040,16 @@ class Update_Emp_Person_Info(APIView):
             setattr(emp_record, key, updates[key])
         emp_record.save()
         return Response(status=status.HTTP_200_OK)
-    
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Update_Emp_Emerg_Info(APIView):
     def patch(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
-        updates=request.data
+        updates = request.data
         try:
-            emp_record=employee.objects.get(id=record_id)
+            emp_record = employee.objects.get(id=record_id)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -1029,9 +1064,9 @@ class Update_Emp_Emerg_Info(APIView):
 class Update_Emp_Profile_Pic(APIView):
     def patch(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
-        updates=request.data
+        updates = request.data
         try:
-            emp_record=employee.objects.get(id=record_id)
+            emp_record = employee.objects.get(id=record_id)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -1039,6 +1074,7 @@ class Update_Emp_Profile_Pic(APIView):
             setattr(emp_record, key, updates[key])
         emp_record.save()
         return Response(status=status.HTTP_200_OK)
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -1048,7 +1084,9 @@ class Start_Hiring(APIView):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "client_id": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+                "client_id": openapi.Schema(
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
+                ),
                 "job_title": openapi.Schema(type=openapi.TYPE_STRING),
                 "role_type": openapi.Schema(type=openapi.TYPE_STRING),
                 "gender": openapi.Schema(type=openapi.TYPE_STRING),
@@ -1105,7 +1143,7 @@ class Start_Hiring(APIView):
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
     def get(self, request, *args, **kwargs):
         hiring_requests = hiring_request.objects.all()
 
@@ -1127,7 +1165,7 @@ class Start_Hiring(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
-        
+
     def delete(self, request, *args, **kwargs):
         user = request.user
         delete_id = request.query_params.get("id")
@@ -1136,8 +1174,8 @@ class Start_Hiring(APIView):
             return Response(status=status.HTTP_200_OK)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
-        
+
+
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Interview_Schedule(APIView):
@@ -1146,7 +1184,9 @@ class Interview_Schedule(APIView):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "client_id": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+                "client_id": openapi.Schema(
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
+                ),
                 "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
                 "gender": openapi.Schema(type=openapi.TYPE_STRING),
                 "job_title": openapi.Schema(type=openapi.TYPE_STRING),
@@ -1193,7 +1233,7 @@ class Interview_Schedule(APIView):
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
     def get(self, request, *args, **kwargs):
         interview_records = interview_schedule.objects.all()
 
@@ -1209,14 +1249,14 @@ class Interview_Schedule(APIView):
                     "employment_term": data.employment_term,
                     "interview_date_time": data.interview_date_time,
                     "country": data.country,
-                    "status": data.status
+                    "status": data.status,
                 }
                 records.append(record)
 
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
-        
+
     def delete(self, request, *args, **kwargs):
         user = request.user
         delete_id = request.query_params.get("id")

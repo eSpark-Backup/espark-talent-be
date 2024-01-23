@@ -111,9 +111,7 @@ class Client_Home(APIView):
         interview_schedule_count = interview_schedule.objects.filter(
             client_id=user
         ).count()
-        onboarding_count = outsource_employees.objects.filter(
-            client_id=user
-        ).count()
+        onboarding_count = outsource_employees.objects.filter(client_id=user).count()
         active_employee = onboarding.objects.filter(
             client_id=user, status="active"
         ).count()
@@ -395,7 +393,8 @@ class Interview_Schedule(APIView):
             type=openapi.TYPE_OBJECT,
             properties={
                 "status": openapi.Schema(
-                    type=openapi.TYPE_STRING, enum=["pending", "rejected", "short_list", "hold"]
+                    type=openapi.TYPE_STRING,
+                    enum=["pending", "rejected", "short_list", "hold"],
                 ),
             },
             required=["status"],
@@ -424,7 +423,6 @@ class Interview_Schedule(APIView):
         operation_summary="Endpoint to update the status of an interview schedule.",
         operation_id="4",
     )
-
     def patch(self, request, *args, **kwargs):
         user = request.user
         request_id = request.query_params.get("id")
@@ -577,10 +575,7 @@ class Team_Member(APIView):
         user = request.user
         records = []
         get_status = request.query_params.get("status")
-        if (
-            get_status == "active"
-            or get_status == "terminated"
-        ):
+        if get_status == "active" or get_status == "terminated":
             onboardings = outsource_employees.objects.filter(
                 client_id=user, status=get_status
             )
@@ -588,7 +583,9 @@ class Team_Member(APIView):
                 for data in onboardings:
                     employee_data = employee.objects.get(email=data.employee_id)
                     record = {
-                        "employee_name": employee_data.first_name + ' ' + employee_data.last_name,
+                        "employee_name": employee_data.first_name
+                        + " "
+                        + employee_data.last_name,
                         "country": data.country,
                         "job_title": data.job_title,
                         "employment_term": data.employment_term,
@@ -632,7 +629,9 @@ class Team_Member(APIView):
                 for data in outsource:
                     employee_data = employee.objects.get(email=data.employee_id)
                     record = {
-                        "employee_name": employee_data.first_name + ' ' + employee_data.last_name,
+                        "employee_name": employee_data.first_name
+                        + " "
+                        + employee_data.last_name,
                         "country": data.country,
                         "job_title": data.job_title,
                         "employment_term": data.employment_term,
@@ -725,12 +724,16 @@ class Leave_Request(APIView):
             for data in leave_requests:
                 employee_serializer = EmployeeSerializer(data.employee_id)
                 employee_data = employee_serializer.data
-                outsource = outsource_employees.objects.get(client_id=data.client_id, employee_id=data.employee_id)
+                outsource = outsource_employees.objects.get(
+                    client_id=data.client_id, employee_id=data.employee_id
+                )
 
                 record = {
                     "id": data.id,
                     "employee_id": employee_data.get("employee_id", ""),
-                    "employee_name": employee_data.get("first_name", " ") + ' ' + employee_data.get("last_name", " "),
+                    "employee_name": employee_data.get("first_name", " ")
+                    + " "
+                    + employee_data.get("last_name", " "),
                     "country": outsource.country,
                     "department": employee_data.get("department", ""),
                     "leave_type": data.leave_type,
@@ -838,13 +841,15 @@ class Leave_Balance(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user
         outsource = outsource_employees.objects.filter(client_id=user)
-        
+
         records = []
 
         if outsource:
             for data in outsource:
                 leave_balances = leave_balance.objects.get(employee_id=data.employee_id)
-                employee_serializer = EmployeeSerializer(employee.objects.get(email=data.employee_id))
+                employee_serializer = EmployeeSerializer(
+                    employee.objects.get(email=data.employee_id)
+                )
                 employee_data = employee_serializer.data
                 employee_name = f"{employee_data.get('first_name', '')} {employee_data.get('last_name', '')}"
 
@@ -929,20 +934,22 @@ class ClockInOut_Request(APIView):
                 client_id=user, status=get_status
             )
         elif get_status == "all":
-            clockinout_requests = clockinout_request.objects.filter(
-                client_id=user
-            )
+            clockinout_requests = clockinout_request.objects.filter(client_id=user)
         records = []
 
         if clockinout_requests:
             for data in clockinout_requests:
-                employee_serializer = EmployeeSerializer(employee.objects.get(email=data.employee_id))
+                employee_serializer = EmployeeSerializer(
+                    employee.objects.get(email=data.employee_id)
+                )
                 employee_data = employee_serializer.data
 
                 record = {
                     "id": data.id,
                     "employee_id": employee_data.get("employee_id", ""),
-                    "employee_name": employee_data.get("first_name", "") + ' ' + employee_data.get("last_name", ""),
+                    "employee_name": employee_data.get("first_name", "")
+                    + " "
+                    + employee_data.get("last_name", ""),
                     "date": data.date,
                     "punch_time": data.punch_time,
                     "punch_type": data.punch_type,
@@ -1046,9 +1053,7 @@ class Download_Report(APIView):
 
         try:
             if get_tab == "lr":
-                records = leave_request.objects.filter(
-                    client_id=user
-                )
+                records = leave_request.objects.filter(client_id=user)
                 current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
                 filename = f"leaveRequestReport_{current_datetime}.pdf"
                 table_headers = [
@@ -1069,11 +1074,17 @@ class Download_Report(APIView):
                         employee.objects.get(email=data.employee_id)
                     )
                     employee_data = employee_serializer.data
-                    outsource = outsource_employees.objects.get(client_id=data.client_id)
+                    outsource = outsource_employees.objects.get(
+                        client_id=data.client_id
+                    )
 
                     row_data = [
                         str(employee_data.get("employee_id", "")),
-                        str(employee_data.get("first_name", "") + ' ' + employee_data.get("last_name", ""),),
+                        str(
+                            employee_data.get("first_name", "")
+                            + " "
+                            + employee_data.get("last_name", ""),
+                        ),
                         str(outsource.country),
                         str(employee_data.get("department", "")),
                         str(data.leave_type),
@@ -1085,9 +1096,7 @@ class Download_Report(APIView):
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
                 col_widths = [65, 80, 70, 70, 60, 35, 150, 60]
             elif get_tab == "cio":
-                records = clockinout_request.objects.filter(
-                    client_id=user
-                )
+                records = clockinout_request.objects.filter(client_id=user)
                 current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
                 filename = f"ClockInOutReport{current_datetime}.pdf"
                 table_headers = [
@@ -1109,7 +1118,11 @@ class Download_Report(APIView):
 
                     row_data = [
                         str(employee_data.get("employee_id", "")),
-                        str(employee_data.get("first_name", "") + ' ' + employee_data.get("last_name", ""),),
+                        str(
+                            employee_data.get("first_name", "")
+                            + " "
+                            + employee_data.get("last_name", ""),
+                        ),
                         str(data.date),
                         str(data.punch_time),
                         str(data.punch_type),
@@ -1135,12 +1148,16 @@ class Download_Report(APIView):
                 raw_data = []
                 for data in records:
                     employee_serializer = EmployeeSerializer(
-                       employee.objects.get(email=data.employee_id)
+                        employee.objects.get(email=data.employee_id)
                     )
                     employee_data = employee_serializer.data
                     leaves = leave_balance.objects.get(employee_id=data.employee_id)
                     row_data = [
-                       str(employee_data.get("first_name", "") + ' ' + employee_data.get("last_name", ""),),
+                        str(
+                            employee_data.get("first_name", "")
+                            + " "
+                            + employee_data.get("last_name", ""),
+                        ),
                         str(leaves.casual_leaves["balance"]),
                         str(leaves.sick_leaves["balance"]),
                         str(leaves.annual_leaves["balance"]),
