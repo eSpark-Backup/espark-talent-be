@@ -161,7 +161,7 @@ class Start_Hiring(APIView):
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                 ),
             },
-            required=["email", "password"],
+            required=["job_title", "role_type","gender","employment_term","salary_range","country","hiring_start_date","hiring_end_date"],
         ),
         responses={
             201: openapi.Response("Successful created"),
@@ -237,6 +237,7 @@ class Hiring_Resquest(APIView):
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
                         },
+                        required=["job_title", "role_type","gender","employment_term","salary_range","country","hiring_start_date","hiring_end_date"],
                     ),
                 ),
             ),

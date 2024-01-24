@@ -1,3 +1,4 @@
+from django.http import Http404
 from .models import *
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -18,7 +19,7 @@ class Add_Employee(APIView):
     parser_classes = (MultiPartParser,)
 
     @swagger_auto_schema(
-        tags=["Employee : Add Employee"],
+        tags=["Employees : Add Employee"],
         responses={
             201: "Request created",
             400: "Bad Request",
@@ -445,7 +446,7 @@ class Add_Client(APIView):
 @permission_classes([IsAuthenticated])
 class Add_Asset(APIView):
     @swagger_auto_schema(
-        tags=["Employee: Add Asset"],
+        tags=["Employees : Add Asset"],
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -797,6 +798,37 @@ class Add_Asset(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Hr_Home(APIView):
+    @swagger_auto_schema(
+        tags=["Dashboard"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "user": openapi.Schema(type=openapi.TYPE_STRING),
+                        "employees": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "clients": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "hiring_requests": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "interview_schedules": openapi.Schema(
+                            type=openapi.TYPE_INTEGER
+                        ),
+                    },
+                ),
+            ),
+            401: openapi.Response("Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve hr home data.",
+        operation_id=".",
+    )
     def get(self, request, *args, **kwargs):
         user = request.user.username
         record = {
@@ -812,6 +844,43 @@ class Hr_Home(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Hr_Employees(APIView):
+    @swagger_auto_schema(
+        tags=["Employees"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "employees_id": openapi.Schema(type=openapi.TYPE_STRING),
+                        "name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "image": openapi.Schema(type=openapi.TYPE_FILE),
+                        "designation": openapi.Schema(type=openapi.TYPE_STRING),
+                        "company": openapi.Schema(type=openapi.TYPE_STRING),
+                        "active": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    },
+                ),
+            ),
+            401: openapi.Response("Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "status",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                enum=[" ", "active", "inactive"],
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve hr Employees data.",
+        operation_id=".",
+    )
     def get(self, request, *args, **kwargs):
         get_status = request.query_params.get("status")
         if get_status:
@@ -896,6 +965,154 @@ class Hr_Employees(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Hr_Employee(APIView):
+    @swagger_auto_schema(
+        tags=["Employees : Profile, Client, Assets, Contract"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "active_clients": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Items(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "client_name": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "client_id": openapi.Schema(
+                                        type=openapi.TYPE_INTEGER
+                                    ),
+                                    "job_title": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "employeement_term": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                },
+                            ),
+                        ),
+                        "terminated_clients": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Items(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "client_name": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "client_id": openapi.Schema(
+                                        type=openapi.TYPE_INTEGER
+                                    ),
+                                    "job_title": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "employeement_term": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                },
+                            ),
+                        ),
+                        "contract_signed": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Items(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "contract_name": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "client_id": openapi.Schema(
+                                        type=openapi.TYPE_INTEGER
+                                    ),
+                                    "date": openapi.Schema(type=openapi.TYPE_STRING),
+                                    "download": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                },
+                            ),
+                        ),
+                        "assets": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Items(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "gadget": openapi.Schema(type=openapi.TYPE_STRING),
+                                    "asset_id": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "assigned_date": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "assignee_name": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "assignee_email": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                },
+                            ),
+                        ),
+                        "employee_details": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                # "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                                "first_name": openapi.Schema(type=openapi.TYPE_STRING),
+                                "last_name": openapi.Schema(type=openapi.TYPE_STRING),
+                                "gender": openapi.Schema(type=openapi.TYPE_STRING),
+                                "dob": openapi.Schema(type=openapi.TYPE_STRING),
+                                "phone_no": openapi.Schema(type=openapi.TYPE_STRING),
+                                "email": openapi.Schema(type=openapi.TYPE_STRING),
+                                "marital_status": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "image": openapi.Schema(type=openapi.TYPE_FILE),
+                                "emergency_no": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "resume": openapi.Schema(type=openapi.TYPE_FILE),
+                                "emergency_contact": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "joining_date": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "designation": openapi.Schema(type=openapi.TYPE_STRING),
+                                "department": openapi.Schema(type=openapi.TYPE_STRING),
+                                "company": openapi.Schema(type=openapi.TYPE_STRING),
+                            },
+                        ),
+                    },
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+            400: openapi.Response(description="Bad Request"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Employee record ID",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "tab",
+                openapi.IN_QUERY,
+                description="Tab name (client, contract, assets)",
+                type=openapi.TYPE_STRING,
+                enum=[" ", "client", "contract", "assets"],
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_id=".",
+        operation_summary="Get Employee Details",
+    )
     def get(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
         tab = request.query_params.get("tab")
@@ -1028,6 +1245,35 @@ class Hr_Employee(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Update_Emp_Person_Info(APIView):
+    @swagger_auto_schema(
+        tags=["Employees"],
+        operation_id=".",
+        operation_summary="Update Employee Personal Information",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "key1": openapi.Schema(type=openapi.TYPE_STRING),
+            },
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Employee record ID",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful update"),
+            400: openapi.Response(description="Bad Request"),
+        },
+    )
     def patch(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
         updates = request.data
@@ -1045,6 +1291,36 @@ class Update_Emp_Person_Info(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Update_Emp_Emerg_Info(APIView):
+    @swagger_auto_schema(
+        tags=["Employees"],
+        operation_id=".",
+        operation_summary="Update Employee Emergency Information",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                # "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                "key1": openapi.Schema(type=openapi.TYPE_STRING),
+            },
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Employee record ID",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful update"),
+            400: openapi.Response(description="Bad Request"),
+        },
+    )
     def patch(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
         updates = request.data
@@ -1062,6 +1338,37 @@ class Update_Emp_Emerg_Info(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Update_Emp_Profile_Pic(APIView):
+    parser_classes = (MultiPartParser,)
+
+    @swagger_auto_schema(
+        tags=["Employees"],
+        operation_id=".",
+        operation_summary="Update Employee Pro Information",
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Employee record ID",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="image",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful update"),
+            400: openapi.Response(description="Bad Request"),
+        },
+    )
     def patch(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
         updates = request.data
@@ -1078,9 +1385,77 @@ class Update_Emp_Profile_Pic(APIView):
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
+class Edit_Cridentials(APIView):
+    @swagger_auto_schema(
+        tags=["Employees"],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "employees_id": openapi.Schema(type=openapi.TYPE_STRING),
+                "current_password": openapi.Schema(type=openapi.TYPE_STRING),
+                "new_password": openapi.Schema(type=openapi.TYPE_STRING),
+                "confirm_password": openapi.Schema(type=openapi.TYPE_STRING),
+            },
+            required=[
+                "employees_id",
+                "current_password",
+                "new_password",
+                "confirm_password",
+            ],
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful update"),
+            204: openapi.Response(description="No content"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="UnAuthorize"),
+        },
+        operation_summary="edit Credentials",
+        operation_id="1",
+    )
+    def patch(self, request, *args, **kwargs):
+        record_id = request.data.get("employee_id")
+        current_password = request.data.get("current_password")
+        new_password = request.data.get("new_password")
+        confirm_password = request.data.get("confirm_password")
+        try:
+            employees = employee.objects.get(employee_id=record_id)
+            end_user_instance = end_user.objects.get(email=employees.email)
+        except employees.DoesNotExist:
+            raise Http404("Employee does not exist")
+
+        if not end_user_instance.check_password(current_password):
+            return Response(
+                {"error": "Incorrect current password"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if new_password != confirm_password:
+            return Response(
+                {"error": "New password and confirm password do not match"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        end_user_instance.set_password(new_password)
+        end_user_instance.save()
+
+        return Response(
+            {"message": "Password updated successfully"}, status=status.HTTP_200_OK
+        )
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 class Start_Hiring(APIView):
     @swagger_auto_schema(
-        tags=["Client : Hiring Request"],
+        tags=["Clients : Hire & onBoard"],
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -1106,7 +1481,17 @@ class Start_Hiring(APIView):
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                 ),
             },
-            required=["email", "password"],
+            required=[
+                "client_id",
+                "job_title",
+                "role_type",
+                "gender",
+                "employment_term",
+                "salary_range",
+                "country",
+                "hiring_start_date",
+                "hiring_end_date",
+            ],
         ),
         responses={
             201: openapi.Response("Successful created"),
@@ -1121,7 +1506,7 @@ class Start_Hiring(APIView):
                 type=openapi.TYPE_STRING,
             ),
         ],
-        operation_summary="Endpoint to create hiring request.",
+        operation_summary="Endpoint to create Start_Hiring.",
         operation_id=".",
     )
     def post(self, request, *args, **kwargs):
@@ -1144,6 +1529,43 @@ class Start_Hiring(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        tags=["Clients : Hire & onBoard"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Items(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "job_title": openapi.Schema(type=openapi.TYPE_STRING),
+                            "role_type": openapi.Schema(type=openapi.TYPE_STRING),
+                            "gender": openapi.Schema(type=openapi.TYPE_STRING),
+                            "employment_term": openapi.Schema(type=openapi.TYPE_STRING),
+                            "salary_range": openapi.Schema(type=openapi.TYPE_STRING),
+                            "hiring_start_date": openapi.Schema(
+                                type=openapi.TYPE_STRING
+                            ),
+                            "hiring_end_date": openapi.Schema(type=openapi.TYPE_STRING),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+        },
+        operation_id=".",
+        operation_summary="Get Start_Hiring ",
+    )
     def get(self, request, *args, **kwargs):
         hiring_requests = hiring_request.objects.all()
 
@@ -1166,6 +1588,32 @@ class Start_Hiring(APIView):
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @swagger_auto_schema(
+        tags=["Clients : Hire & onBoard"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            204: openapi.Response(description="No content"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="Unauthorize"),
+        },
+        operation_summary="Endpoint to delete a Start_Hiring.",
+        operation_id=".",
+    )
     def delete(self, request, *args, **kwargs):
         user = request.user
         delete_id = request.query_params.get("id")
@@ -1180,7 +1628,7 @@ class Start_Hiring(APIView):
 @permission_classes([IsAuthenticated])
 class Interview_Schedule(APIView):
     @swagger_auto_schema(
-        tags=["Client : Interview Schedule"],
+        tags=["Clients : Hire & onBoard"],
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -1197,7 +1645,16 @@ class Interview_Schedule(APIView):
                 ),
                 "country": openapi.Schema(type=openapi.TYPE_STRING),
             },
-            required=["email", "password"],
+            required=[
+                "client_id",
+                "employee_name",
+                "gender",
+                "job_title",
+                "role_type",
+                "employment_term",
+                "interview_date_time",
+                "country",
+            ],
         ),
         responses={
             201: openapi.Response("Successful created"),
@@ -1234,6 +1691,44 @@ class Interview_Schedule(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        tags=["Clients : Hire & onBoard"],
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "gender": openapi.Schema(type=openapi.TYPE_STRING),
+                            "role_type": openapi.Schema(type=openapi.TYPE_STRING),
+                            "employment_term": openapi.Schema(type=openapi.TYPE_STRING),
+                            "interview_date_time": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
+                            ),
+                            "country": openapi.Schema(type=openapi.TYPE_STRING),
+                            "status": openapi.Schema(type=openapi.TYPE_STRING),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response("No content"),
+            401: openapi.Response("UnAuthorize"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve hiring request data.",
+        operation_id="1",
+    )
     def get(self, request, *args, **kwargs):
         interview_records = interview_schedule.objects.all()
 
@@ -1257,6 +1752,32 @@ class Interview_Schedule(APIView):
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @swagger_auto_schema(
+        tags=["Clients : Hire & onBoard"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            204: openapi.Response(description="No content"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="Unauthorize"),
+        },
+        operation_summary="Endpoint to delete a hiring request.",
+        operation_id="2",
+    )
     def delete(self, request, *args, **kwargs):
         user = request.user
         delete_id = request.query_params.get("id")
