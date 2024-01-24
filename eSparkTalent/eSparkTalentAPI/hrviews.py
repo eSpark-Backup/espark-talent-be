@@ -806,7 +806,7 @@ class Hr_Home(APIView):
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
-                        "user": openapi.Schema(type=openapi.TYPE_STRING),
+                        "user_name": openapi.Schema(type=openapi.TYPE_STRING),
                         "employees": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "clients": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "hiring_requests": openapi.Schema(type=openapi.TYPE_INTEGER),
@@ -855,7 +855,7 @@ class Hr_Employees(APIView):
                         "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "employees_id": openapi.Schema(type=openapi.TYPE_STRING),
                         "name": openapi.Schema(type=openapi.TYPE_STRING),
-                        "image": openapi.Schema(type=openapi.TYPE_FILE),
+                        "image_path": openapi.Schema(type=openapi.TYPE_STRING),
                         "designation": openapi.Schema(type=openapi.TYPE_STRING),
                         "company": openapi.Schema(type=openapi.TYPE_STRING),
                         "active": openapi.Schema(type=openapi.TYPE_BOOLEAN),
@@ -879,7 +879,7 @@ class Hr_Employees(APIView):
             ),
         ],
         operation_summary="Endpoint to retrieve hr Employees data.",
-        operation_id=".",
+        operation_id="1",
     )
     def get(self, request, *args, **kwargs):
         get_status = request.query_params.get("status")
@@ -982,7 +982,7 @@ class Hr_Employee(APIView):
                                         type=openapi.TYPE_STRING
                                     ),
                                     "client_id": openapi.Schema(
-                                        type=openapi.TYPE_INTEGER
+                                        type=openapi.TYPE_STRING
                                     ),
                                     "job_title": openapi.Schema(
                                         type=openapi.TYPE_STRING
@@ -1002,7 +1002,7 @@ class Hr_Employee(APIView):
                                         type=openapi.TYPE_STRING
                                     ),
                                     "client_id": openapi.Schema(
-                                        type=openapi.TYPE_INTEGER
+                                        type=openapi.TYPE_STRING
                                     ),
                                     "job_title": openapi.Schema(
                                         type=openapi.TYPE_STRING
@@ -1022,9 +1022,10 @@ class Hr_Employee(APIView):
                                         type=openapi.TYPE_STRING
                                     ),
                                     "client_id": openapi.Schema(
-                                        type=openapi.TYPE_INTEGER
+                                        type=openapi.TYPE_STRING
                                     ),
-                                    "date": openapi.Schema(type=openapi.TYPE_STRING),
+                                    "date": openapi.Schema(
+                                            type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
                                     "download": openapi.Schema(
                                         type=openapi.TYPE_STRING
                                     ),
@@ -1041,14 +1042,13 @@ class Hr_Employee(APIView):
                                         type=openapi.TYPE_STRING
                                     ),
                                     "assigned_date": openapi.Schema(
-                                        type=openapi.TYPE_STRING
-                                    ),
+                                         type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                                    
                                     "assignee_name": openapi.Schema(
                                         type=openapi.TYPE_STRING
                                     ),
                                     "assignee_email": openapi.Schema(
-                                        type=openapi.TYPE_STRING
-                                    ),
+                                            type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
                                 },
                             ),
                         ),
@@ -1060,23 +1060,40 @@ class Hr_Employee(APIView):
                                 "first_name": openapi.Schema(type=openapi.TYPE_STRING),
                                 "last_name": openapi.Schema(type=openapi.TYPE_STRING),
                                 "gender": openapi.Schema(type=openapi.TYPE_STRING),
-                                "dob": openapi.Schema(type=openapi.TYPE_STRING),
-                                "phone_no": openapi.Schema(type=openapi.TYPE_STRING),
-                                "email": openapi.Schema(type=openapi.TYPE_STRING),
+                                "dob": openapi.Schema(
+                                        type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                                "phone_no": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "email": openapi.Schema(
+                                            type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
                                 "marital_status": openapi.Schema(
                                     type=openapi.TYPE_STRING
                                 ),
-                                "image": openapi.Schema(type=openapi.TYPE_FILE),
+                                "image_path": openapi.Schema(type=openapi.TYPE_STRING),
                                 "emergency_no": openapi.Schema(
                                     type=openapi.TYPE_STRING
                                 ),
-                                "resume": openapi.Schema(type=openapi.TYPE_FILE),
+                                "resume_path": openapi.Schema(type=openapi.TYPE_STRING),
                                 "emergency_contact": openapi.Schema(
-                                    type=openapi.TYPE_STRING
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "primary":openapi.Schema(type=openapi.TYPE_OBJECT,
+                                                                 properties={
+                                                                     "name":openapi.Schema(type=openapi.TYPE_STRING),
+                                                                     "relationship":openapi.Schema(type=openapi.TYPE_STRING),
+                                                                     "phone":openapi.Schema(type=openapi.TYPE_INTEGER)
+                                                                 }),
+                                        "secondary":openapi.Schema(type=openapi.TYPE_OBJECT,
+                                                                 properties={
+                                                                     "name":openapi.Schema(type=openapi.TYPE_STRING),
+                                                                     "relationship":openapi.Schema(type=openapi.TYPE_STRING),
+                                                                     "phone":openapi.Schema(type=openapi.TYPE_INTEGER)
+                                                                 }),
+                                    }
+                                    
+                                                                     
                                 ),
                                 "joining_date": openapi.Schema(
-                                    type=openapi.TYPE_STRING
-                                ),
+                                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
                                 "designation": openapi.Schema(type=openapi.TYPE_STRING),
                                 "department": openapi.Schema(type=openapi.TYPE_STRING),
                                 "company": openapi.Schema(type=openapi.TYPE_STRING),
@@ -1247,12 +1264,22 @@ class Hr_Employee(APIView):
 class Update_Emp_Person_Info(APIView):
     @swagger_auto_schema(
         tags=["Employees"],
-        operation_id=".",
+        operation_id="5",
         operation_summary="Update Employee Personal Information",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "key1": openapi.Schema(type=openapi.TYPE_STRING),
+                "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
+                "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                "dob": openapi.Schema(type=openapi.TYPE_STRING),
+                "email": openapi.Schema(
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+                "designation": openapi.Schema(type=openapi.TYPE_STRING),
+                "marital_status": openapi.Schema(type=openapi.TYPE_STRING),
+                "gender": openapi.Schema(type=openapi.TYPE_STRING),
+                "department": openapi.Schema(type=openapi.TYPE_STRING),
+                "joining_date": openapi.Schema(type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATETIME),
             },
         ),
         manual_parameters=[
@@ -1293,13 +1320,30 @@ class Update_Emp_Person_Info(APIView):
 class Update_Emp_Emerg_Info(APIView):
     @swagger_auto_schema(
         tags=["Employees"],
-        operation_id=".",
+        operation_id="3",
         operation_summary="Update Employee Emergency Information",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                # "id": openapi.Schema(type=openapi.TYPE_INTEGER),
-                "key1": openapi.Schema(type=openapi.TYPE_STRING),
+                "emergency_contact": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "primary":openapi.Schema(type=openapi.TYPE_OBJECT,
+                                                                 properties={
+                                                                     "name":openapi.Schema(type=openapi.TYPE_STRING),
+                                                                     "relationship":openapi.Schema(type=openapi.TYPE_STRING),
+                                                                     "phone":openapi.Schema(type=openapi.TYPE_INTEGER)
+                                                                 }),
+                                        "secondary":openapi.Schema(type=openapi.TYPE_OBJECT,
+                                                                 properties={
+                                                                     "name":openapi.Schema(type=openapi.TYPE_STRING),
+                                                                     "relationship":openapi.Schema(type=openapi.TYPE_STRING),
+                                                                     "phone":openapi.Schema(type=openapi.TYPE_INTEGER)
+                                                                 }),
+                                    }
+                                    
+                                                                     
+                                ),
             },
         ),
         manual_parameters=[
@@ -1342,8 +1386,8 @@ class Update_Emp_Profile_Pic(APIView):
 
     @swagger_auto_schema(
         tags=["Employees"],
-        operation_id=".",
-        operation_summary="Update Employee Pro Information",
+        operation_id="4",
+        operation_summary="Update Employee image",
         manual_parameters=[
             openapi.Parameter(
                 "id",
@@ -1418,7 +1462,7 @@ class Edit_Cridentials(APIView):
             401: openapi.Response(description="UnAuthorize"),
         },
         operation_summary="edit Credentials",
-        operation_id="1",
+        operation_id="2",
     )
     def patch(self, request, *args, **kwargs):
         record_id = request.data.get("employee_id")
@@ -1507,7 +1551,7 @@ class Start_Hiring(APIView):
             ),
         ],
         operation_summary="Endpoint to create Start_Hiring.",
-        operation_id=".",
+        operation_id="5",
     )
     def post(self, request, *args, **kwargs):
         serializer = hiring_requestSerializer(data=request.data)
@@ -1554,16 +1598,16 @@ class Start_Hiring(APIView):
                             "employment_term": openapi.Schema(type=openapi.TYPE_STRING),
                             "salary_range": openapi.Schema(type=openapi.TYPE_STRING),
                             "hiring_start_date": openapi.Schema(
-                                type=openapi.TYPE_STRING
-                            ),
-                            "hiring_end_date": openapi.Schema(type=openapi.TYPE_STRING),
+                                        type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                            "hiring_end_date": openapi.Schema(
+                                        type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
                         },
                     ),
                 ),
             ),
             204: openapi.Response(description="No Content"),
         },
-        operation_id=".",
+        operation_id="4",
         operation_summary="Get Start_Hiring ",
     )
     def get(self, request, *args, **kwargs):
@@ -1612,7 +1656,7 @@ class Start_Hiring(APIView):
             401: openapi.Response(description="Unauthorize"),
         },
         operation_summary="Endpoint to delete a Start_Hiring.",
-        operation_id=".",
+        operation_id="6",
     )
     def delete(self, request, *args, **kwargs):
         user = request.user
@@ -1670,7 +1714,7 @@ class Interview_Schedule(APIView):
             ),
         ],
         operation_summary="Endpoint to create interview request.",
-        operation_id=".",
+        operation_id="2",
     )
     def post(self, request, *args, **kwargs):
         serializer = interview_requestSerializer(data=request.data)
@@ -1776,7 +1820,7 @@ class Interview_Schedule(APIView):
             401: openapi.Response(description="Unauthorize"),
         },
         operation_summary="Endpoint to delete a hiring request.",
-        operation_id="2",
+        operation_id="3",
     )
     def delete(self, request, *args, **kwargs):
         user = request.user
