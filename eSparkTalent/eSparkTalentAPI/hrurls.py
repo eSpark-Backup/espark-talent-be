@@ -15,7 +15,7 @@ urlpatterns=[
     path('hr_update_empinfo/', Update_Emp_Person_Info.as_view()),
     path('hr_update_empcontact/', Update_Emp_Emerg_Info.as_view()),
     path('hr_update_empimg/', Update_Emp_Profile_Pic.as_view()),
-    path('hr_update_empCredential/', Edit_Cridentials.as_view()),
+    path('hr_update_empcred/', Edit_Cridentials.as_view()),
     path('hr_start_hire/', Start_Hiring.as_view()),
     path('hr_is/', Interview_Schedule.as_view()),
 ]

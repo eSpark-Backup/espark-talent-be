@@ -1055,7 +1055,7 @@ class Hr_Employee(APIView):
                         "employee_details": openapi.Schema(
                             type=openapi.TYPE_OBJECT,
                             properties={
-                                # "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                                 "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
                                 "first_name": openapi.Schema(type=openapi.TYPE_STRING),
                                 "last_name": openapi.Schema(type=openapi.TYPE_STRING),
