@@ -103,7 +103,7 @@ class employee(models.Model):
     last_name = models.CharField(max_length=30)
     gender = models.CharField(max_length=7)
     dob = models.DateField(null=True)
-    phone_no = models.CharField(max_length=11)
+    phone_number = models.CharField(max_length=11)
     email = models.EmailField(unique=True)
     marital_status = models.CharField(max_length=15, null=True)
     image = models.ImageField(

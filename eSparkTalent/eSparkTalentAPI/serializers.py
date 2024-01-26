@@ -11,11 +11,10 @@ class userSerializer(serializers.ModelSerializer):
 
 
 class hiring_requestSerializer(serializers.ModelSerializer):
-    # user=userSerializer()
     class Meta:
         model = hiring_request
-        # exclude = ['id']
-        fields = "__all__"
+        exclude = ['client_id']
+        # fields = "__all__"
         depth = 1
 
 class interview_requestSerializer(serializers.ModelSerializer):

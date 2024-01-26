@@ -18,4 +18,6 @@ urlpatterns=[
     path('hr_update_empcred/', Edit_Cridentials.as_view()),
     path('hr_start_hire/', Start_Hiring.as_view()),
     path('hr_is/', Interview_Schedule.as_view()),
+    path('hr_clients/', Hr_Clients.as_view()),
+    path('hr_client_prof/', Hr_Client.as_view()),
 ]

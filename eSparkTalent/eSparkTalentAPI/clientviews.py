@@ -28,10 +28,10 @@ class LoginView(APIView):
             type=openapi.TYPE_OBJECT,
             properties={
                 "email": openapi.Schema(
-                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL, default="admin@esparkconsultants.com"
                 ),
                 "password": openapi.Schema(
-                    type=openapi.TYPE_STRING, format=openapi.FORMAT_PASSWORD
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_PASSWORD, default="admin@espark"
                 ),
             },
             required=["email", "password"],
@@ -111,8 +111,8 @@ class Client_Home(APIView):
         interview_schedule_count = interview_schedule.objects.filter(
             client_id=user
         ).count()
-        onboarding_count = outsource_employees.objects.filter(client_id=user).count()
-        active_employee = onboarding.objects.filter(
+        onboarding_count = onboarding.objects.filter(client_id=user).count()
+        active_employee = outsource_employees.objects.filter(
             client_id=user, status="active"
         ).count()
 
@@ -184,7 +184,7 @@ class Start_Hiring(APIView):
         if serializer.is_valid():
             client_1 = client.objects.get(email=request.user)
             hiring_request.objects.create(
-                client_id=client_1,
+                client_id=client_1.email,
                 job_title=serializer.validated_data["job_title"],
                 role_type=serializer.validated_data["role_type"],
                 gender=serializer.validated_data["gender"],

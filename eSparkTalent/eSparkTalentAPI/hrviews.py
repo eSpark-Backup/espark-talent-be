@@ -64,7 +64,7 @@ class Add_Employee(APIView):
                 required=True,
             ),
             openapi.Parameter(
-                name="phone_no",
+                name="phone_number",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_INTEGER,
                 required=True,
@@ -228,7 +228,7 @@ class Add_Employee(APIView):
                     last_name=serializer.validated_data["last_name"],
                     gender=serializer.validated_data["gender"],
                     dob=serializer.validated_data["dob"],
-                    phone_no=serializer.validated_data["phone_no"],
+                    phone_number=serializer.validated_data["phone_number"],
                     email=serializer.validated_data["email"],
                     marital_status=serializer.validated_data["marital_status"],
                     image=serializer.validated_data["image"],
@@ -896,7 +896,7 @@ class Hr_Employees(APIView):
                                 "id": e_user.id,
                                 "employee_id": e_user.employee_id,
                                 "name": e_user.first_name + " " + e_user.last_name,
-                                "image": e_user.image.url,
+                                "image_path": e_user.image.path,
                                 "designation": e_user.designation,
                                 "company": c_user.company_name,
                                 "active": True,
@@ -919,7 +919,7 @@ class Hr_Employees(APIView):
                                 "id": emp.id,
                                 "employee_id": emp.employee_id,
                                 "name": emp.first_name + " " + emp.last_name,
-                                "image": emp.image.url,
+                                "image_path": emp.image.path,
                                 "designation": emp.designation,
                                 "company": emp.company,
                                 "active": False,
@@ -950,7 +950,7 @@ class Hr_Employees(APIView):
                         "id": emp.id,
                         "employee_id": emp.employee_id,
                         "name": emp.first_name + " " + emp.last_name,
-                        "image": emp.image.url,
+                        "image_path": emp.image.path,
                         "designation": emp.designation,
                         "company": company,
                         "active": active,
@@ -1025,7 +1025,9 @@ class Hr_Employee(APIView):
                                         type=openapi.TYPE_STRING
                                     ),
                                     "date": openapi.Schema(
-                                            type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATETIME,
+                                    ),
                                     "download": openapi.Schema(
                                         type=openapi.TYPE_STRING
                                     ),
@@ -1042,13 +1044,16 @@ class Hr_Employee(APIView):
                                         type=openapi.TYPE_STRING
                                     ),
                                     "assigned_date": openapi.Schema(
-                                         type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
-                                    
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATETIME,
+                                    ),
                                     "assignee_name": openapi.Schema(
                                         type=openapi.TYPE_STRING
                                     ),
                                     "assignee_email": openapi.Schema(
-                                            type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_EMAIL,
+                                    ),
                                 },
                             ),
                         ),
@@ -1061,10 +1066,16 @@ class Hr_Employee(APIView):
                                 "last_name": openapi.Schema(type=openapi.TYPE_STRING),
                                 "gender": openapi.Schema(type=openapi.TYPE_STRING),
                                 "dob": openapi.Schema(
-                                        type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
-                                "phone_no": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
+                                "phone_number": openapi.Schema(
+                                    type=openapi.TYPE_INTEGER
+                                ),
                                 "email": openapi.Schema(
-                                            type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_EMAIL,
+                                ),
                                 "marital_status": openapi.Schema(
                                     type=openapi.TYPE_STRING
                                 ),
@@ -1076,24 +1087,40 @@ class Hr_Employee(APIView):
                                 "emergency_contact": openapi.Schema(
                                     type=openapi.TYPE_OBJECT,
                                     properties={
-                                        "primary":openapi.Schema(type=openapi.TYPE_OBJECT,
-                                                                 properties={
-                                                                     "name":openapi.Schema(type=openapi.TYPE_STRING),
-                                                                     "relationship":openapi.Schema(type=openapi.TYPE_STRING),
-                                                                     "phone":openapi.Schema(type=openapi.TYPE_INTEGER)
-                                                                 }),
-                                        "secondary":openapi.Schema(type=openapi.TYPE_OBJECT,
-                                                                 properties={
-                                                                     "name":openapi.Schema(type=openapi.TYPE_STRING),
-                                                                     "relationship":openapi.Schema(type=openapi.TYPE_STRING),
-                                                                     "phone":openapi.Schema(type=openapi.TYPE_INTEGER)
-                                                                 }),
-                                    }
-                                    
-                                                                     
+                                        "primary": openapi.Schema(
+                                            type=openapi.TYPE_OBJECT,
+                                            properties={
+                                                "name": openapi.Schema(
+                                                    type=openapi.TYPE_STRING
+                                                ),
+                                                "relationship": openapi.Schema(
+                                                    type=openapi.TYPE_STRING
+                                                ),
+                                                "phone": openapi.Schema(
+                                                    type=openapi.TYPE_INTEGER
+                                                ),
+                                            },
+                                        ),
+                                        "secondary": openapi.Schema(
+                                            type=openapi.TYPE_OBJECT,
+                                            properties={
+                                                "name": openapi.Schema(
+                                                    type=openapi.TYPE_STRING
+                                                ),
+                                                "relationship": openapi.Schema(
+                                                    type=openapi.TYPE_STRING
+                                                ),
+                                                "phone": openapi.Schema(
+                                                    type=openapi.TYPE_INTEGER
+                                                ),
+                                            },
+                                        ),
+                                    },
                                 ),
                                 "joining_date": openapi.Schema(
-                                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
                                 "designation": openapi.Schema(type=openapi.TYPE_STRING),
                                 "department": openapi.Schema(type=openapi.TYPE_STRING),
                                 "company": openapi.Schema(type=openapi.TYPE_STRING),
@@ -1239,12 +1266,12 @@ class Hr_Employee(APIView):
                     "last_name": emp_record.last_name,
                     "gender": emp_record.gender,
                     "dob": emp_record.dob,
-                    "phone_no": emp_record.phone_no,
+                    "phone_number": emp_record.phone_number,
                     "email": emp_record.email,
                     "marital_status": emp_record.marital_status,
-                    "image": emp_record.image.url,
+                    "image_path": emp_record.image.path,
                     "emergency_no": emp_record.emergency_no,
-                    "resume": emp_record.resume.url,
+                    "resume_path": emp_record.resume.path,
                     "emergency_contact": emp_record.emergency_contact,
                     "joining_date": emp_record.joining_date,
                     "designation": emp_record.designation,
@@ -1273,13 +1300,15 @@ class Update_Emp_Person_Info(APIView):
                 "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
                 "dob": openapi.Schema(type=openapi.TYPE_STRING),
                 "email": openapi.Schema(
-                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
+                ),
                 "designation": openapi.Schema(type=openapi.TYPE_STRING),
                 "marital_status": openapi.Schema(type=openapi.TYPE_STRING),
                 "gender": openapi.Schema(type=openapi.TYPE_STRING),
                 "department": openapi.Schema(type=openapi.TYPE_STRING),
-                "joining_date": openapi.Schema(type=openapi.TYPE_STRING,
-                                        format=openapi.FORMAT_DATETIME),
+                "joining_date": openapi.Schema(
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME
+                ),
             },
         ),
         manual_parameters=[
@@ -1326,24 +1355,30 @@ class Update_Emp_Emerg_Info(APIView):
             type=openapi.TYPE_OBJECT,
             properties={
                 "emergency_contact": openapi.Schema(
-                                    type=openapi.TYPE_OBJECT,
-                                    properties={
-                                        "primary":openapi.Schema(type=openapi.TYPE_OBJECT,
-                                                                 properties={
-                                                                     "name":openapi.Schema(type=openapi.TYPE_STRING),
-                                                                     "relationship":openapi.Schema(type=openapi.TYPE_STRING),
-                                                                     "phone":openapi.Schema(type=openapi.TYPE_INTEGER)
-                                                                 }),
-                                        "secondary":openapi.Schema(type=openapi.TYPE_OBJECT,
-                                                                 properties={
-                                                                     "name":openapi.Schema(type=openapi.TYPE_STRING),
-                                                                     "relationship":openapi.Schema(type=openapi.TYPE_STRING),
-                                                                     "phone":openapi.Schema(type=openapi.TYPE_INTEGER)
-                                                                 }),
-                                    }
-                                    
-                                                                     
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "primary": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "name": openapi.Schema(type=openapi.TYPE_STRING),
+                                "relationship": openapi.Schema(
+                                    type=openapi.TYPE_STRING
                                 ),
+                                "phone": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            },
+                        ),
+                        "secondary": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "name": openapi.Schema(type=openapi.TYPE_STRING),
+                                "relationship": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "phone": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            },
+                        ),
+                    },
+                ),
             },
         ),
         manual_parameters=[
@@ -1582,6 +1617,13 @@ class Start_Hiring(APIView):
                 description="Bearer Token",
                 type=openapi.TYPE_STRING,
             ),
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the client record",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
         ],
         responses={
             200: openapi.Response(
@@ -1598,9 +1640,11 @@ class Start_Hiring(APIView):
                             "employment_term": openapi.Schema(type=openapi.TYPE_STRING),
                             "salary_range": openapi.Schema(type=openapi.TYPE_STRING),
                             "hiring_start_date": openapi.Schema(
-                                        type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME
+                            ),
                             "hiring_end_date": openapi.Schema(
-                                        type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME),
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME
+                            ),
                         },
                     ),
                 ),
@@ -1611,7 +1655,9 @@ class Start_Hiring(APIView):
         operation_summary="Get Start_Hiring ",
     )
     def get(self, request, *args, **kwargs):
-        hiring_requests = hiring_request.objects.all()
+        record_id = request.query_params.get("id")
+        client_data = client.objects.get(id=record_id)
+        hiring_requests = hiring_request.objects.filter(client_id=client_data.email)
 
         if hiring_requests:
             records = []
@@ -1659,7 +1705,6 @@ class Start_Hiring(APIView):
         operation_id="6",
     )
     def delete(self, request, *args, **kwargs):
-        user = request.user
         delete_id = request.query_params.get("id")
         try:
             hiring_request.objects.filter(id=delete_id).delete()
@@ -1830,3 +1875,223 @@ class Interview_Schedule(APIView):
             return Response(status=status.HTTP_200_OK)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Hr_Clients(APIView):
+    @swagger_auto_schema(
+        tags=["Clients"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "client_id": openapi.Schema(type=openapi.TYPE_STRING),
+                        "name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "image_path": openapi.Schema(type=openapi.TYPE_STRING),
+                        "company_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "active": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    },
+                ),
+            ),
+            401: openapi.Response("Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve Clients data.",
+        operation_id="1",
+    )
+    def get(self, request, *args, **kwargs):
+        clients = client.objects.all()
+        if clients:
+            records = []
+            for cl in clients:
+                user = end_user.objects.filter(email=cl.email)
+                record = {
+                    "id": cl.id,
+                    "client_id": cl.client_id,
+                    "name": cl.first_name + " " + cl.last_name,
+                    "image_path": cl.image.path,
+                    "company_name": cl.company_name,
+                    "active": user.is_active,
+                }
+                records.append(record)
+            return Response(records, status=status.HTTP_200_OK)
+
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Hr_Client(APIView):
+    parser_classes = (MultiPartParser,)
+
+    @swagger_auto_schema(
+        tags=["Clients : Profile"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "client_id": openapi.Schema(type=openapi.TYPE_STRING),
+                        "first_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "last_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "company_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "phone_number": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "email": openapi.Schema(
+                            type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
+                        ),
+                        "country": openapi.Schema(type=openapi.TYPE_STRING),
+                        "image_path": openapi.Schema(type=openapi.TYPE_STRING),
+                        "address": openapi.Schema(type=openapi.TYPE_STRING),
+                        "join_date": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+            400: openapi.Response(description="Bad Request"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Employee record ID",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_id="1",
+        operation_summary="Get Employee Details",
+    )
+    def get(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        client_data = client.objects.get(id=record_id)
+        if client_data:
+            try:
+                record = {
+                    "id": client_data.id,
+                    "client_id": client_data.client_id,
+                    "first_name": client_data.first_name,
+                    "last_name": client_data.last_name,
+                    "company_name": client_data.company_name,
+                    "phone_number": client_data.phone_number,
+                    "email": client_data.email,
+                    "country": client_data.country,
+                    "image_path": client_data.image.path,
+                    "address": client_data.address,
+                    "join_date": client_data.join_date,
+                }
+                return Response(record, status=status.HTTP_200_OK)
+            except:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        tags=["Clients : Profile"],
+        operation_id="2",
+        operation_summary="Update Clients Personal Information",
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Employee record ID",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="client_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="first_name",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="last_name",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="company_name",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="email",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+            ),
+            openapi.Parameter(
+                name="phone_number",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+            ),
+            openapi.Parameter(
+                name="join_date",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+            ),
+            openapi.Parameter(
+                name="country",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="address",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="image",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful update"),
+            400: openapi.Response(description="Bad Request"),
+        },
+    )
+    def patch(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        updates = request.data
+        try:
+            client_record = client.objects.get(id=record_id)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        for key in updates:
+            setattr(client_record, key, updates[key])
+        client_record.save()
+        return Response(status=status.HTTP_200_OK)
