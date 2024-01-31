@@ -119,8 +119,8 @@ class employee(models.Model):
     )
     emergency_contact = models.JSONField(null=True)
     joining_date = models.DateField(null=True)
-    designation = models.CharField(max_length=30)
-    department = models.CharField(max_length=30)
+    role = models.CharField(max_length=30)
+    job_title = models.CharField(max_length=30)
     company = models.CharField(max_length=30)
     punch_timings = models.JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -230,7 +230,7 @@ class onboarding(models.Model):
     role_type = models.CharField(max_length=15)
     employment_term = models.CharField(max_length=15)
     joining_date = models.DateField()
-    notice_period = models.CharField(max_length=15)
+    notice_period = models.IntegerField(max_length=15)
     salary = models.IntegerField(null=True)
     benefits = models.JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -291,7 +291,7 @@ class leave_request(models.Model):
         return f"{self.client_id} - {self.employee_id} - {self.id}"
 
 
-class clockinout_request(models.Model):
+class punch_request(models.Model):
     punch_type = [("check_in", "check_in"), ("check_out", "check_out")]
     status = [
         ("pending", "pending"),
@@ -305,7 +305,7 @@ class clockinout_request(models.Model):
     punch_time = models.TimeField()
     date = models.DateField()
     description = models.CharField(max_length=200, default="")
-    status = models.CharField(max_length=10, choices=status)
+    status = models.CharField(max_length=10, choices=status, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -343,9 +343,9 @@ class time_sheet(models.Model):
 
 class employee_invoice(models.Model):
     payment_status = [
-        ("Pending", "Pending"),
-        ("Processing", "Processing"),
-        ("Paid", "Paid"),
+        ("pending", "pending"),
+        ("processing", "processing"),
+        ("paid", "paid"),
     ]
     id = models.AutoField(primary_key=True)
     client_id = models.EmailField()
@@ -353,7 +353,7 @@ class employee_invoice(models.Model):
     invoice_date = models.DateField()
     due_date = models.DateField()
     invoice_amount = models.IntegerField()
-    payment_status = models.CharField(max_length=15, choices=payment_status)
+    payment_status = models.CharField(max_length=15, choices=payment_status, default="pending")
     invoice = models.FileField(
         upload_to="invoices/employee_invoices/",
         validators=[pdf_ext_valid, valid_pdffile_type],
@@ -378,7 +378,7 @@ class other_payment(models.Model):
     invoice_date = models.DateField()
     due_date = models.DateField()
     invoice_amount = models.IntegerField()
-    payment_status = models.CharField(max_length=15, choices=payment_status)
+    payment_status = models.CharField(max_length=15, choices=payment_status, default="pending")
     invoice = models.FileField(
         upload_to="invoices/other_payments/",
         validators=[pdf_ext_valid, valid_pdffile_type],
@@ -391,10 +391,10 @@ class other_payment(models.Model):
         return f"{self.client_id} - {self.id}"
 
 
-class company_contract(models.Model):
+class client_contract(models.Model):
     id = models.AutoField(primary_key=True)
     contract_name = models.CharField(max_length=255)
-    email = models.EmailField()
+    client_id = models.EmailField()
     date = models.DateField()
     contract_doc = models.FileField(
         upload_to="contracts/company/",
@@ -403,10 +403,24 @@ class company_contract(models.Model):
     )
 
     def __str__(self):
-        return f"{self.email} - {self.id}"
+        return f"{self.client_id} - {self.id}"
 
 
 class employee_contract(models.Model):
+    id = models.AutoField(primary_key=True)
+    employee_id = models.EmailField()
+    contract_name = models.CharField(max_length=255)
+    date = models.DateField()
+    contract_doc = models.FileField(
+        upload_to="contracts/employee/",
+        validators=[pdf_ext_valid, valid_pdffile_type],
+        default="",
+    )
+
+    def __str__(self):
+        return f"{self.employee_id}  - {self.id}"
+    
+class offshore_contracts(models.Model):
     id = models.AutoField(primary_key=True)
     client_id = models.EmailField()
     employee_id = models.EmailField()
@@ -419,7 +433,7 @@ class employee_contract(models.Model):
     )
 
     def __str__(self):
-        return f"{self.client_id} - {self.client_id} - {self.id}"
+        return f"{self.employee_id}  - {self.client_id} - {self.id}"
 
 
 class asset(models.Model):
@@ -452,3 +466,29 @@ class outsource_employees(models.Model):
 
     def __str__(self):
         return f"{self.client_id} - {self.id}"
+
+class company_data(models.Model):
+    id = models.AutoField(primary_key=True)
+    company_name = models.CharField(max_length=30, default="")
+    company_email = models.EmailField(default="")
+    website_url = models.URLField(default="")
+    image = models.ImageField(
+        upload_to="company/logo",
+        validators=[img_ext_valid, valid_imgfile_type],
+        default="",
+    )
+
+    def __str__(self):
+        return f"{self.id}"
+
+    def save(self, *args, **kwargs):
+        try:
+            old_logo = company_data.objects.get(id=self.id)
+            if old_logo.image.name != self.image.name:
+                old_image_path = os.path.join("media", old_logo.image.name)
+                if os.path.exists(old_image_path):
+                    os.remove(old_image_path)
+        except client.DoesNotExist:
+            pass
+
+        super().save(*args, **kwargs)
