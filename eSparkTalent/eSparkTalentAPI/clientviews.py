@@ -931,11 +931,11 @@ class ClockInOut_Request(APIView):
             or get_status == "completed"
             or get_status == "rejected"
         ):
-            clockinout_requests = clockinout_request.objects.filter(
+            clockinout_requests = punch_request.objects.filter(
                 client_id=user, status=get_status
             )
         elif get_status == "all":
-            clockinout_requests = clockinout_request.objects.filter(client_id=user)
+            clockinout_requests = punch_request.objects.filter(client_id=user)
         records = []
 
         if clockinout_requests:
@@ -1002,7 +1002,7 @@ class ClockInOut_Request(APIView):
         request_id = request.query_params.get("id")
         to_update_status = request.data["status"]
         try:
-            to_update_clockinout_request = clockinout_request.objects.get(id=request_id)
+            to_update_clockinout_request = punch_request.objects.get(id=request_id)
             if to_update_clockinout_request:
                 to_update_clockinout_request.status = to_update_status
                 to_update_clockinout_request.save()
@@ -1097,7 +1097,7 @@ class Download_Report(APIView):
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
                 col_widths = [65, 80, 70, 70, 60, 35, 150, 60]
             elif get_tab == "cio":
-                records = clockinout_request.objects.filter(client_id=user)
+                records = punch_request.objects.filter(client_id=user)
                 current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
                 filename = f"ClockInOutReport{current_datetime}.pdf"
                 table_headers = [
