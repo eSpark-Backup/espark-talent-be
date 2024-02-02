@@ -29,6 +29,28 @@ class LoginView(APIView):
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
+class Employee_Home(APIView):
+    def get(self, request, *args, **kwargs):
+        e_email = request.user
+        c_email = request.query_params.get("c_email")
+        try:
+            leave_records = leave_balance.objects.get(employee_id=e_email)
+            leave_summary = {
+                "id": leave_records.id,
+                "casual_leaves": leave_records.casual_leaves,
+                "sick_leaves": leave_records.sick_leaves,
+                "annual_leaves": leave_records.annual_leaves,
+                "unpaid_leaves": leave_records.unpaid_leaves,
+                "hajj_leaves": leave_records.hajj_leaves,
+                "paid_leaves": leave_records.paid_leaves,
+            }
+            return Response(leave_summary, status=status.HTTP_200_OK)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 class Company_Contract(APIView):
     def get(self, request, *args, **kwargs):
         e_email = request.user
@@ -83,6 +105,18 @@ class Leave_Request(APIView):
         e_email = request.user
         c_email = request.query_params.get("c_email")
         tab = request.query_params.get("tab")
+        pending = leave_request.objects.filter(
+            employee_id=e_email, client_id=c_email, status="pending"
+        ).count()
+        rejected = leave_request.objects.filter(
+            employee_id=e_email, client_id=c_email, status="rejected"
+        ).count()
+        completed = leave_request.objects.filter(
+            employee_id=e_email, client_id=c_email, status="completed"
+        ).count()
+        all = leave_request.objects.filter(
+            employee_id=e_email, client_id=c_email
+        ).count()
         try:
             l_balance = leave_balance.objects.get(employee_id=e_email)
             balance_record = {
@@ -123,6 +157,10 @@ class Leave_Request(APIView):
                         "start_date": req.start_date,
                         "end_date": req.end_date,
                         "reason": req.reason,
+                        "pending": pending,
+                        "rejected": rejected,
+                        "completed": completed,
+                        "all": all,
                     }
                     request_record.append(record)
             else:
@@ -154,6 +192,10 @@ class Leave_Request(APIView):
                         "start_date": req.start_date,
                         "end_date": req.end_date,
                         "reason": req.reason,
+                        "pending": pending,
+                        "rejected": rejected,
+                        "completed": completed,
+                        "all": all,
                     }
                     request_record.append(record)
             else:
@@ -163,6 +205,36 @@ class Leave_Request(APIView):
         if request_record:
             records = {"balance": balance_record, "request": request_record}
             return Response(records, status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        e_email = request.user
+        client_email=request.data["client_id"]
+        leave_type = request.data["leave_type"]
+        start_date = request.data["start_date"]
+        end_date = request.data["end_date"]
+        count = request.data["count"]
+        reason = request.data["reason"]
+        attachment = request.data["attachment"]
+        leave_request.objects.create(
+            employee_id=e_email,
+            client_id=client_email,
+            leave_type=leave_type,
+            start_date=start_date,
+            end_date=end_date,
+            count=count,
+            reason=reason,
+            attachment=attachment,
+            status="pending",
+        )
+        return Response(status=status.HTTP_200_OK)
+
+    def delete(self, request, *args, **kwargs):
+        id = request.query_params.get("id")
+        try:
+            leave_request.objects.get(id=id).delete()
+            return Response(status=status.HTTP_200_OK)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -204,6 +276,18 @@ class Punch_Request(APIView):
         c_email = request.query_params.get("c_email")
         tab = request.query_params.get("tab")
         records = []
+        pending = punch_request.objects.filter(
+            employee_id=e_email, client_id=c_email, status="pending"
+        ).count()
+        rejected = punch_request.objects.filter(
+            employee_id=e_email, client_id=c_email, status="rejected"
+        ).count()
+        completed = punch_request.objects.filter(
+            employee_id=e_email, client_id=c_email, status="completed"
+        ).count()
+        all = punch_request.objects.filter(
+            employee_id=e_email, client_id=c_email
+        ).count()
         if tab == "pending" or tab == "completed" or tab == "rejected":
             p_request = punch_request.objects.filter(
                 employee_id=e_email, client_id=c_email, status=tab
@@ -225,6 +309,10 @@ class Punch_Request(APIView):
                         "punch_time": req.punch_time,
                         "description": req.description,
                         "status": req.status,
+                        "pending": pending,
+                        "rejected": rejected,
+                        "completed": completed,
+                        "all": all,
                     }
                     records.append(record)
             else:
@@ -251,6 +339,10 @@ class Punch_Request(APIView):
                         "punch_time": req.punch_time,
                         "description": req.description,
                         "status": req.status,
+                        "pending": pending,
+                        "rejected": rejected,
+                        "completed": completed,
+                        "all": all,
                     }
                     records.append(record)
             else:
@@ -261,3 +353,29 @@ class Punch_Request(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def post(self, request, *args, **kwargs):
+        e_email = request.user_name
+        client_email=request.data["client_id"]
+        punch_type = request.data["punch_type"]
+        punch_time = request.data["punch_time"]
+        date = request.data["date"]
+        description = request.data["description"]
+        punch_request.objects.create(
+            employee_id=e_email,
+            client_id=client_email,
+            punch_type=punch_type,
+            punch_time=punch_time,
+            date=date,
+            description=description,
+            status="pending",
+        )
+        return Response(status=status.HTTP_200_OK)
+
+    def delete(self, request, *args, **kwargs):
+        id = request.query_params.get("id")
+        try:
+            punch_request.objects.get(id=id).delete()
+            return Response(status=status.HTTP_200_OK)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
