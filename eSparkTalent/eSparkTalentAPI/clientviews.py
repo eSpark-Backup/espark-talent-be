@@ -355,15 +355,7 @@ class Interview_Schedule(APIView):
                             "job_title": openapi.Schema(type=openapi.TYPE_STRING),
                             "role_type": openapi.Schema(type=openapi.TYPE_STRING),
                             "employment_term": openapi.Schema(
-                                type=openapi.TYPE_OBJECT,
-                                properties={
-                                    "minimum": openapi.Schema(
-                                        type=openapi.TYPE_INTEGER
-                                    ),
-                                    "maximum": openapi.Schema(
-                                        type=openapi.TYPE_INTEGER
-                                    ),
-                                },
+                                type=openapi.TYPE_STRING,
                             ),
                             "interview_date_time": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME
@@ -481,20 +473,12 @@ class Onboarding(APIView):
                             "job_title": openapi.Schema(type=openapi.TYPE_STRING),
                             "role_type": openapi.Schema(type=openapi.TYPE_STRING),
                             "employment_term": openapi.Schema(
-                                type=openapi.TYPE_OBJECT,
-                                properties={
-                                    "minimum": openapi.Schema(
-                                        type=openapi.TYPE_INTEGER
-                                    ),
-                                    "maximum": openapi.Schema(
-                                        type=openapi.TYPE_INTEGER
-                                    ),
-                                },
+                                type=openapi.TYPE_STRING,
                             ),
                             "joining_date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
-                            "notice_period": openapi.Schema(type=openapi.TYPE_STRING),
+                            "notice_period": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "salary": openapi.Schema(type=openapi.TYPE_INTEGER),
                         },
                     ),
@@ -571,15 +555,7 @@ class Team_Member(APIView):
                             "job_title": openapi.Schema(type=openapi.TYPE_STRING),
                             "role_type": openapi.Schema(type=openapi.TYPE_STRING),
                             "employment_term": openapi.Schema(
-                                type=openapi.TYPE_OBJECT,
-                                properties={
-                                    "minimum": openapi.Schema(
-                                        type=openapi.TYPE_INTEGER
-                                    ),
-                                    "maximum": openapi.Schema(
-                                        type=openapi.TYPE_INTEGER
-                                    ),
-                                },
+                                type=openapi.TYPE_STRING,
                             ),
                             "joining_date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
@@ -700,7 +676,7 @@ class Leave_Request(APIView):
                             "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
                             "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
-                            # "country": openapi.Schema(type=openapi.TYPE_STRING),
+                            "country": openapi.Schema(type=openapi.TYPE_STRING),
                             "department": openapi.Schema(type=openapi.TYPE_STRING),
                             "leave_type": openapi.Schema(type=openapi.TYPE_STRING),
                             "start_date": openapi.Schema(
@@ -710,8 +686,6 @@ class Leave_Request(APIView):
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
                             "count": openapi.Schema(type=openapi.TYPE_INTEGER),
-                            "sandwich_count": openapi.Schema(type=openapi.TYPE_INTEGER),
-                            "total": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "reason": openapi.Schema(type=openapi.TYPE_STRING),
                             "requested_at": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME
@@ -843,6 +817,29 @@ class Leave_Request(APIView):
                             ) - int(to_update_leave_request.count)
                             leave_balances_instance.annual_leaves["availed"] = int(
                                 leave_balances_instance.annual_leaves["availed"]
+                            ) + int(to_update_leave_request.count)
+                        elif to_update_leave_request.leave_type == "hajj":
+                            leave_balances_instance.hajj_leaves["balance"] = int(
+                                leave_balances_instance.hajj_leaves["balance"]
+                            ) - int(to_update_leave_request.count)
+                            leave_balances_instance.hajj_leaves["availed"] = int(
+                                leave_balances_instance.hajj_leaves["availed"]
+                            ) + int(to_update_leave_request.count)
+
+                        elif to_update_leave_request.leave_type == "paid":
+                            leave_balances_instance.paid_leaves["balance"] = int(
+                                leave_balances_instance.paid_leaves["balance"]
+                            ) - int(to_update_leave_request.count)
+                            leave_balances_instance.paid_leaves["availed"] = int(
+                                leave_balances_instance.paid_leaves["availed"]
+                            ) + int(to_update_leave_request.count)
+
+                        elif to_update_leave_request.leave_type == "unpaid":
+                            leave_balances_instance.unpaid_leaves["balance"] = int(
+                                leave_balances_instance.unpaid_leaves["balance"]
+                            ) - int(to_update_leave_request.count)
+                            leave_balances_instance.unpaid_leaves["availed"] = int(
+                                leave_balances_instance.unpaid_leaves["availed"]
                             ) + int(to_update_leave_request.count)
 
                         leave_balances_instance.save()
@@ -1286,24 +1283,13 @@ class Download_Report(APIView):
                 )
 
                 pdf_table.setStyle(style)
-
-                # Create paragraph for raw data
                 styles = getSampleStyleSheet()
-
-                # Build PDF document
                 elements = []
-
-                # Draw centered heading using the canvas object
                 heading = FileHeading
                 elements.append(Paragraph(heading, styles["Title"]))
-
-                # Add a line break
                 elements.append(Paragraph("<br/>", styles["Normal"]))
 
-                # Add the table
                 elements.append(pdf_table)
-
-                # Add a line break
                 elements.append(Paragraph("<br/>", styles["Normal"]))
 
                 pdf.build(elements)
@@ -1320,7 +1306,7 @@ class Download_Report(APIView):
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-class UpdateUserNameView(APIView):
+class UpdateCompanyNameView(APIView):
     @swagger_auto_schema(
         tags=["Oragnization : Settings"],
         request_body=openapi.Schema(
@@ -1349,13 +1335,10 @@ class UpdateUserNameView(APIView):
     )
     def patch(self, request):
         user = request.user
-        new_user_name = request.data.get("company_name")
-        if new_user_name:
-            record = end_user.objects.get(email=user)
-            record.username = new_user_name
-            record.save()
+        new_company_name = request.data.get("company_name")
+        if new_company_name:
             record = client.objects.get(email=user)
-            record.company_name = new_user_name
+            record.company_name = new_company_name
             record.save()
             return Response(status=status.HTTP_200_OK)
         else:
@@ -1417,9 +1400,11 @@ class UpdatePasswordView(APIView):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "password": openapi.Schema(type=openapi.TYPE_STRING),
+                "current_password": openapi.Schema(type=openapi.TYPE_STRING),
+                "new_password": openapi.Schema(type=openapi.TYPE_STRING),
+                "confirm_password": openapi.Schema(type=openapi.TYPE_STRING),
             },
-            required=["password"],
+            required=["current_password,new_password,confirm_password"],
         ),
         manual_parameters=[
             openapi.Parameter(
@@ -1440,9 +1425,22 @@ class UpdatePasswordView(APIView):
     )
     def patch(self, request):
         user = request.user
-        new_password = request.data.get("password")
-        if new_password:
+        current_password = request.data.get("current_password")
+        new_password = request.data.get("new_password")
+        confirm_password = request.data.get("confirm_password")
+
+        try:
             record = end_user.objects.get(email=user)
+        except end_user.DoesNotExist:
+            raise Http404("User does not exist")
+
+        if not record.check_password(current_password):
+            return Response(
+                {"error": "Incorrect current password"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if new_password == confirm_password:
             record.set_password(new_password)
             record.save()
             return Response(
@@ -1868,7 +1866,7 @@ class Client_contract(APIView):
                     "contract_name": data.contract_name,
                     "client_id": data.client_id,
                     "date": data.date,
-                    "contract_doc": data.contract_doc.url,  # Assuming you want the URL of the contract document
+                    "contract_doc": data.contract_doc.path,
                 }
                 records.append(record)
 
@@ -1913,9 +1911,8 @@ class Employee_Contract(APIView):
     )
     def get(self, request, *args, **kwargs):
         user = request.user
-        emp_contract = employee_contract.objects.filter(employee_id=user)
+        emp_contract = offshore_contracts.objects.filter(client_id=user)
         records = []
-
         if emp_contract:
             for data in emp_contract:
                 record = {
@@ -1923,7 +1920,7 @@ class Employee_Contract(APIView):
                     "contract_name": data.contract_name,
                     "employee_id": data.employee_id,
                     "date": data.date,
-                    "contract_doc": data.contract_doc.url,
+                    "contract_doc": data.contract_doc.path,
                 }
                 records.append(record)
             return Response(records, status=status.HTTP_200_OK)
