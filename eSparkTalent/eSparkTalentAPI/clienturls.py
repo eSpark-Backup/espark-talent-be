@@ -13,9 +13,11 @@ urlpatterns=[
     path('c_lb/',Leave_Balance.as_view()),
     path('c_clockinout/',ClockInOut_Request.as_view()),
     path('c_downreport/',Download_Report.as_view()),
-    path('c_upduser/', UpdateUserNameView.as_view()),
+    path('c_upduser/', UpdateCompanyNameView.as_view()),
     path('c_updpic/', UploadPictureView.as_view()),
     path('c_updpass/', UpdatePasswordView.as_view()),
     path('c_tracktime/', Time_Tracking.as_view()),
     path('c_invpay/', Invoice_Payments.as_view()),
+    path('c_cmpcontract/', Client_contract.as_view()),
+    path('c_empcontract/', Employee_Contract.as_view()),
 ]
