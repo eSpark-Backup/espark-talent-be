@@ -92,7 +92,8 @@ class Client_Home(APIView):
                         ),
                         "onboarding_count": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "active_employee": openapi.Schema(type=openapi.TYPE_INTEGER),
-                        "Client_image": openapi.Schema(type=openapi.TYPE_FILE),
+                        "client_image": openapi.Schema(type=openapi.TYPE_FILE),
+                        "company_image": openapi.Schema(type=openapi.TYPE_FILE),
                     },
                 ),
             ),
@@ -125,6 +126,8 @@ class Client_Home(APIView):
             image_path = client_data.image.path
         except client.DoesNotExist:
             image_path = None
+        
+        company_record = company_data.objects.get(id=1)
 
         data = {
             "username": user.username,
@@ -133,6 +136,7 @@ class Client_Home(APIView):
             "onboarding_count": onboarding_count,
             "active_employee": active_employee,
             "client_image": image_path,
+            "company_image": company_record.image.path
         }
 
         return Response(data, status=status.HTTP_200_OK)

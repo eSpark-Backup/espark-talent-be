@@ -230,7 +230,7 @@ class onboarding(models.Model):
     role_type = models.CharField(max_length=15)
     employment_term = models.CharField(max_length=15)
     joining_date = models.DateField()
-    notice_period = models.IntegerField(max_length=15)
+    notice_period = models.IntegerField()
     salary = models.IntegerField(null=True)
     benefits = models.JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
