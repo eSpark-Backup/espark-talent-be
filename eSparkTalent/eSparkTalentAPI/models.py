@@ -194,8 +194,7 @@ class hiring_request(models.Model):
 
     def __str__(self):
         return f"{self.client_id} - {self.id}"
-
-
+    
 class interview_schedule(models.Model):
     status = [
         ("short_list", "short_list"),

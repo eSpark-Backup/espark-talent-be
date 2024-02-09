@@ -100,6 +100,7 @@ class Add_Employee(APIView):
                 type=openapi.TYPE_FILE,
                 required=True,
             ),
+            
             openapi.Parameter(
                 name="emergency_contact",
                 in_=openapi.IN_FORM,
@@ -126,13 +127,13 @@ class Add_Employee(APIView):
                 required=True,
             ),
             openapi.Parameter(
-                name="designation",
+                name="job_title",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
                 required=True,
             ),
             openapi.Parameter(
-                name="department",
+                name="role",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
                 required=True,
@@ -144,14 +145,7 @@ class Add_Employee(APIView):
                 required=True,
             ),
             openapi.Parameter(
-                name="benefits",
-                in_=openapi.IN_FORM,
-                type=openapi.TYPE_OBJECT,
-                default={"health": True, "fuel": False},
-                required=True,
-            ),
-            openapi.Parameter(
-                name="punch_time",
+                name="punch_timings",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_OBJECT,
                 default={"check_in": "10:00", "check_out": "19:00"},
@@ -236,14 +230,13 @@ class Add_Employee(APIView):
                     resume=serializer.validated_data["resume"],
                     emergency_contact=serializer.validated_data["emergency_contact"],
                     joining_date=serializer.validated_data["joining_date"],
-                    designation=serializer.validated_data["designation"],
-                    department=serializer.validated_data["department"],
+                    job_title=serializer.validated_data["job_title"],
+                    role=serializer.validated_data["role"],
                     company=serializer.validated_data["company"],
-                    benefits=serializer.validated_data["benefits"],
-                    punch_time=serializer.validated_data["punch_time"],
+                    punch_timings=serializer.validated_data["punch_timings"],
                 )
 
-                end_user.objects.create_user(
+                end_user.objects.create(
                     username=serializer.validated_data["first_name"]
                     + " "
                     + serializer.validated_data["last_name"],
@@ -258,43 +251,48 @@ class Add_Employee(APIView):
                         "total": casual_leaves,
                         "availed": 0,
                         "balance": casual_leaves,
+                        "status" : "enable"
                     },
                     sick_leaves={
                         "total": sick_leaves,
                         "availed": 0,
                         "balance": sick_leaves,
+                        "status" : "enable"
                     },
                     annual_leaves={
                         "total": annual_leaves,
                         "availed": 0,
                         "balance": annual_leaves,
+                        "status" : "enable"
                     },
                     unpaid_leaves={
                         "total": unpaid_leaves,
                         "availed": 0,
                         "balance": unpaid_leaves,
+                        "status" : "enable"
                     },
                     hajj_leaves={
                         "total": hajj_leaves,
                         "availed": 0,
                         "balance": hajj_leaves,
+                        "status" : "enable"
                     },
                     paid_leaves={
                         "total": paid_leaves,
                         "availed": 0,
                         "balance": paid_leaves,
+                        "status" : "enable"
                     },
                 )
-
                 outsource_employees.objects.create(
                     client_id="talent@esparkconsultants.com",
                     employee_id=serializer.validated_data["email"],
-                    job_title=serializer.validated_data["designation"],
+                    job_title=serializer.validated_data["job_title"],
                     country="Pakistan",
-                    role_type="",
+                    role_type= "",
                     employment_term="",
                     joining_date=serializer.validated_data["joining_date"],
-                    salary="",
+                    salary= "1000",
                     benefits={},
                 )
                 return Response(
@@ -424,7 +422,6 @@ class Add_Client(APIView):
                     address=serializer.validated_data["address"],
                     image=serializer.validated_data["image"],
                 )
-
                 end_user.objects.create_user(
                     username=serializer.validated_data["company_name"],
                     role="client",
@@ -856,7 +853,7 @@ class Hr_Employees(APIView):
                         "employees_id": openapi.Schema(type=openapi.TYPE_STRING),
                         "name": openapi.Schema(type=openapi.TYPE_STRING),
                         "image_path": openapi.Schema(type=openapi.TYPE_STRING),
-                        "designation": openapi.Schema(type=openapi.TYPE_STRING),
+                        "job_title": openapi.Schema(type=openapi.TYPE_STRING),
                         "company": openapi.Schema(type=openapi.TYPE_STRING),
                         "active": openapi.Schema(type=openapi.TYPE_BOOLEAN),
                     },
@@ -897,7 +894,7 @@ class Hr_Employees(APIView):
                                 "employee_id": e_user.employee_id,
                                 "name": e_user.first_name + " " + e_user.last_name,
                                 "image_path": e_user.image.path,
-                                "designation": e_user.designation,
+                                "designation": e_user.job_title,
                                 "company": c_user.company_name,
                                 "active": True,
                             }
@@ -913,14 +910,14 @@ class Hr_Employees(APIView):
                 records = []
                 for emp in employees:
                     try:
-                        e_user = outsource_employees.objects.get(employee_id=emp.email)
-                        if not e_user:
+                        e_user = outsource_employees.objects.get(client_id=emp.email)
+                        if e_user:
                             record = {
                                 "id": emp.id,
                                 "employee_id": emp.employee_id,
                                 "name": emp.first_name + " " + emp.last_name,
                                 "image_path": emp.image.path,
-                                "designation": emp.designation,
+                                "designation": emp.job_title,
                                 "company": emp.company,
                                 "active": False,
                             }
@@ -931,27 +928,26 @@ class Hr_Employees(APIView):
                     return Response(records, status=status.HTTP_200_OK)
                 else:
                     return Response(status=status.HTTP_204_NO_CONTENT)
-
         else:
             employees = employee.objects.all()
             if employees:
                 records = []
                 for emp in employees:
-                    e_user = outsource_employees.objects.get(email=emp.email)
-                    if not e_user:
-                        company = emp.company
-                        active = False
-                    else:
+                    try:
+                        e_user = outsource_employees.objects.get(client_id=emp.email)
                         c_user = client.objects.get(email=e_user.client_id)
                         company = c_user.company_name
                         active = True
+                    except outsource_employees.DoesNotExist:
+                        company = emp.company
+                        active = False
 
                     record = {
                         "id": emp.id,
                         "employee_id": emp.employee_id,
                         "name": emp.first_name + " " + emp.last_name,
                         "image_path": emp.image.path,
-                        "designation": emp.designation,
+                        "designation": emp.job_title,
                         "company": company,
                         "active": active,
                     }
@@ -966,7 +962,7 @@ class Hr_Employees(APIView):
 @permission_classes([IsAuthenticated])
 class Hr_Employee(APIView):
     @swagger_auto_schema(
-        tags=["Employees : Profile, Client, Assets, Contract"],
+        tags=["Employees : Profile, Client, Assets"],
         responses={
             200: openapi.Response(
                 description="Successful request",
@@ -990,6 +986,9 @@ class Hr_Employee(APIView):
                                     "employeement_term": openapi.Schema(
                                         type=openapi.TYPE_STRING
                                     ),
+                                    "join_date": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
                                 },
                             ),
                         ),
@@ -1010,30 +1009,13 @@ class Hr_Employee(APIView):
                                     "employeement_term": openapi.Schema(
                                         type=openapi.TYPE_STRING
                                     ),
-                                },
-                            ),
-                        ),
-                        "contract_signed": openapi.Schema(
-                            type=openapi.TYPE_ARRAY,
-                            items=openapi.Items(
-                                type=openapi.TYPE_OBJECT,
-                                properties={
-                                    "contract_name": openapi.Schema(
-                                        type=openapi.TYPE_STRING
-                                    ),
-                                    "client_id": openapi.Schema(
-                                        type=openapi.TYPE_STRING
-                                    ),
-                                    "date": openapi.Schema(
-                                        type=openapi.TYPE_STRING,
-                                        format=openapi.FORMAT_DATETIME,
-                                    ),
-                                    "download": openapi.Schema(
+                                    "join_date": openapi.Schema(
                                         type=openapi.TYPE_STRING
                                     ),
                                 },
                             ),
                         ),
+                        
                         "assets": openapi.Schema(
                             type=openapi.TYPE_ARRAY,
                             items=openapi.Items(
@@ -1047,13 +1029,10 @@ class Hr_Employee(APIView):
                                         type=openapi.TYPE_STRING,
                                         format=openapi.FORMAT_DATETIME,
                                     ),
-                                    "assignee_name": openapi.Schema(
+                                    "assignee": openapi.Schema(
                                         type=openapi.TYPE_STRING
                                     ),
-                                    "assignee_email": openapi.Schema(
-                                        type=openapi.TYPE_STRING,
-                                        format=openapi.FORMAT_EMAIL,
-                                    ),
+                                   
                                 },
                             ),
                         ),
@@ -1062,16 +1041,14 @@ class Hr_Employee(APIView):
                             properties={
                                 "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                                 "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
-                                "first_name": openapi.Schema(type=openapi.TYPE_STRING),
-                                "last_name": openapi.Schema(type=openapi.TYPE_STRING),
+                                "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
+                               
                                 "gender": openapi.Schema(type=openapi.TYPE_STRING),
                                 "dob": openapi.Schema(
                                     type=openapi.TYPE_STRING,
                                     format=openapi.FORMAT_DATETIME,
                                 ),
-                                "phone_number": openapi.Schema(
-                                    type=openapi.TYPE_INTEGER
-                                ),
+                               
                                 "email": openapi.Schema(
                                     type=openapi.TYPE_STRING,
                                     format=openapi.FORMAT_EMAIL,
@@ -1080,9 +1057,6 @@ class Hr_Employee(APIView):
                                     type=openapi.TYPE_STRING
                                 ),
                                 "image_path": openapi.Schema(type=openapi.TYPE_STRING),
-                                "emergency_no": openapi.Schema(
-                                    type=openapi.TYPE_STRING
-                                ),
                                 "resume_path": openapi.Schema(type=openapi.TYPE_STRING),
                                 "emergency_contact": openapi.Schema(
                                     type=openapi.TYPE_OBJECT,
@@ -1121,9 +1095,8 @@ class Hr_Employee(APIView):
                                     type=openapi.TYPE_STRING,
                                     format=openapi.FORMAT_DATETIME,
                                 ),
-                                "designation": openapi.Schema(type=openapi.TYPE_STRING),
-                                "department": openapi.Schema(type=openapi.TYPE_STRING),
-                                "company": openapi.Schema(type=openapi.TYPE_STRING),
+                                "job_title": openapi.Schema(type=openapi.TYPE_STRING),
+                                "role": openapi.Schema(type=openapi.TYPE_STRING),
                             },
                         ),
                     },
@@ -1143,9 +1116,8 @@ class Hr_Employee(APIView):
             openapi.Parameter(
                 "tab",
                 openapi.IN_QUERY,
-                description="Tab name (client, contract, assets)",
                 type=openapi.TYPE_STRING,
-                enum=[" ", "client", "contract", "assets"],
+                enum=[" ", "client", "assets"],
             ),
             openapi.Parameter(
                 "Authorization",
@@ -1157,6 +1129,7 @@ class Hr_Employee(APIView):
         operation_id=".",
         operation_summary="Get Employee Details",
     )
+    #error
     def get(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
         tab = request.query_params.get("tab")
@@ -1164,15 +1137,15 @@ class Hr_Employee(APIView):
         if tab == "client":
             active_clients = []
             terminated_clients = []
-            contracts = []
+            
             active = outsource_employees.objects.filter(
                 employee_id=employee_data.email, status="active"
             )
             terminated = outsource_employees.objects.filter(
                 employee_id=employee_data.email, status="terminated"
             )
-            contract = employee_contract.objects.filter(employee_id=employee_data.email)
-            if active and terminated and contract:
+           
+            if active and terminated:
                 for rec in active:
                     client_data = client.objects.get(email=rec.client_id)
                     record = {
@@ -1182,6 +1155,8 @@ class Hr_Employee(APIView):
                         "client_id": client_data.client_id,
                         "job_title": rec.job_title,
                         "employeement_term": rec.employment_term,
+                        "join_date": client_data.join_date,
+                        "join_date": client_data.join_date,
                     }
                     active_clients.append(record)
                 for rec in terminated:
@@ -1195,46 +1170,17 @@ class Hr_Employee(APIView):
                         "employeement_term": rec.employment_term,
                     }
                     terminated_clients.append(record)
-                for rec in contract:
-                    if rec.client_id != "talent@esparkconsultants.com":
-                        client_data = client.objects.get(email=rec.client_id)
-                        record = {
-                            "contract_name": rec.contract_name,
-                            "client_id": client_data.client_id,
-                            "date": rec.date,
-                            "download": rec.contract_doc.url,
-                        }
-                        contracts.append(record)
-
+               
                 data = {
                     "active_clients": active_clients,
                     "terminated_clients": terminated_clients,
-                    "contract_signed": contracts,
+                    
                 }
                 return Response(data, status=status.HTTP_200_OK)
 
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-        elif tab == "contract":
-            contract = employee_contract.objects.filter(employee_id=employee_data.email)
-            if contract:
-                records = []
-                for rec in contract:
-                    if rec.client_id == "talent@esparkconsultants.com":
-                        client_data = client.objects.get(email=rec.client_id)
-                        record = {
-                            "contract_name": rec.contract_name,
-                            "client_id": client_data.client_id,
-                            "date": rec.date,
-                            "download": rec.contract_doc.url,
-                        }
-                        records.append(record)
-                if len(records) > 0:
-                    return Response(records, status=status.HTTP_200_OK)
-
-            else:
-                return Response(status=status.HTTP_204_NO_CONTENT)
 
         elif tab == "assets":
             emp_record = employee.objects.get(id=record_id)
@@ -1246,8 +1192,7 @@ class Hr_Employee(APIView):
                         "gadget": rec.gadget,
                         "asset_id": rec.asset_id,
                         "assigned_date": rec.assigned_date,
-                        "assignee_name": rec.assignee_name,
-                        "assignee_email": rec.assignee_email,
+                        "assignee": f"{rec.assignee_name}\n{rec.assignee_email}",
                     }
                     records.append(record)
                 if len(records) > 0:
@@ -1262,21 +1207,18 @@ class Hr_Employee(APIView):
                 record = {
                     "id": emp_record.id,
                     "employee_id": emp_record.employee_id,
-                    "first_name": emp_record.first_name,
-                    "last_name": emp_record.last_name,
+                    "employee_name": emp_record.first_name+" "+emp_record.last_name,
                     "gender": emp_record.gender,
                     "dob": emp_record.dob,
-                    "phone_number": emp_record.phone_number,
                     "email": emp_record.email,
                     "marital_status": emp_record.marital_status,
                     "image_path": emp_record.image.path,
-                    "emergency_no": emp_record.emergency_no,
                     "resume_path": emp_record.resume.path,
                     "emergency_contact": emp_record.emergency_contact,
                     "joining_date": emp_record.joining_date,
-                    "designation": emp_record.designation,
-                    "department": emp_record.department,
-                    "company": emp_record.company,
+                    "job_title": emp_record.job_title,
+                    "role": emp_record.role,
+                    
                 }
                 return Response(record, status=status.HTTP_200_OK)
             except:
@@ -1302,10 +1244,10 @@ class Update_Emp_Person_Info(APIView):
                 "email": openapi.Schema(
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
                 ),
-                "designation": openapi.Schema(type=openapi.TYPE_STRING),
+                "job_title": openapi.Schema(type=openapi.TYPE_STRING),
                 "marital_status": openapi.Schema(type=openapi.TYPE_STRING),
                 "gender": openapi.Schema(type=openapi.TYPE_STRING),
-                "department": openapi.Schema(type=openapi.TYPE_STRING),
+                "role": openapi.Schema(type=openapi.TYPE_STRING),
                 "joining_date": openapi.Schema(
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME
                 ),
@@ -1539,7 +1481,7 @@ class Start_Hiring(APIView):
             type=openapi.TYPE_OBJECT,
             properties={
                 "client_id": openapi.Schema(
-                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
+                    type=openapi.TYPE_STRING
                 ),
                 "job_title": openapi.Schema(type=openapi.TYPE_STRING),
                 "role_type": openapi.Schema(type=openapi.TYPE_STRING),
@@ -1589,7 +1531,8 @@ class Start_Hiring(APIView):
         operation_id="5",
     )
     def post(self, request, *args, **kwargs):
-        serializer = hiring_requestSerializer(data=request.data)
+        serializer = start_requestSerializer(data=request.data)
+        print(serializer)
         if serializer.is_valid():
             hiring_request.objects.create(
                 client_id=serializer.validated_data["client_id"],
@@ -1876,6 +1819,185 @@ class Interview_Schedule(APIView):
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Onboarding(APIView):
+    @swagger_auto_schema(
+        tags=["Clients : Hire & onBoard"],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "client_id": openapi.Schema(
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
+                ),
+                "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
+                "gender": openapi.Schema(type=openapi.TYPE_STRING),
+                "country": openapi.Schema(type=openapi.TYPE_STRING),
+                "job_title": openapi.Schema(type=openapi.TYPE_STRING),
+                "role_type": openapi.Schema(type=openapi.TYPE_STRING),
+                "employment_term": openapi.Schema(type=openapi.TYPE_STRING),
+                "joining_date": openapi.Schema(
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME
+                ),
+                "notice_period": openapi.Schema(type=openapi.TYPE_STRING),
+                "salary": openapi.Schema(type=openapi.TYPE_INTEGER),
+                
+            },
+            required=[
+                "client_id",
+                "employee_name",
+                "gender",
+                "country",
+                "job_title",
+                "role_type",
+                "employment_term",
+                "joining_date",
+                "notice_period",
+                "salary"
+            ],
+        ),
+        responses={
+            201: openapi.Response("Successful created"),
+            400: openapi.Response("Bad request"),
+            401: openapi.Response("UnAuthorize"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to create onboarding request.",
+        operation_id="6",
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = onboardingSerializer(data=request.data)
+        if serializer.is_valid():
+            onboarding.objects.create(
+                client_id=serializer.validated_data["client_id"],
+                employee_name=serializer.validated_data["employee_name"],
+                gender=serializer.validated_data["gender"],
+                country=serializer.validated_data["country"],
+                job_title=serializer.validated_data["job_title"],
+                role_type=serializer.validated_data["role_type"],
+                joining_date=serializer.validated_data["joining_date"],
+                notice_period=serializer.validated_data["notice_period"],
+                salary=serializer.validated_data["salary"],
+            
+            )
+            return Response(
+                {"message": "Resquest created"}, status=status.HTTP_201_CREATED
+            )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    @swagger_auto_schema(
+        tags=["Clients : Hire & onBoard"],
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "gender": openapi.Schema(type=openapi.TYPE_STRING),
+                            "job_title": openapi.Schema(type=openapi.TYPE_STRING),
+                            "role_type": openapi.Schema(type=openapi.TYPE_STRING),
+                            "employment_term": openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "minimum": openapi.Schema(
+                                        type=openapi.TYPE_INTEGER
+                                    ),
+                                    "maximum": openapi.Schema(
+                                        type=openapi.TYPE_INTEGER
+                                    ),
+                                },
+                            ),
+                            "joining_date": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
+                            ),
+                            "notice_period": openapi.Schema(type=openapi.TYPE_STRING),
+                            "salary": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response("No content"),
+            401: openapi.Response("UnAuthorize"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve on-boarding data.",
+        operation_id="7",
+    )
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        onboardings = onboarding.objects.filter(client_id=user)
+        records = []
+        if onboardings:
+            for data in onboardings:
+                record = {
+                    "id": data.id,
+                    "employee_name": data.employee_name,
+                    "gender": data.gender,
+                    "country": data.country,
+                    "job_title": data.job_title,
+                    "role_type": data.role_type,
+                    "employment_term": data.employment_term,
+                    "joining_date": data.joining_date,
+                    "notice_period": data.notice_period,
+                    "salary": data.salary,
+                }
+                records.append(record)
+            return Response(records, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    @swagger_auto_schema(
+        tags=["Clients : Hire & onBoard"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            204: openapi.Response(description="No content"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="Unauthorize"),
+        },
+        operation_summary="Endpoint to delete a onboarding request.",
+        operation_id="8",
+    )
+    def delete(self, request, *args, **kwargs):
+        user = request.user
+        delete_id = request.query_params.get("id")
+        try:
+            onboarding.objects.filter(id=delete_id).delete()
+            return Response(status=status.HTTP_200_OK)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -1915,7 +2037,7 @@ class Hr_Clients(APIView):
         if clients:
             records = []
             for cl in clients:
-                user = end_user.objects.filter(email=cl.email)
+                user = end_user.objects.get(email=cl.email)
                 record = {
                     "id": cl.id,
                     "client_id": cl.client_id,
@@ -1926,11 +2048,8 @@ class Hr_Clients(APIView):
                 }
                 records.append(record)
             return Response(records, status=status.HTTP_200_OK)
-
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Hr_Client(APIView):
@@ -2095,3 +2214,4 @@ class Hr_Client(APIView):
             setattr(client_record, key, updates[key])
         client_record.save()
         return Response(status=status.HTTP_200_OK)
+
