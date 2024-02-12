@@ -367,9 +367,9 @@ class employee_invoice(models.Model):
 
 class other_payment(models.Model):
     payment_status = [
-        ("Pending", "Pending"),
-        ("Processing", "Processing"),
-        ("Paid", "Paid"),
+        ("pending", "pending"),
+        ("processing", "processing"),
+        ("paid", "paid"),
     ]
     id = models.AutoField(primary_key=True)
     client_id = models.EmailField()

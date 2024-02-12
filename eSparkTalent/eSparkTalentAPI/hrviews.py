@@ -11,6 +11,7 @@ import datetime
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.parsers import MultiPartParser
+from django.core.exceptions import ObjectDoesNotExist
 
 
 @authentication_classes([JWTAuthentication])
@@ -100,7 +101,6 @@ class Add_Employee(APIView):
                 type=openapi.TYPE_FILE,
                 required=True,
             ),
-            
             openapi.Parameter(
                 name="emergency_contact",
                 in_=openapi.IN_FORM,
@@ -251,37 +251,37 @@ class Add_Employee(APIView):
                         "total": casual_leaves,
                         "availed": 0,
                         "balance": casual_leaves,
-                        "status" : "enable"
+                        "status": "enable",
                     },
                     sick_leaves={
                         "total": sick_leaves,
                         "availed": 0,
                         "balance": sick_leaves,
-                        "status" : "enable"
+                        "status": "enable",
                     },
                     annual_leaves={
                         "total": annual_leaves,
                         "availed": 0,
                         "balance": annual_leaves,
-                        "status" : "enable"
+                        "status": "enable",
                     },
                     unpaid_leaves={
                         "total": unpaid_leaves,
                         "availed": 0,
                         "balance": unpaid_leaves,
-                        "status" : "enable"
+                        "status": "enable",
                     },
                     hajj_leaves={
                         "total": hajj_leaves,
                         "availed": 0,
                         "balance": hajj_leaves,
-                        "status" : "enable"
+                        "status": "enable",
                     },
                     paid_leaves={
                         "total": paid_leaves,
                         "availed": 0,
                         "balance": paid_leaves,
-                        "status" : "enable"
+                        "status": "enable",
                     },
                 )
                 outsource_employees.objects.create(
@@ -289,10 +289,10 @@ class Add_Employee(APIView):
                     employee_id=serializer.validated_data["email"],
                     job_title=serializer.validated_data["job_title"],
                     country="Pakistan",
-                    role_type= "",
+                    role_type="",
                     employment_term="",
                     joining_date=serializer.validated_data["joining_date"],
-                    salary= "1000",
+                    salary="1000",
                     benefits={},
                 )
                 return Response(
@@ -501,295 +501,287 @@ class Add_Asset(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# @authentication_classes([JWTAuthentication])
-# @permission_classes([IsAuthenticated])
-# class Employee_Invoice(APIView):
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Employee_Invoice(APIView):
 
-#     parser_classes = (MultiPartParser,)
+    parser_classes = (MultiPartParser,)
 
-#     @swagger_auto_schema(
-#         tags=["Client : Employee Invoice"],
-#         responses={
-#             201: "Request created",
-#             400: "Bad Request",
-#             401: "Unauthorized",
-#         },
-#         manual_parameters=[
-#             openapi.Parameter(
-#                 "Authorization",
-#                 openapi.IN_HEADER,
-#                 description="Bearer Token",
-#                 type=openapi.TYPE_STRING,
-#             ),
-#             openapi.Parameter(
-#                 name="onboarding_id",
-#                 in_=openapi.IN_FORM,
-#                 type=openapi.TYPE_STRING,
-#                 required=True,
-#             ),
-#             openapi.Parameter(
-#                 name="invoice_date",
-#                 in_=openapi.IN_FORM,
-#                 type=openapi.TYPE_STRING,
-#                 format=openapi.FORMAT_DATE,
-#                 required=True,
-#             ),
-#             openapi.Parameter(
-#                 name="due_date",
-#                 in_=openapi.IN_FORM,
-#                 type=openapi.TYPE_STRING,
-#                 format=openapi.FORMAT_DATE,
-#                 required=True,
-#             ),
-#             openapi.Parameter(
-#                 name="invoice_amount",
-#                 in_=openapi.IN_FORM,
-#                 type=openapi.TYPE_INTEGER,
-#                 required=True,
-#             ),
-#             openapi.Parameter(
-#                 name="invoice",
-#                 in_=openapi.IN_FORM,
-#                 type=openapi.TYPE_FILE,
-#                 required=True,
-#             ),
-#             openapi.Parameter(
-#                 "payment_status",
-#                 openapi.IN_FORM,
-#                 type=openapi.TYPE_STRING,
-#                 enum=["Paid", "Pending", "Processing"],
-#                 required=True,
-#             ),
-#             openapi.Parameter(
-#                 name="employee_email",
-#                 in_=openapi.IN_FORM,
-#                 type=openapi.TYPE_STRING,
-#                 required=True,
-#             ),
-#             openapi.Parameter(
-#                 name="client_email",
-#                 in_=openapi.IN_FORM,
-#                 type=openapi.TYPE_STRING,
-#                 required=True,
-#             ),
-#         ],
-#         operation_summary="Employee Invoice",
-#         operation_id=".",
-#     )
-#     def post(self, request, *args, **kwargs):
-#         posted_data = request.data
-#         employee_mail = posted_data.pop("employee_email", None)[0]
-#         client_mail = posted_data.pop("client_email", None)[0]
-#         try:
-#             onboards = onboarding.objects.get(
-#                 client=client_mail, employee=employee_mail
-#             )
-#             onboard_id = onboards.id
-#             posted_data["onboarding_id"] = onboard_id
-#             serializer = EmployeeInvoiceSerializer(data=posted_data)
-#             if serializer.is_valid():
-#                 employee_invoice.objects.create(
-#                     onboarding_id=serializer.validated_data["onboarding_id"],
-#                     invoice_date=serializer.validated_data["invoice_date"],
-#                     due_date=serializer.validated_data["due_date"],
-#                     invoice_amount=serializer.validated_data["invoice_amount"],
-#                     payment_status=serializer.validated_data["payment_status"],
-#                     invoice=serializer.validated_data["invoice"],
-#                 )
-#                 return Response(
-#                     {"message": "Resquest created"}, status=status.HTTP_201_CREATED
-#                 )
-#             else:
-#                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#         except:
-#             return Response(status=status.HTTP_400_BAD_REQUEST)
+    @swagger_auto_schema(
+        tags=["Client : Employee Invoice"],
+        responses={
+            201: "Request created",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="employee_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="invoice_date",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="due_date",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="invoice_amount",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="invoice",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required=True,
+            ),
+            openapi.Parameter(
+                "payment_status",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                enum=["pending", "paid", "processing"],
+                required=True,
+            ),
+            openapi.Parameter(
+                name="client_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        operation_summary="Employee Invoice",
+        operation_id="0",
+    )
+    def post(self, request, *args, **kwargs):
+        posted_data = request.data
+        id = posted_data.get("employee_id", None)
+        print(id)
+        employee_data = employee.objects.get(employee_id=id)
+        print(employee_data)
+        posted_data["employee_id"] = employee_data.email
+        try:
+            serializer = EmployeeInvoiceSerializer(data=posted_data)
 
-#     @swagger_auto_schema(
-#         tags=["Client : Employee Invoice"],
-#         request_body=openapi.Schema(
-#             type=openapi.TYPE_OBJECT,
-#             properties={
-#                 "payment_status": openapi.Schema(
-#                     type=openapi.TYPE_STRING, enum=["Pending", "Processing", "Paid"]
-#                 ),
-#             },
-#             required=["payment_status"],
-#         ),
-#         manual_parameters=[
-#             openapi.Parameter(
-#                 "id",
-#                 openapi.IN_QUERY,
-#                 description="ID of the record",
-#                 type=openapi.TYPE_INTEGER,
-#                 required=True,
-#             ),
-#             openapi.Parameter(
-#                 "Authorization",
-#                 openapi.IN_HEADER,
-#                 description="Bearer Token",
-#                 type=openapi.TYPE_STRING,
-#             ),
-#         ],
-#         responses={
-#             201: "Request created",
-#             400: "Bad Request",
-#             401: "Unauthorized",
-#         },
-#         operation_summary="Employee Invoice",
-#         operation_id=".",
-#     )
+            if serializer.is_valid():
+                employee_invoice.objects.create(
+                    client_id=serializer.validated_data["client_id"],
+                    employee_id=serializer.validated_data["employee_id"],
+                    invoice_date=serializer.validated_data["invoice_date"],
+                    due_date=serializer.validated_data["due_date"],
+                    invoice_amount=serializer.validated_data["invoice_amount"],
+                    payment_status=serializer.validated_data["payment_status"],
+                    invoice=serializer.validated_data["invoice"],
+                )
+                return Response(
+                    {"message": "Request created"}, status=status.HTTP_201_CREATED
+                )
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except ObjectDoesNotExist:
+            return Response(
+                {"message": "Onboarding not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-#     def patch(self, request, *args, **kwargs):
-#         request_id = request.query_params.get("id")
-#         to_update_status = request.data["payment_status"]
-#         try:
-#             to_update_emp_inv = employee_invoice.objects.get(id=request_id)
-#             if to_update_emp_inv:
-#                 to_update_emp_inv.payment_status = to_update_status
-#                 to_update_emp_inv.save()
+    @swagger_auto_schema(
+        tags=["Client : Employee Invoice"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "payment_status",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                enum=["pending", "paid", "processing"],
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            201: "Request created",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        operation_summary="Employee Invoice",
+        operation_id="1",
+    )
+    def patch(self, request, *args, **kwargs):
+        request_id = request.query_params.get("id")
+        to_update_status = request.data["payment_status"]
+        try:
+            to_update_emp_inv = employee_invoice.objects.get(id=request_id)
+            if to_update_emp_inv:
+                to_update_emp_inv.payment_status = to_update_status
+                to_update_emp_inv.save()
 
-#                 return Response(status=status.HTTP_200_OK)
-#             else:
-#                 return Response(status=status.HTTP_204_NO_CONTENT)
-#         except:
-#             return Response(status=status.HTTP_400_BAD_REQUEST)
+                return Response(status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
-# @authentication_classes([JWTAuthentication])
-# @permission_classes([IsAuthenticated])
-# class Other_Payment(APIView):
-#     parser_classes = (MultiPartParser,)
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Other_Payment(APIView):
+    parser_classes = (MultiPartParser,)
 
-#     @swagger_auto_schema(
-#         tags=["Client : Other Invoice/payment"],
-#         responses={
-#             201: "Request created",
-#             400: "Bad Request",
-#             401: "Unauthorized",
-#         },
-#         manual_parameters=[
-#             openapi.Parameter(
-#                 "Authorization",
-#                 openapi.IN_HEADER,
-#                 description="Bearer Token",
-#                 type=openapi.TYPE_STRING,
-#             ),
-#             openapi.Parameter(
-#                 name="client",
-#                 in_=openapi.IN_FORM,
-#                 type=openapi.TYPE_STRING,
-#                 required=True,
-#             ),
-#             openapi.Parameter(
-#                 name="invoice_reference",
-#                 in_=openapi.IN_FORM,
-#                 type=openapi.TYPE_STRING,
-#                 required=True,
-#             ),
-#             openapi.Parameter(
-#                 name="invoice_date",
-#                 in_=openapi.IN_FORM,
-#                 type=openapi.TYPE_STRING,
-#                 format=openapi.FORMAT_DATE,
-#                 required=True,
-#             ),
-#             openapi.Parameter(
-#                 name="due_date",
-#                 in_=openapi.IN_FORM,
-#                 type=openapi.TYPE_STRING,
-#                 format=openapi.FORMAT_DATE,
-#                 required=True,
-#             ),
-#             openapi.Parameter(
-#                 name="invoice_amount",
-#                 in_=openapi.IN_FORM,
-#                 type=openapi.TYPE_INTEGER,
-#                 required=True,
-#             ),
-#             openapi.Parameter(
-#                 name="invoice",
-#                 in_=openapi.IN_FORM,
-#                 type=openapi.TYPE_FILE,
-#                 required=True,
-#             ),
-#             openapi.Parameter(
-#                 "payment_status",
-#                 openapi.IN_FORM,
-#                 type=openapi.TYPE_STRING,
-#                 enum=["Paid", "Pending", "Processing"],
-#                 required=True,
-#             ),
-#         ],
-#         operation_summary="Other Invoice/payment",
-#         operation_id=".",
-#     )
-#     def post(self, request, *args, **kwargs):
-#         serializer = OtherPaymentSerializer(data=request.data)
-#         if serializer.is_valid():
-#             other_payment.objects.create(
-#                 client=serializer.validated_data["client"],
-#                 invoice_reference=serializer.validated_data["invoice_reference"],
-#                 invoice_date=serializer.validated_data["invoice_date"],
-#                 due_date=serializer.validated_data["due_date"],
-#                 invoice_amount=serializer.validated_data["invoice_amount"],
-#                 payment_status=serializer.validated_data["payment_status"],
-#                 invoice=serializer.validated_data["invoice"],
-#             )
-#             return Response(
-#                 {"message": "Resquest created"}, status=status.HTTP_201_CREATED
-#             )
-#         else:
-#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    @swagger_auto_schema(
+        tags=["Client : Other Invoice/payment"],
+        responses={
+            201: "Request created",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="client_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="invoice_reference",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="invoice_date",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="due_date",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="invoice_amount",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="invoice",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required=True,
+            ),
+            openapi.Parameter(
+                "payment_status",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                enum=["pending", "paid", "processing"],
+                required=True,
+            ),
+        ],
+        operation_summary="Other Invoice/payment",
+        operation_id="0",
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = OtherPaymentSerializer(data=request.data)
+        if serializer.is_valid():
+            other_payment.objects.create(
+                client_id=serializer.validated_data["client_id"],
+                invoice_reference=serializer.validated_data["invoice_reference"],
+                invoice_date=serializer.validated_data["invoice_date"],
+                due_date=serializer.validated_data["due_date"],
+                invoice_amount=serializer.validated_data["invoice_amount"],
+                payment_status=serializer.validated_data["payment_status"],
+                invoice=serializer.validated_data["invoice"],
+            )
+            return Response(
+                {"message": "Resquest created"}, status=status.HTTP_201_CREATED
+            )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        tags=["Client : Other Invoice/payment"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "payment_status",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                enum=["pending", "paid", "processing"],
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            201: "Request created",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        operation_summary="Other Invoice/payment",
+        operation_id=".",
+    )
+    def patch(self, request, *args, **kwargs):
+        request_id = request.query_params.get("id")
+        to_update_status = request.data["payment_status"]
+        try:
+            to_update_otherpay = other_payment.objects.get(id=request_id)
+            if to_update_otherpay:
+                to_update_otherpay.payment_status = to_update_status
+                to_update_otherpay.save()
 
-#     @swagger_auto_schema(
-#         tags=["Client : Other Invoice/payment"],
-#         request_body=openapi.Schema(
-#             type=openapi.TYPE_OBJECT,
-#             properties={
-#                 "payment_status": openapi.Schema(
-#                     type=openapi.TYPE_STRING, enum=["Pending", "Processing", "Paid"]
-#                 ),
-#             },
-#             required=["payment_status"],
-#         ),
-#         manual_parameters=[
-#             openapi.Parameter(
-#                 "id",
-#                 openapi.IN_QUERY,
-#                 description="ID of the record",
-#                 type=openapi.TYPE_INTEGER,
-#                 required=True,
-#             ),
-#             openapi.Parameter(
-#                 "Authorization",
-#                 openapi.IN_HEADER,
-#                 description="Bearer Token",
-#                 type=openapi.TYPE_STRING,
-#             ),
-#         ],
-#         responses={
-#             201: "Request created",
-#             400: "Bad Request",
-#             401: "Unauthorized",
-#         },
-#         operation_summary="Other Invoice/payment",
-#         operation_id=".",
-#     )
-#     def patch(self, request, *args, **kwargs):
-#         request_id = request.query_params.get("id")
-#         to_update_status = request.data["payment_status"]
-#         try:
-#             to_update_otherpay = other_payment.objects.get(id=request_id)
-#             if to_update_otherpay:
-#                 to_update_otherpay.payment_status = to_update_status
-#                 to_update_otherpay.save()
-
-#                 return Response(status=status.HTTP_200_OK)
-#             else:
-#                 return Response(status=status.HTTP_204_NO_CONTENT)
-#         except:
-#             return Response(status=status.HTTP_400_BAD_REQUEST)
+                return Response(status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -1015,7 +1007,6 @@ class Hr_Employee(APIView):
                                 },
                             ),
                         ),
-                        
                         "assets": openapi.Schema(
                             type=openapi.TYPE_ARRAY,
                             items=openapi.Items(
@@ -1032,7 +1023,6 @@ class Hr_Employee(APIView):
                                     "assignee": openapi.Schema(
                                         type=openapi.TYPE_STRING
                                     ),
-                                   
                                 },
                             ),
                         ),
@@ -1041,14 +1031,14 @@ class Hr_Employee(APIView):
                             properties={
                                 "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                                 "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
-                                "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
-                               
+                                "employee_name": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
                                 "gender": openapi.Schema(type=openapi.TYPE_STRING),
                                 "dob": openapi.Schema(
                                     type=openapi.TYPE_STRING,
                                     format=openapi.FORMAT_DATETIME,
                                 ),
-                               
                                 "email": openapi.Schema(
                                     type=openapi.TYPE_STRING,
                                     format=openapi.FORMAT_EMAIL,
@@ -1129,7 +1119,7 @@ class Hr_Employee(APIView):
         operation_id=".",
         operation_summary="Get Employee Details",
     )
-    #error
+    # error
     def get(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
         tab = request.query_params.get("tab")
@@ -1137,15 +1127,15 @@ class Hr_Employee(APIView):
         if tab == "client":
             active_clients = []
             terminated_clients = []
-            
+
             active = outsource_employees.objects.filter(
                 employee_id=employee_data.email, status="active"
             )
             terminated = outsource_employees.objects.filter(
                 employee_id=employee_data.email, status="terminated"
             )
-           
-            if active and terminated:
+
+            if active or terminated:
                 for rec in active:
                     client_data = client.objects.get(email=rec.client_id)
                     record = {
@@ -1170,17 +1160,15 @@ class Hr_Employee(APIView):
                         "employeement_term": rec.employment_term,
                     }
                     terminated_clients.append(record)
-               
+
                 data = {
                     "active_clients": active_clients,
                     "terminated_clients": terminated_clients,
-                    
                 }
                 return Response(data, status=status.HTTP_200_OK)
 
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
-
 
         elif tab == "assets":
             emp_record = employee.objects.get(id=record_id)
@@ -1207,7 +1195,7 @@ class Hr_Employee(APIView):
                 record = {
                     "id": emp_record.id,
                     "employee_id": emp_record.employee_id,
-                    "employee_name": emp_record.first_name+" "+emp_record.last_name,
+                    "employee_name": emp_record.first_name + " " + emp_record.last_name,
                     "gender": emp_record.gender,
                     "dob": emp_record.dob,
                     "email": emp_record.email,
@@ -1218,7 +1206,6 @@ class Hr_Employee(APIView):
                     "joining_date": emp_record.joining_date,
                     "job_title": emp_record.job_title,
                     "role": emp_record.role,
-                    
                 }
                 return Response(record, status=status.HTTP_200_OK)
             except:
@@ -1480,9 +1467,7 @@ class Start_Hiring(APIView):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "client_id": openapi.Schema(
-                    type=openapi.TYPE_STRING
-                ),
+                "client_id": openapi.Schema(type=openapi.TYPE_STRING),
                 "job_title": openapi.Schema(type=openapi.TYPE_STRING),
                 "role_type": openapi.Schema(type=openapi.TYPE_STRING),
                 "gender": openapi.Schema(type=openapi.TYPE_STRING),
@@ -1819,6 +1804,7 @@ class Interview_Schedule(APIView):
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
+
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Onboarding(APIView):
@@ -1841,7 +1827,6 @@ class Onboarding(APIView):
                 ),
                 "notice_period": openapi.Schema(type=openapi.TYPE_STRING),
                 "salary": openapi.Schema(type=openapi.TYPE_INTEGER),
-                
             },
             required=[
                 "client_id",
@@ -1853,7 +1838,7 @@ class Onboarding(APIView):
                 "employment_term",
                 "joining_date",
                 "notice_period",
-                "salary"
+                "salary",
             ],
         ),
         responses={
@@ -1885,13 +1870,13 @@ class Onboarding(APIView):
                 joining_date=serializer.validated_data["joining_date"],
                 notice_period=serializer.validated_data["notice_period"],
                 salary=serializer.validated_data["salary"],
-            
             )
             return Response(
                 {"message": "Resquest created"}, status=status.HTTP_201_CREATED
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
         responses={
@@ -1962,7 +1947,7 @@ class Onboarding(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
         manual_parameters=[
@@ -2050,6 +2035,8 @@ class Hr_Clients(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Hr_Client(APIView):
@@ -2214,4 +2201,3 @@ class Hr_Client(APIView):
             setattr(client_record, key, updates[key])
         client_record.save()
         return Response(status=status.HTTP_200_OK)
-
