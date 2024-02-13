@@ -799,77 +799,15 @@ class Add_Asset(APIView):
 @permission_classes([IsAuthenticated])
 class Hr_Home(APIView):
     @swagger_auto_schema(
-        tags=["Dashboard"],
-        responses={
-            200: openapi.Response(
-                description="Successful request",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        "user_name": openapi.Schema(type=openapi.TYPE_STRING),
-                        "employees": openapi.Schema(type=openapi.TYPE_INTEGER),
-                        "clients": openapi.Schema(type=openapi.TYPE_INTEGER),
-                        "hiring_requests": openapi.Schema(type=openapi.TYPE_INTEGER),
-                        "interview_schedules": openapi.Schema(
-                            type=openapi.TYPE_INTEGER
-                        ),
-                    },
-                ),
-            ),
-            401: openapi.Response("Unauthorized"),
-        },
-        manual_parameters=[
-            openapi.Parameter(
-                "Authorization",
-                openapi.IN_HEADER,
-                description="Bearer Token",
-                type=openapi.TYPE_STRING,
-            ),
-        ],
-        operation_summary="Endpoint to retrieve hr home data.",
-        operation_id=".",
-    )
-    def get(self, request, *args, **kwargs):
-        user = request.user.username
-        record = {
-            "user": user,
-            "employees": employee.objects.all().count(),
-            "clients": client.objects.all().count(),
-            "hiring_requests": hiring_request.objects.all().count(),
-            "interview_schedules": interview_schedule.objects.all().count(),
-        }
-        return Response(record, status=status.HTTP_200_OK)
-
-
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-class Hr_Employees(APIView):
-    @swagger_auto_schema(
-        tags=["Employees"],
-        responses={
-            200: openapi.Response(
-                description="Successful request",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
-                        "employees_id": openapi.Schema(type=openapi.TYPE_STRING),
-                        "name": openapi.Schema(type=openapi.TYPE_STRING),
-                        "image_path": openapi.Schema(type=openapi.TYPE_STRING),
-                        "designation": openapi.Schema(type=openapi.TYPE_STRING),
-                        "company": openapi.Schema(type=openapi.TYPE_STRING),
-                        "active": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    },
-                ),
-            ),
-            401: openapi.Response("Unauthorized"),
-        },
+        tags=["Leave"],
         manual_parameters=[
             openapi.Parameter(
                 "status",
                 openapi.IN_QUERY,
+                description="Status filter (all, pending, completed, rejected)",
                 type=openapi.TYPE_STRING,
-                enum=[" ", "active", "inactive"],
+                enum=["all", "pending", "completed", "rejected"],
+                required=True,
             ),
             openapi.Parameter(
                 "Authorization",
@@ -878,8 +816,89 @@ class Hr_Employees(APIView):
                 type=openapi.TYPE_STRING,
             ),
         ],
-        operation_summary="Endpoint to retrieve hr Employees data.",
-        operation_id="1",
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "requests": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    "employee_id": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "employee_name": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "department": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "leave_type": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "start_date": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATE,
+                                    ),
+                                    "end_date": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATE,
+                                    ),
+                                    "count": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    "status": openapi.Schema(type=openapi.TYPE_STRING),
+                                    "reason": openapi.Schema(type=openapi.TYPE_STRING),
+                                    "requested_at": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATETIME,
+                                    ),
+                                },
+                            ),
+                        ),
+                        "balance": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                                "employee_name": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "department": openapi.Schema(type=openapi.TYPE_STRING),
+                                "leave_type": openapi.Schema(type=openapi.TYPE_STRING),
+                                "start_date": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATE,
+                                ),
+                                "end_date": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATE,
+                                ),
+                                "count": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "status": openapi.Schema(type=openapi.TYPE_STRING),
+                                "reason": openapi.Schema(type=openapi.TYPE_STRING),
+                                "requested_at": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
+                            },
+                        ),
+                        "pending": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "rejected": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "completed": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "all": openapi.Schema(type=openapi.TYPE_INTEGER),
+                    },
+                ),
+            ),
+            204: openapi.Response("No content"),
+            206: openapi.Response("Partial content"),
+            401: openapi.Response("UnAuthorize"),
+            400: openapi.Response("Bad Request"),
+        },
+        operation_summary="Endpoint to retrieve leave request and leave balance data.",
+        operation_id="get_leave_data",
     )
     def get(self, request, *args, **kwargs):
         get_status = request.query_params.get("status")
