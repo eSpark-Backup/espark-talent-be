@@ -11,10 +11,10 @@ from .serializers import *
 from datetime import datetime, timedelta
 from dateutil import parser
 from django.db.models import Q
-from .threads import Check_Punches
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.parsers import MultiPartParser
+import calendar
 
 
 @authentication_classes([JWTAuthentication])
@@ -44,7 +44,7 @@ class Employee_Home(APIView):
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
-                        "leave_summaries": openapi.Schema(
+                        "leave_summary": openapi.Schema(
                             type=openapi.TYPE_OBJECT,
                             properties={
                                 "id": openapi.Schema(type=openapi.TYPE_INTEGER),
@@ -152,52 +152,81 @@ class Employee_Home(APIView):
                                 ),
                             },
                         ),
-                        "workspaces": openapi.Schema(type=openapi.TYPE_OBJECT),
-                        "requests": openapi.Schema(
-                            type=openapi.TYPE_ARRAY,
-                            items=openapi.Schema(
-                                type=openapi.TYPE_OBJECT,
-                                properties={
-                                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
-                                    "employee_id": openapi.Schema(
-                                        type=openapi.TYPE_STRING
-                                    ),
-                                    "employee_name": openapi.Schema(
-                                        type=openapi.TYPE_STRING
-                                    ),
-                                    "department": openapi.Schema(
-                                        type=openapi.TYPE_STRING
-                                    ),
-                                    "leave_type": openapi.Schema(
-                                        type=openapi.TYPE_STRING
-                                    ),
-                                    "requested_at": openapi.Schema(
-                                        type=openapi.TYPE_STRING,
-                                        format=openapi.FORMAT_DATETIME,
-                                    ),
-                                    "count": openapi.Schema(type=openapi.TYPE_INTEGER),
-                                    "status": openapi.Schema(type=openapi.TYPE_STRING),
-                                    "start_date": openapi.Schema(
-                                        type=openapi.TYPE_STRING,
-                                        format=openapi.FORMAT_DATE,
-                                    ),
-                                    "end_date": openapi.Schema(
-                                        type=openapi.TYPE_STRING,
-                                        format=openapi.FORMAT_DATE,
-                                    ),
-                                    "reason": openapi.Schema(type=openapi.TYPE_STRING),
-                                },
-                            ),
+                        "attendence_summary": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "shifts": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "expected_minutes": openapi.Schema(
+                                    type=openapi.TYPE_INTEGER
+                                ),
+                                "worked_minutes": openapi.Schema(
+                                    type=openapi.TYPE_INTEGER
+                                ),
+                                "short_minutes": openapi.Schema(
+                                    type=openapi.TYPE_INTEGER
+                                ),
+                                "leaves": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            },
                         ),
-                        "pending": openapi.Schema(type=openapi.TYPE_INTEGER),
-                        "rejected": openapi.Schema(type=openapi.TYPE_INTEGER),
-                        "completed": openapi.Schema(type=openapi.TYPE_INTEGER),
-                        "all": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "statistics": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "today": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "this_week": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "this_month": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "remaining": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "overtime": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            },
+                        ),
+                        "today_activity": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "check_in": openapi.Schema(type=openapi.TYPE_STRING),
+                                "check_out": openapi.Schema(type=openapi.TYPE_STRING),
+                                "break": openapi.Schema(type=openapi.TYPE_STRING),
+                                "resume": openapi.Schema(type=openapi.TYPE_STRING),
+                            },
+                        ),
+                        "workspaces": openapi.Schema(type=openapi.TYPE_OBJECT),
+                        "punch_timings": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "check_in": openapi.Schema(type=openapi.TYPE_STRING),
+                                "check_out": openapi.Schema(type=openapi.TYPE_STRING),
+                            },
+                        ),
+                        "current_workspace_details": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "client_id": openapi.Schema(type=openapi.TYPE_STRING),
+                                "client_email": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_EMAIL,
+                                ),
+                                "company_name": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "client_name": openapi.Schema(type=openapi.TYPE_STRING),
+                                "image": openapi.Schema(type=openapi.TYPE_FILE),
+                            },
+                        ),
+                        "employee_details": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                                "employee_name": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "employee_email": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_EMAIL,
+                                ),
+                                "image": openapi.Schema(type=openapi.TYPE_FILE),
+                            },
+                        ),
                     },
                 ),
             ),
-            204: openapi.Response(description="No content"),
-            206: openapi.Response(description="Partial content"),
             401: openapi.Response(description="UnAuthorize"),
             400: openapi.Response(description="Bad Request"),
         },
@@ -254,6 +283,19 @@ class Employee_Home(APIView):
 
         current_month = datetime.now().strftime("%B")
         current_year = datetime.now().year
+        today = datetime.now().strftime("%d-%m-%Y")
+        # _, last_day = calendar.monthrange(current_year, datetime.now().month)
+
+        # weekdays_count = [0, 0, 0, 0, 0, 0, 0]
+
+        # for day in range(1, last_day + 1):
+        #     weekday = calendar.weekday(current_year, datetime.now().month, day)
+        #     weekdays_count[weekday] += 1
+
+        # total_weekdays = sum(weekdays_count[:5])
+        # date_today = datetime.now()
+        # start_of_week = date_today - timedelta(days=date_today.weekday())
+        # end_of_week = start_of_week + timedelta(days=4)
         try:
             time_sheet_record = time_sheet.objects.get(
                 employee_id=e_email,
@@ -261,27 +303,184 @@ class Employee_Home(APIView):
                 month=current_month,
                 year=current_year,
             )
-            month_timesheet = {
-                "id": time_sheet_record.id,
-                "client_id": time_sheet_record.client_id,
-                "employee_id": time_sheet_record.employee_id,
-                "month": time_sheet_record.month,
-                "record": time_sheet_record.record,
-                "year": time_sheet_record.year,
+
+            today_activity = {
+                "check_in": "-",
+                "check_out": "-",
+                "break": "-",
+                "resume": "-",
+            }
+
+            # statistics = {
+            #     "today": 0,
+            #     "this_week": 0,
+            #     "this_month": 0,
+            #     "remaining": total_weekdays * 9,
+            #     "overtime": 0,
+            # }
+            # if (
+            #     today in time_sheet_record.record
+            #     and time_sheet_record.record[today]["check_in"] != "-"
+            # ):
+            #     current_time = datetime.now().time()
+            #     check_in_time = datetime.strptime(
+            #         time_sheet_record.record[today]["check_in"], "%H:%M:%S"
+            #     ).time()
+
+            #     time_difference = datetime.combine(
+            #         datetime.today(), current_time
+            #     ) - datetime.combine(datetime.today(), check_in_time)
+
+            #     t_hours_worked = round(time_difference.total_seconds() / 3600, 2)
+            #     statistics["today"] = t_hours_worked
+
+            if today in time_sheet_record.record:
+                if "check_in" in time_sheet_record.record[today]:
+                    today_activity["check_in"] = time_sheet_record.record[today]["check_in"]
+                if "check_out" in time_sheet_record.record[today]:
+                    today_activity["check_out"] = time_sheet_record.record[today][
+                        "check_out"
+                    ]
+                if "break" in time_sheet_record.record[today]:
+                    today_activity["break"] = time_sheet_record.record[today]["break"]
+                if "resume" in time_sheet_record.record[today]:
+                    today_activity["resume"] = time_sheet_record.record[today]["resume"]
+
+                # if time_sheet_record.record[today]["check_in"] != "-":
+                #     current_time = datetime.now().time()
+                #     check_in_time = datetime.strptime(
+                #         time_sheet_record.record[today]["check_in"], "%H:%M:%S"
+                #     ).time()
+
+                #     time_difference = datetime.combine(
+                #         datetime.today(), current_time
+                #     ) - datetime.combine(datetime.today(), check_in_time)
+
+                #     t_hours_worked = round(time_difference.total_seconds() / 3600, 2)
+                #     statistics["today"] = t_hours_worked
+            actual_shifts = 0
+            minutes_worked = 0
+            # w_minutes_worked=0
+            # w_hours_worked=0
+            leave = 0
+            for value in time_sheet_record.record:
+                if (
+                    time_sheet_record.record[value]["status"]["Day Off"] == False
+                    and time_sheet_record.record[value]["status"]["Full Leave"] == False
+                ):
+                    actual_shifts += 1
+                if time_sheet_record.record[value]["status"]["Full Leave"] == True:
+                    leave += 1
+                if (
+                    time_sheet_record.record[value]["check_in"] != "-"
+                    and time_sheet_record.record[value]["check_out"] != "-"
+                ):
+                    check_in_time = time_sheet_record.record[value]["check_in"]
+                    check_out_time = time_sheet_record.record[value]["check_out"]
+                    check_in_datetime = datetime.strptime(check_in_time, "%H:%M:%S")
+                    check_out_datetime = datetime.strptime(check_out_time, "%H:%M:%S")
+
+                    time_difference = check_out_datetime - check_in_datetime
+                    minutes_worked += time_difference.seconds // 60
+            #     record_date = datetime.strptime(value, "%d-%m-%Y")
+            #     print(start_of_week <= record_date <= end_of_week)
+            #     if start_of_week <= record_date <= end_of_week:
+            #         check_in_time = time_sheet_record.record[value]["check_in"]
+            #         check_out_time = time_sheet_record.record[value]["check_out"]
+            #         check_in_datetime = datetime.strptime(check_in_time, "%H:%M:%S")
+            #         check_out_datetime = datetime.strptime(check_out_time, "%H:%M:%S")
+
+            #         time_difference = check_out_datetime - check_in_datetime
+            #         w_minutes_worked += time_difference.seconds // 60
+
+
+            # m_hours_worked = round(minutes_worked / 3600, 2)
+
+            workable_minutes = actual_shifts * 9 * 60
+            worked_minutes = minutes_worked
+            if workable_minutes > worked_minutes:
+                short_minutes = workable_minutes - worked_minutes
+            elif workable_minutes <= worked_minutes:
+                short_minutes = "0m"
+
+            attendence_summary = {
+                "shifts": actual_shifts,
+                "expected_minutes": workable_minutes,
+                "worked_minutes": worked_minutes,
+                "short_minutes": short_minutes,
+                "leaves": leave,
             }
         except:
-            month_timesheet = {}
+            # statistics = {
+            #     "today": 0,
+            #     "this_week": 0,
+            #     "this_month": 0,
+            #     "remaining": total_weekdays * 9,
+            #     "overtime": 0,
+            # }
+            today_activity = {
+                "check_in": "-",
+                "check_out": "-",
+                "break": "-",
+                "resume": "-",
+            }
+            attendence_summary = {}
         punch_timings = employee.objects.get(email=e_email).punch_timings
+
         payload = {
-            "leave_summaries": leave_summary,
+            "leave_summary": leave_summary,
+            "attendence_summary": attendence_summary,
+            "today_activity": today_activity,
+            # "statistics": statistics,
             "workspaces": workspaces,
-            "months_timesheet": month_timesheet,
             "punch_timings": punch_timings,
-            "current_workspace": current_workspace,
+            "current_workspace_details": current_workspace,
             "employee_details": employee_details,
         }
         return Response(payload, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(
+        tags=["Dashboard: Mark check in, Mark checkout, Mark break out Resumed"],
+        manual_parameters=[
+            openapi.Parameter(
+                "check_in",
+                openapi.IN_QUERY,
+                description="Time of check in",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "check_out",
+                openapi.IN_QUERY,
+                description="Time of check out",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "break",
+                openapi.IN_QUERY,
+                description="Time of break",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "resume",
+                openapi.IN_QUERY,
+                description="Time of resume",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: "Successful request",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        operation_summary="Update punch timings",
+        operation_id=".",
+    )
     def patch(self, request, *args, **kwargs):
         e_email = request.user
         workspace = request.query_params.get("workspace")
@@ -289,38 +488,180 @@ class Employee_Home(APIView):
         check_out = request.query_params.get("check_out")
         breaked = request.query_params.get("break")
         resumed = request.query_params.get("resume")
+        now = datetime.now()
         if check_in:
-            punch_check_in = Check_Punches()
-            punch_check_in.check_punch(
-                employee=e_email, client=workspace, check_in=check_in
+            months_timesheet = time_sheet.objects.filter(
+                month=now.strftime("%B"),
+                employee_id=e_email,
+                client_id=workspace,
+                year=now.strftime("%Y"),
             )
+            if months_timesheet:
+                for rec in months_timesheet:
+
+                    if (now.date().strftime("%d-%m-%Y") not in rec.record) or (
+                        "check_in" in rec.record[now.date().strftime("%d-%m-%Y")]
+                        and rec.record[now.date().strftime("%d-%m-%Y")]["check_in"]
+                        == "-"
+                    ):
+                        rec.record[now.date().strftime("%d-%m-%Y")] = {
+                            "check_in": check_in,
+                            "check_out": "-",
+                            "hours_worked": "-",
+                            "overtime": "-",
+                            "status": {
+                                "Present": True,
+                                "Missing": "False",
+                                "Absent": False,
+                                "Day Off": False,
+                                "Full Leave": False,
+                                "Short Duration": "-",
+                            },
+                        }
+                        rec.save()
+                        return Response(status=status.HTTP_200_OK)
+            else:
+                time_sheet.objects.create(
+                    month=now.strftime("%B"),
+                    employee_id=e_email,
+                    client_id=workspace,
+                    year=now.year,
+                    record={
+                        now.date().strftime("%d-%m-%Y"): {
+                            "check_in": check_in,
+                            "check_out": "-",
+                            "hours_worked": "-",
+                            "overtime": "-",
+                            "status": {
+                                "Present": True,
+                                "Missing": False,
+                                "Absent": False,
+                                "Day Off": False,
+                                "Full Leave": False,
+                                "Short Duration": "-",
+                            },
+                        }
+                    },
+                )
+                return Response(status=status.HTTP_200_OK)
 
         if check_out:
-            punch_check_out = Check_Punches()
-            punch_check_out.check_punch(
-                employee=e_email, client=workspace, check_out=check_out
+            months_timesheet = time_sheet.objects.filter(
+                month=now.strftime("%B"),
+                employee_id=e_email,
+                client_id=workspace,
+                year=now.strftime("%Y"),
             )
+            if (
+                months_timesheet
+                and months_timesheet[0].record[now.date().strftime("%d-%m-%Y")][
+                    "check_out"
+                ]
+                == "-"
+                and months_timesheet[0].record[now.date().strftime("%d-%m-%Y")][
+                    "check_in"
+                ]
+                != "-"
+            ):
+                for rec in months_timesheet:
+                    check_in_time = rec.record[now.date().strftime("%d-%m-%Y")][
+                        "check_in"
+                    ]
+                    hours_worked = datetime.strptime(
+                        check_out, "%H:%M:%S"
+                    ) - datetime.strptime(check_in_time, "%H:%M:%S")
+
+                    if hours_worked.total_seconds() // 3600 < 9:
+                        rec.record[now.date().strftime("%d-%m-%Y")][
+                            "check_out"
+                        ] = check_out
+                        rec.record[now.date().strftime("%d-%m-%Y")]["overtime"] = "0h"
+                        rec.record[now.date().strftime("%d-%m-%Y")][
+                            "hours_worked"
+                        ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
+                        rec.record[now.date().strftime("%d-%m-%Y")]["status"][
+                            "Short Duration"
+                        ] = True
+                        rec.save()
+                        return Response(status=status.HTTP_200_OK)
+
+                    elif hours_worked.total_seconds() // 3600 >= 9:
+                        overtime = hours_worked - timedelta(hours=9)
+                        overtime_min = (overtime.seconds // 60) % 60
+                        overtime_hours = overtime.seconds // 3600
+                        rec.record[now.date().strftime("%d-%m-%Y")][
+                            "check_out"
+                        ] = check_out
+                        rec.record[now.date().strftime("%d-%m-%Y")][
+                            "hours_worked"
+                        ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
+                        rec.record[now.date().strftime("%d-%m-%Y")]["status"][
+                            "Short Duration"
+                        ] = False
+                        if overtime_hours and overtime_min:
+                            over_duration = f"{overtime_hours}h {overtime_min}m"
+                        elif overtime_hours and not overtime_min:
+                            over_duration = f"{overtime_hours}h"
+                        elif not overtime_hours and overtime_min:
+                            over_duration = f"{overtime_min}m"
+                        else:
+                            over_duration = "0h"
+
+                        rec.record[now.date().strftime("%d-%m-%Y")][
+                            "overtime"
+                        ] = over_duration
+
+                        rec.save()
+                        return Response(status=status.HTTP_200_OK)
 
         if breaked:
-            punch_breaked = Check_Punches()
-            punch_breaked.check_punch(
-                employee=e_email, client=workspace, breaked=breaked
+            months_timesheet = time_sheet.objects.filter(
+                month=now.strftime("%B"),
+                employee_id=e_email,
+                client_id=workspace,
+                year=now.strftime("%Y"),
             )
+            if months_timesheet:
+                for rec in months_timesheet:
+                    if (
+                        now.date().strftime("%d-%m-%Y") in rec.record
+                        and "break" not in rec.record[now.date().strftime("%d-%m-%Y")]
+                        and (
+                            "check_in" in rec.record[now.date().strftime("%d-%m-%Y")]
+                            and rec.record[now.date().strftime("%d-%m-%Y")]["check_in"]
+                            != "-"
+                        )
+                    ):
+                        rec.record[now.date().strftime("%d-%m-%Y")]["break"] = breaked
+
+                        rec.save()
+                        return Response(status=status.HTTP_200_OK)
 
         if resumed:
-            punch_resumed = Check_Punches()
-            punch_resumed.check_punch(
-                employee=e_email, client=workspace, resumed=resumed
+            months_timesheet = time_sheet.objects.filter(
+                month=now.strftime("%B"),
+                employee_id=e_email,
+                client_id=workspace,
+                year=now.strftime("%Y"),
             )
+            if months_timesheet:
+                for rec in months_timesheet:
+                    if (
+                        now.date().strftime("%d-%m-%Y") in rec.record
+                        and "break" in rec.record[now.date().strftime("%d-%m-%Y")]
+                        and "resume" not in rec.record[now.date().strftime("%d-%m-%Y")]
+                        and (
+                            "check_in" in rec.record[now.date().strftime("%d-%m-%Y")]
+                            and rec.record[now.date().strftime("%d-%m-%Y")]["check_in"]
+                            != "-"
+                        )
+                    ):
+                        rec.record[now.date().strftime("%d-%m-%Y")]["resume"] = resumed
 
+                        rec.save()
+                        return Response(status=status.HTTP_200_OK)
         else:
-            no_punch=Check_Punches()
-            no_punch.check_punch(
-                employee=e_email, client=workspace
-            )
-
-        
-        return Response(status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -676,7 +1017,9 @@ class Leave_Request(APIView):
                                     type=openapi.TYPE_STRING,
                                     format=openapi.FORMAT_EMAIL,
                                 ),
-                                "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
+                                "employee_name": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
                                 "image": openapi.Schema(type=openapi.TYPE_FILE),
                             },
                         ),
@@ -1228,7 +1571,6 @@ class Time_Sheet(APIView):
                     year__lte=to_year,
                 ),
             )
-
             filtered_record = {}
             for record in time_sheet_records:
                 for key, value in record.record.items():
@@ -1239,69 +1581,43 @@ class Time_Sheet(APIView):
                         from_date_object.day <= date and month == from_date_object.month
                     ) or (date <= to_date_object.day and month == to_date_object.month):
                         filtered_record[key] = value
+
             if len(filtered_record) > 0:
                 hours_worked = 0
                 minutes_worked = 0
-                short_hours = 0
-                short_minutes = 0
                 short_duration = 0
-                overtime_hours = 0
-                overtime_minutes = 0
                 present = 0
                 missing_punch = 0
                 leaves = 0
                 day_off = 0
                 absent = 0
-                overtime_threshold = timedelta(hours=9)
                 for date, rec in filtered_record.items():
-                    check_in_time = rec["check_in"]
-                    check_out_time = rec["check_out"]
+                    if rec["check_in"] != "-" and rec["check_out"] != "-":
+                        check_in_time = rec["check_in"]
+                        check_out_time = rec["check_out"]
 
-                    check_in_datetime = datetime.strptime(check_in_time, "%H:%M:%S")
-                    check_out_datetime = datetime.strptime(check_out_time, "%H:%M:%S")
-
-                    time_difference = check_out_datetime - check_in_datetime
-
-                    hours_worked += time_difference.seconds // 3600
-                    minutes_worked += (time_difference.seconds // 60) % 60
-
-                    if (time_difference.total_seconds() // 3600) < 9:
-                        short_time = (
-                            datetime.strptime("09:00:00", "%H:%M:%S") - time_difference
+                        check_in_datetime = datetime.strptime(check_in_time, "%H:%M:%S")
+                        check_out_datetime = datetime.strptime(
+                            check_out_time, "%H:%M:%S"
                         )
-                        short_minutes += short_time.minute
-                        short_hours += short_time.hour
 
-                    if (time_difference.total_seconds() / 3600) > 9:
-                        overtime = time_difference - overtime_threshold
-                        overtime_hours += overtime.seconds // 3600
-                        overtime_minutes += (overtime.seconds // 60) % 60
+                        time_difference = check_out_datetime - check_in_datetime
 
-                    short_duration += rec["status"]["Short Duration"]
-                    present += rec["status"]["Present"]
-                    missing_punch += rec["status"]["Missing"]
-                    leaves += rec["status"]["Full Leave"]
-                    day_off += rec["status"]["Day Off"]
-                    absent += rec["status"]["Absent"]
+                        hours_worked += time_difference.seconds // 3600
+                        minutes_worked += (time_difference.seconds // 60) % 60
 
-                if short_hours and short_minutes:
-                    short_hours = f"{short_hours}h {short_minutes}m"
-                elif short_hours and not short_minutes:
-                    short_hours = f"{short_hours}h"
-                elif not short_hours and short_minutes:
-                    short_hours = f"{short_minutes}m"
-                else:
-                    short_hours = "0h"
-
-                if overtime_hours and overtime_minutes:
-                    overtime_hours = f"{overtime_hours}h {overtime_minutes}m"
-                elif overtime_hours and not overtime_minutes:
-                    overtime_hours = f"{overtime_hours}h"
-                elif not overtime_hours and overtime_minutes:
-                    overtime_hours = f"{overtime_minutes}m"
-                else:
-                    overtime_hours = "0h"
-
+                    if rec["status"]["Short Duration"] == True:
+                        short_duration += rec["status"]["Short Duration"]
+                    if rec["status"]["Present"] == True:
+                        present += rec["status"]["Present"]
+                    if rec["status"]["Missing"] == True:
+                        missing_punch += rec["status"]["Missing"]
+                    if rec["status"]["Full Leave"] == True:
+                        leaves += rec["status"]["Full Leave"]
+                    if rec["status"]["Day Off"] == True:
+                        day_off += rec["status"]["Day Off"]
+                    if rec["status"]["Absent"] == True:
+                        absent += rec["status"]["Absent"]
                 if minutes_worked and hours_worked:
                     worked_hours = f"{hours_worked}h {minutes_worked}m"
                 elif hours_worked and not minutes_worked:
@@ -1310,6 +1626,28 @@ class Time_Sheet(APIView):
                     worked_hours = f"{minutes_worked}m"
                 else:
                     worked_hours = "0h"
+
+                actual_shifts = 0
+                for key, value in filtered_record.items():
+                    if (
+                        value["status"]["Day Off"] == False
+                        and value["status"]["Full Leave"] == False
+                    ):
+                        actual_shifts += 1
+
+                workable_minutes = actual_shifts * 9 * 60
+                worked_minutes = hours_worked * 60 + minutes_worked
+                if workable_minutes > worked_minutes:
+                    short_minutes = workable_minutes - worked_minutes
+                    short_hours = f"{short_minutes // 60}h {short_minutes%60}m"
+                    overtime_hours = "0h 0m"
+                elif workable_minutes < worked_minutes:
+                    overtime_minutes = worked_minutes - workable_minutes
+                    short_hours = f"{overtime_minutes // 60}h {overtime_minutes%60}m"
+                    short_hours = "0h 0m"
+                else:
+                    overtime_hours = "0h 0m"
+                    short_hours = "0h 0m"
 
                 summary = {
                     "workable_shifts": len(filtered_record),
@@ -1368,62 +1706,38 @@ class Time_Sheet(APIView):
                 }
                 hours_worked = 0
                 minutes_worked = 0
-                short_hours = 0
-                short_minutes = 0
                 short_duration = 0
-                overtime_hours = 0
-                overtime_minutes = 0
                 present = 0
                 missing_punch = 0
                 leaves = 0
                 day_off = 0
                 absent = 0
-                overtime_threshold = timedelta(hours=9)
                 for date, rec in record["record"].items():
-                    check_in_time = rec["check_in"]
-                    check_out_time = rec["check_out"]
-                    check_in_datetime = datetime.strptime(check_in_time, "%H:%M:%S")
-                    check_out_datetime = datetime.strptime(check_out_time, "%H:%M:%S")
-
-                    time_difference = check_out_datetime - check_in_datetime
-
-                    hours_worked += time_difference.seconds // 3600
-                    minutes_worked += (time_difference.seconds // 60) % 60
-
-                    if (time_difference.total_seconds() // 3600) < 9:
-                        short_time = (
-                            datetime.strptime("09:00:00", "%H:%M:%S") - time_difference
+                    if rec["check_in"] != "-" and rec["check_out"] != "-":
+                        check_in_time = rec["check_in"]
+                        check_out_time = rec["check_out"]
+                        check_in_datetime = datetime.strptime(check_in_time, "%H:%M:%S")
+                        check_out_datetime = datetime.strptime(
+                            check_out_time, "%H:%M:%S"
                         )
-                        short_minutes += short_time.minute
-                        short_hours += short_time.hour
 
-                    if (time_difference.total_seconds() / 3600) > 9:
-                        overtime = time_difference - overtime_threshold
-                        overtime_hours += overtime.seconds // 3600
-                        overtime_minutes += (overtime.seconds // 60) % 60
-                    short_duration += rec["status"]["Short Duration"]
-                    present += rec["status"]["Present"]
-                    missing_punch += rec["status"]["Missing"]
-                    leaves += rec["status"]["Full Leave"]
-                    day_off += rec["status"]["Day Off"]
-                    absent += rec["status"]["Absent"]
+                        time_difference = check_out_datetime - check_in_datetime
 
-                if short_hours and short_minutes:
-                    short_hours = f"{short_hours}h {short_minutes}m"
-                elif short_hours and not short_minutes:
-                    short_hours = f"{short_hours}h"
-                elif not short_hours and short_minutes:
-                    short_hours = f"{short_minutes}m"
-                else:
-                    short_hours = "0h"
-                if overtime_hours and overtime_minutes:
-                    overtime_hours = f"{overtime_hours}h {overtime_minutes}m"
-                elif overtime_hours and not overtime_minutes:
-                    overtime_hours = f"{overtime_hours}h"
-                elif not overtime_hours and overtime_minutes:
-                    overtime_hours = f"{overtime_minutes}m"
-                else:
-                    overtime_hours = "0h"
+                        hours_worked += time_difference.seconds // 3600
+                        minutes_worked += (time_difference.seconds // 60) % 60
+
+                    if rec["status"]["Short Duration"] == True:
+                        short_duration += rec["status"]["Short Duration"]
+                    if rec["status"]["Present"] == True:
+                        present += rec["status"]["Present"]
+                    if rec["status"]["Missing"] == True:
+                        missing_punch += rec["status"]["Missing"]
+                    if rec["status"]["Full Leave"] == True:
+                        leaves += rec["status"]["Full Leave"]
+                    if rec["status"]["Day Off"] == True:
+                        day_off += rec["status"]["Day Off"]
+                    if rec["status"]["Absent"] == True:
+                        absent += rec["status"]["Absent"]
 
                 if minutes_worked and hours_worked:
                     worked_hours = f"{hours_worked}h {minutes_worked}m"
@@ -1434,9 +1748,31 @@ class Time_Sheet(APIView):
                 else:
                     worked_hours = "0h"
 
+                actual_shifts = 0
+                for value in ts_record.record:
+                    if (
+                        ts_record.record[value]["status"]["Day Off"] == False
+                        and ts_record.record[value]["status"]["Full Leave"] == False
+                    ):
+                        actual_shifts += 1
+
+                workable_minutes = actual_shifts * 9 * 60
+                worked_minutes = hours_worked * 60 + minutes_worked
+                if workable_minutes > worked_minutes:
+                    short_minutes = workable_minutes - worked_minutes
+                    short_hours = f"{short_minutes // 60}h {short_minutes%60}m"
+                    overtime_hours = "0h 0m"
+                elif workable_minutes < worked_minutes:
+                    overtime_minutes = worked_minutes - workable_minutes
+                    short_hours = f"{overtime_minutes // 60}h {overtime_minutes%60}m"
+                    short_hours = "0h 0m"
+                else:
+                    overtime_hours = "0h 0m"
+                    short_hours = "0h 0m"
+
                 summary = {
-                    "workable_shifts": len(ts_record.record),
-                    "workable_hours": f"{len(ts_record.record)*9}h",
+                    "workable_shifts": actual_shifts,
+                    "workable_hours": f"{actual_shifts*9}h",
                     "worked_hours": worked_hours,
                     "short_hours": short_hours,
                     "overtime_hours": overtime_hours,
@@ -1670,7 +2006,6 @@ class Punch_Request(APIView):
             all = punch_request.objects.filter(
                 employee_id=e_email, client_id=c_email
             ).count()
-            print(pending, rejected)
             if tab == "pending" or tab == "completed" or tab == "rejected":
                 p_request = punch_request.objects.filter(
                     employee_id=e_email, client_id=c_email, status=tab
