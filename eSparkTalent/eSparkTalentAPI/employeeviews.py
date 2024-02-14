@@ -24,11 +24,10 @@ class Employee_Home(APIView):
         tags=["Dashboard"],
         manual_parameters=[
             openapi.Parameter(
-                "status",
+                "workspace",
                 openapi.IN_QUERY,
-                description="Status filter (all, pending, completed, rejected)",
+                description="Specify current client",
                 type=openapi.TYPE_STRING,
-                enum=["all", "pending", "completed", "rejected"],
                 required=True,
             ),
             openapi.Parameter(
@@ -181,18 +180,36 @@ class Employee_Home(APIView):
                         "today_activity": openapi.Schema(
                             type=openapi.TYPE_OBJECT,
                             properties={
-                                "check_in": openapi.Schema(type=openapi.TYPE_STRING),
-                                "check_out": openapi.Schema(type=openapi.TYPE_STRING),
-                                "break": openapi.Schema(type=openapi.TYPE_STRING),
-                                "resume": openapi.Schema(type=openapi.TYPE_STRING),
+                                "check_in": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
+                                "check_out": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
+                                "break": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
+                                "resume": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
                             },
                         ),
                         "workspaces": openapi.Schema(type=openapi.TYPE_OBJECT),
                         "punch_timings": openapi.Schema(
                             type=openapi.TYPE_OBJECT,
                             properties={
-                                "check_in": openapi.Schema(type=openapi.TYPE_STRING),
-                                "check_out": openapi.Schema(type=openapi.TYPE_STRING),
+                                "check_in": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
+                                "check_out": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
                             },
                         ),
                         "current_workspace_details": openapi.Schema(
@@ -284,18 +301,23 @@ class Employee_Home(APIView):
         current_month = datetime.now().strftime("%B")
         current_year = datetime.now().year
         today = datetime.now().strftime("%d-%m-%Y")
-        # _, last_day = calendar.monthrange(current_year, datetime.now().month)
+        date_today = datetime.now()
+        _, last_day = calendar.monthrange(current_year, date_today.month)
 
-        # weekdays_count = [0, 0, 0, 0, 0, 0, 0]
+        total_weekdays = 0
 
-        # for day in range(1, last_day + 1):
-        #     weekday = calendar.weekday(current_year, datetime.now().month, day)
-        #     weekdays_count[weekday] += 1
+        for day in range(1, last_day + 1):
+            weekday = calendar.weekday(current_year, date_today.month, day)
+            total_weekdays += 1 if weekday < 5 else 0
 
-        # total_weekdays = sum(weekdays_count[:5])
-        # date_today = datetime.now()
-        # start_of_week = date_today - timedelta(days=date_today.weekday())
-        # end_of_week = start_of_week + timedelta(days=4)
+        weekdays_up_to_today = 0
+        for day in range(1, date_today.day + 1):
+            weekday = calendar.weekday(current_year, date_today.month, day)
+            weekdays_up_to_today += 1 if weekday < 5 else 0
+
+        start_of_week = date_today - timedelta(days=date_today.weekday())
+        end_of_week = start_of_week + timedelta(days=4)
+
         try:
             time_sheet_record = time_sheet.objects.get(
                 employee_id=e_email,
@@ -311,66 +333,75 @@ class Employee_Home(APIView):
                 "resume": "-",
             }
 
-            # statistics = {
-            #     "today": 0,
-            #     "this_week": 0,
-            #     "this_month": 0,
-            #     "remaining": total_weekdays * 9,
-            #     "overtime": 0,
-            # }
-            # if (
-            #     today in time_sheet_record.record
-            #     and time_sheet_record.record[today]["check_in"] != "-"
-            # ):
-            #     current_time = datetime.now().time()
-            #     check_in_time = datetime.strptime(
-            #         time_sheet_record.record[today]["check_in"], "%H:%M:%S"
-            #     ).time()
+            statistics = {
+                "today": 0,
+                "this_week": 0,
+                "this_month": 0,
+                "remaining": total_weekdays * 9,
+                "overtime": 0,
+            }
 
-            #     time_difference = datetime.combine(
-            #         datetime.today(), current_time
-            #     ) - datetime.combine(datetime.today(), check_in_time)
+            if (
+                today in time_sheet_record.record
+                and time_sheet_record.record[today]["check_in"] != "-"
+            ):
+                current_time = datetime.now().time()
+                check_in_time = datetime.strptime(
+                    time_sheet_record.record[today]["check_in"], "%H:%M:%S"
+                ).time()
 
-            #     t_hours_worked = round(time_difference.total_seconds() / 3600, 2)
-            #     statistics["today"] = t_hours_worked
+                time_difference = datetime.combine(
+                    datetime.today(), current_time
+                ) - datetime.combine(datetime.today(), check_in_time)
+
+                t_hours_worked = round(time_difference.total_seconds() / 3600, 2)
+                statistics["today"] = t_hours_worked
 
             if today in time_sheet_record.record:
                 if "check_in" in time_sheet_record.record[today]:
-                    today_activity["check_in"] = time_sheet_record.record[today]["check_in"]
+                    today_activity["check_in"] = time_sheet_record.record[today][
+                        "check_in"
+                    ]
+
                 if "check_out" in time_sheet_record.record[today]:
                     today_activity["check_out"] = time_sheet_record.record[today][
                         "check_out"
                     ]
+
                 if "break" in time_sheet_record.record[today]:
                     today_activity["break"] = time_sheet_record.record[today]["break"]
+
                 if "resume" in time_sheet_record.record[today]:
                     today_activity["resume"] = time_sheet_record.record[today]["resume"]
 
-                # if time_sheet_record.record[today]["check_in"] != "-":
-                #     current_time = datetime.now().time()
-                #     check_in_time = datetime.strptime(
-                #         time_sheet_record.record[today]["check_in"], "%H:%M:%S"
-                #     ).time()
+                if time_sheet_record.record[today]["check_in"] != "-":
+                    current_time = datetime.now().time()
+                    check_in_time = datetime.strptime(
+                        time_sheet_record.record[today]["check_in"], "%H:%M:%S"
+                    ).time()
 
-                #     time_difference = datetime.combine(
-                #         datetime.today(), current_time
-                #     ) - datetime.combine(datetime.today(), check_in_time)
+                    time_difference = datetime.combine(
+                        datetime.today(), current_time
+                    ) - datetime.combine(datetime.today(), check_in_time)
 
-                #     t_hours_worked = round(time_difference.total_seconds() / 3600, 2)
-                #     statistics["today"] = t_hours_worked
+                    t_hours_worked = round(time_difference.total_seconds() / 3600, 2)
+                    statistics["today"] = t_hours_worked
+
             actual_shifts = 0
             minutes_worked = 0
-            # w_minutes_worked=0
-            # w_hours_worked=0
+            w_hours_worked = 0
             leave = 0
+
             for value in time_sheet_record.record:
                 if (
                     time_sheet_record.record[value]["status"]["Day Off"] == False
                     and time_sheet_record.record[value]["status"]["Full Leave"] == False
                 ):
                     actual_shifts += 1
+
                 if time_sheet_record.record[value]["status"]["Full Leave"] == True:
                     leave += 1
+
                 if (
                     time_sheet_record.record[value]["check_in"] != "-"
                     and time_sheet_record.record[value]["check_out"] != "-"
@@ -382,19 +413,44 @@ class Employee_Home(APIView):
 
                     time_difference = check_out_datetime - check_in_datetime
                     minutes_worked += time_difference.seconds // 60
-            #     record_date = datetime.strptime(value, "%d-%m-%Y")
-            #     print(start_of_week <= record_date <= end_of_week)
-            #     if start_of_week <= record_date <= end_of_week:
-            #         check_in_time = time_sheet_record.record[value]["check_in"]
-            #         check_out_time = time_sheet_record.record[value]["check_out"]
-            #         check_in_datetime = datetime.strptime(check_in_time, "%H:%M:%S")
-            #         check_out_datetime = datetime.strptime(check_out_time, "%H:%M:%S")
 
-            #         time_difference = check_out_datetime - check_in_datetime
-            #         w_minutes_worked += time_difference.seconds // 60
+                record_date = datetime.strptime(value, "%d-%m-%Y")
+                if start_of_week <= record_date <= end_of_week:
+                    if (
+                        time_sheet_record.record[value]["check_in"] != "-"
+                        and time_sheet_record.record[value]["check_out"] != "-"
+                    ):
+                        check_in_time = time_sheet_record.record[value]["check_in"]
+                        check_out_time = time_sheet_record.record[value]["check_out"]
+                        check_in_datetime = datetime.strptime(check_in_time, "%H:%M:%S")
+                        check_out_datetime = datetime.strptime(
+                            check_out_time, "%H:%M:%S"
+                        )
 
+                        time_difference = check_out_datetime - check_in_datetime
+                        w_hours_worked += time_difference.seconds / 3600
 
-            # m_hours_worked = round(minutes_worked / 3600, 2)
+                    elif (
+                        value == today
+                        and time_sheet_record.record[value]["check_in"] != "-"
+                        and time_sheet_record.record[value]["check_out"] == "-"
+                    ):
+                        check_in_time = time_sheet_record.record[value]["check_in"]
+                        check_in_datetime = datetime.strptime(check_in_time, "%H:%M:%S")
+                        time_difference = datetime.combine(
+                            datetime.today(), current_time
+                        ) - datetime.combine(datetime.today(), check_in_datetime.time())
+                        w_hours_worked += time_difference.seconds / 3600
+
+            statistics["this_week"] = round(w_hours_worked, 2)
+            m_hours_worked = round(minutes_worked / 60, 2)
+            statistics["this_month"] = m_hours_worked
+            statistics["remaining"] = round(
+                (statistics["remaining"] - m_hours_worked), 2
+            )
+            overtime_threshold = weekdays_up_to_today * 9
+            if m_hours_worked > overtime_threshold:
+                statistics["overtime"] = round((m_hours_worked - overtime_threshold), 2)
 
             workable_minutes = actual_shifts * 9 * 60
             worked_minutes = minutes_worked
@@ -411,13 +467,13 @@ class Employee_Home(APIView):
                 "leaves": leave,
             }
         except:
-            # statistics = {
-            #     "today": 0,
-            #     "this_week": 0,
-            #     "this_month": 0,
-            #     "remaining": total_weekdays * 9,
-            #     "overtime": 0,
-            # }
+            statistics = {
+                "today": 0,
+                "this_week": 0,
+                "this_month": 0,
+                "remaining": total_weekdays * 9,
+                "overtime": 0,
+            }
             today_activity = {
                 "check_in": "-",
                 "check_out": "-",
@@ -425,13 +481,14 @@ class Employee_Home(APIView):
                 "resume": "-",
             }
             attendence_summary = {}
+
         punch_timings = employee.objects.get(email=e_email).punch_timings
 
         payload = {
             "leave_summary": leave_summary,
             "attendence_summary": attendence_summary,
             "today_activity": today_activity,
-            # "statistics": statistics,
+            "statistics": statistics,
             "workspaces": workspaces,
             "punch_timings": punch_timings,
             "current_workspace_details": current_workspace,
@@ -440,31 +497,42 @@ class Employee_Home(APIView):
         return Response(payload, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
-        tags=["Dashboard: Mark check in, Mark checkout, Mark break out Resumed"],
+        tags=["Dashboard: Mark check in, Mark checkout, Mark break out, Resumed"],
         manual_parameters=[
+            openapi.Parameter(
+                "workspace",
+                openapi.IN_QUERY,
+                description="Specify current client",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
             openapi.Parameter(
                 "check_in",
                 openapi.IN_QUERY,
-                description="Time of check in",
+                description="Punch check in",
                 type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATETIME,
             ),
             openapi.Parameter(
                 "check_out",
                 openapi.IN_QUERY,
-                description="Time of check out",
+                description="Punch check out",
                 type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATETIME,
             ),
             openapi.Parameter(
                 "break",
                 openapi.IN_QUERY,
-                description="Time of break",
+                description="Punch break",
                 type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATETIME,
             ),
             openapi.Parameter(
                 "resume",
                 openapi.IN_QUERY,
-                description="Time of resume",
+                description="Punch resume",
                 type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATETIME,
             ),
             openapi.Parameter(
                 "Authorization",
@@ -478,7 +546,7 @@ class Employee_Home(APIView):
             400: "Bad Request",
             401: "Unauthorized",
         },
-        operation_summary="Update punch timings",
+        operation_summary="Mark punches",
         operation_id=".",
     )
     def patch(self, request, *args, **kwargs):
@@ -682,7 +750,7 @@ class Company_Contract(APIView):
                             type=openapi.TYPE_STRING,
                             format=openapi.FORMAT_DATETIME,
                         ),
-                        "contract_doc": openapi.Schema(type=openapi.TYPE_STRING),
+                        "contract_doc": openapi.Schema(type=openapi.TYPE_FILE),
                     },
                 ),
             ),
@@ -739,7 +807,7 @@ class Offshore_Contract(APIView):
                             type=openapi.TYPE_STRING,
                             format=openapi.FORMAT_DATETIME,
                         ),
-                        "contract_doc": openapi.Schema(type=openapi.TYPE_STRING),
+                        "contract_doc": openapi.Schema(type=openapi.TYPE_FILE),
                     },
                 ),
             ),
@@ -747,6 +815,13 @@ class Offshore_Contract(APIView):
             401: openapi.Response(description="Unauthorized"),
         },
         manual_parameters=[
+            openapi.Parameter(
+                "c_email",
+                openapi.IN_QUERY,
+                description="Specify current client",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
             openapi.Parameter(
                 "Authorization",
                 openapi.IN_HEADER,
@@ -787,12 +862,32 @@ class Leave_Request(APIView):
         tags=["Leave"],
         manual_parameters=[
             openapi.Parameter(
-                "status",
+                "c_email",
                 openapi.IN_QUERY,
-                description="Status filter (all, pending, completed, rejected)",
+                description="Specify current client",
                 type=openapi.TYPE_STRING,
-                enum=["all", "pending", "completed", "rejected"],
                 required=True,
+            ),
+            openapi.Parameter(
+                "tab",
+                openapi.IN_QUERY,
+                description="Status filter (pending, completed, rejected) otherwise all",
+                type=openapi.TYPE_STRING,
+                enum=["pending", "completed", "rejected"],
+            ),
+            openapi.Parameter(
+                "from",
+                openapi.IN_QUERY,
+                description="Date filter",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+            ),
+            openapi.Parameter(
+                "to",
+                openapi.IN_QUERY,
+                description="Date filter",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
             ),
             openapi.Parameter(
                 "Authorization",
@@ -1330,7 +1425,6 @@ class Leave_Request(APIView):
         operation_id=".",
     )
     def post(self, request, *args, **kwargs):
-
         e_email = request.user
         try:
             client_email = request.data["client_id"]
@@ -1396,12 +1490,25 @@ class Time_Sheet(APIView):
         tags=["Time sheet"],
         manual_parameters=[
             openapi.Parameter(
-                "status",
+                "c_email",
                 openapi.IN_QUERY,
-                description="Status filter (all, pending, completed, rejected)",
+                description="Specify current client",
                 type=openapi.TYPE_STRING,
-                enum=["all", "pending", "completed", "rejected"],
                 required=True,
+            ),
+            openapi.Parameter(
+                "from",
+                openapi.IN_QUERY,
+                description="Date filter",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+            ),
+            openapi.Parameter(
+                "to",
+                openapi.IN_QUERY,
+                description="Date filter",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
             ),
             openapi.Parameter(
                 "Authorization",
@@ -1813,15 +1920,35 @@ class Time_Sheet(APIView):
 @permission_classes([IsAuthenticated])
 class Punch_Request(APIView):
     @swagger_auto_schema(
-        tags=["Leave"],
+        tags=["Punch requests"],
         manual_parameters=[
             openapi.Parameter(
-                "status",
+                "c_email",
                 openapi.IN_QUERY,
-                description="Status filter (all, pending, completed, rejected)",
+                description="Specify current client",
                 type=openapi.TYPE_STRING,
-                enum=["all", "pending", "completed", "rejected"],
                 required=True,
+            ),
+            openapi.Parameter(
+                "tab",
+                openapi.IN_QUERY,
+                description="Status filter (pending, completed, rejected) otherwise all",
+                type=openapi.TYPE_STRING,
+                enum=["pending", "completed", "rejected"],
+            ),
+            openapi.Parameter(
+                "from",
+                openapi.IN_QUERY,
+                description="Date filter",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+            ),
+            openapi.Parameter(
+                "to",
+                openapi.IN_QUERY,
+                description="Date filter",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
             ),
             openapi.Parameter(
                 "Authorization",
@@ -2108,6 +2235,7 @@ class Punch_Request(APIView):
                 name="punch_time",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATETIME,
                 required=True,
             ),
             openapi.Parameter(
@@ -2180,3 +2308,53 @@ class Punch_Request(APIView):
             return Response(status=status.HTTP_200_OK)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Policies(APIView):
+    @swagger_auto_schema(
+        tags=["Policies"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "policy_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "policy_doc": openapi.Schema(type=openapi.TYPE_FILE),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve employee policies",
+        operation_id=".",
+    )
+    def get(self, request, *args, **kwargs):
+        emp_policies = policy.objects.filter(employee=True)
+        policies = []
+        for emp_pol in emp_policies:
+            record = {
+                "id": emp_pol.id,
+                "policy_name": emp_pol.policy_name,
+                "policy_doc": emp_pol.policy_doc.path,
+            }
+            policies.append(record)
+        if len(policies) > 0:
+            return Response(policies, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)

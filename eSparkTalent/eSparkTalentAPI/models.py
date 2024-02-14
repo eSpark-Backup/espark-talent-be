@@ -492,3 +492,17 @@ class company_data(models.Model):
             pass
 
         super().save(*args, **kwargs)
+
+class policy(models.Model):
+    id = models.AutoField(primary_key=True)
+    policy_name = models.CharField(max_length=30, default="")
+    policy_doc = models.FileField(
+        upload_to="policies/",
+        validators=[pdf_ext_valid, valid_pdffile_type],
+        default="",
+    )
+    employee = models.BooleanField()
+    client = models.BooleanField()
+
+    def __str__(self):
+        return f"{self.policy_name} - {self.id}"
