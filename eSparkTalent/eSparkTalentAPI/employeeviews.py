@@ -26,8 +26,9 @@ class Employee_Home(APIView):
             openapi.Parameter(
                 "workspace",
                 openapi.IN_QUERY,
-                description="Specify current client",
+                description="Specify current client email",
                 type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
                 required=True,
             ),
             openapi.Parameter(
@@ -502,8 +503,9 @@ class Employee_Home(APIView):
             openapi.Parameter(
                 "workspace",
                 openapi.IN_QUERY,
-                description="Specify current client",
+                description="Specify current client email",
                 type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
                 required=True,
             ),
             openapi.Parameter(
@@ -818,8 +820,9 @@ class Offshore_Contract(APIView):
             openapi.Parameter(
                 "c_email",
                 openapi.IN_QUERY,
-                description="Specify current client",
+                description="Specify current client email",
                 type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
                 required=True,
             ),
             openapi.Parameter(
@@ -864,8 +867,9 @@ class Leave_Request(APIView):
             openapi.Parameter(
                 "c_email",
                 openapi.IN_QUERY,
-                description="Specify current client",
+                description="Specify current client email",
                 type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
                 required=True,
             ),
             openapi.Parameter(
@@ -1492,8 +1496,9 @@ class Time_Sheet(APIView):
             openapi.Parameter(
                 "c_email",
                 openapi.IN_QUERY,
-                description="Specify current client",
+                description="Specify current client email",
                 type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
                 required=True,
             ),
             openapi.Parameter(
@@ -1925,8 +1930,9 @@ class Punch_Request(APIView):
             openapi.Parameter(
                 "c_email",
                 openapi.IN_QUERY,
-                description="Specify current client",
+                description="Specify current client email",
                 type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
                 required=True,
             ),
             openapi.Parameter(
