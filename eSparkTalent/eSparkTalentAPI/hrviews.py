@@ -289,7 +289,7 @@ class Add_Employee(APIView):
                     employee_id=serializer.validated_data["email"],
                     job_title=serializer.validated_data["job_title"],
                     country="Pakistan",
-                    role_type="role",
+                    role_type=serializer.validated_data["role_type"],
                     employment_term="",
                     joining_date=serializer.validated_data["joining_date"],
                     salary="",
@@ -563,7 +563,8 @@ class Employee_Invoice(APIView):
             openapi.Parameter(
                 name="client_id",
                 in_=openapi.IN_FORM,
-                type=openapi.FORMAT_EMAIL,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
                 required=True,
             ),
         ],
@@ -670,7 +671,8 @@ class Other_Payment(APIView):
             openapi.Parameter(
                 name="client_id",
                 in_=openapi.IN_FORM,
-                type=openapi.FORMAT_EMAIL,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
                 required=True,
             ),
             openapi.Parameter(
@@ -1018,18 +1020,14 @@ class Hr_Employee(APIView):
                                         type=openapi.TYPE_STRING,
                                         format=openapi.FORMAT_DATETIME,
                                     ),
-                                    "assignee": openapi.Schema(
-                                        type=openapi.TYPE_STRING,
-                                        properties={
-                                            "assignee_name": openapi.Schema(
-                                                type=openapi.TYPE_STRING
-                                            ),
-                                            "assignee_email": openapi.Schema(
-                                                type=openapi.TYPE_STRING,
-                                                format=openapi.FORMAT_EMAIL,
-                                            ),
-                                        },
+                                    
+                                    "assignee_name": openapi.Schema(
+                                        type=openapi.TYPE_STRING
                                     ),
+                                    "assignee_email": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_EMAIL,
+                                    ),     
                                 },
                             ),
                         ),
@@ -1189,6 +1187,7 @@ class Hr_Employee(APIView):
                         "assigned_date": rec.assigned_date,
                         "assignee_name": rec.assignee_name,
                         "assignee_email": rec.assignee_email,
+                
                     }
                     records.append(record)
                 if len(records) > 0:
