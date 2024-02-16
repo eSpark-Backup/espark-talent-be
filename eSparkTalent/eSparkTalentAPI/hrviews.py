@@ -236,7 +236,7 @@ class Add_Employee(APIView):
                     punch_timings=serializer.validated_data["punch_timings"],
                 )
 
-                end_user.objects.create(
+                end_user.objects.create_user(
                     username=serializer.validated_data["first_name"]
                     + " "
                     + serializer.validated_data["last_name"],
@@ -289,10 +289,10 @@ class Add_Employee(APIView):
                     employee_id=serializer.validated_data["email"],
                     job_title=serializer.validated_data["job_title"],
                     country="Pakistan",
-                    role_type="",
+                    role_type="role",
                     employment_term="",
                     joining_date=serializer.validated_data["joining_date"],
-                    salary="1000",
+                    salary="",
                     benefits={},
                 )
                 return Response(
@@ -563,7 +563,7 @@ class Employee_Invoice(APIView):
             openapi.Parameter(
                 name="client_id",
                 in_=openapi.IN_FORM,
-                type=openapi.TYPE_STRING,
+                type=openapi.FORMAT_EMAIL,
                 required=True,
             ),
         ],
@@ -573,9 +573,7 @@ class Employee_Invoice(APIView):
     def post(self, request, *args, **kwargs):
         posted_data = request.data
         id = posted_data.get("employee_id", None)
-        print(id)
         employee_data = employee.objects.get(employee_id=id)
-        print(employee_data)
         posted_data["employee_id"] = employee_data.email
         try:
             serializer = EmployeeInvoiceSerializer(data=posted_data)
@@ -672,7 +670,7 @@ class Other_Payment(APIView):
             openapi.Parameter(
                 name="client_id",
                 in_=openapi.IN_FORM,
-                type=openapi.TYPE_STRING,
+                type=openapi.FORMAT_EMAIL,
                 required=True,
             ),
             openapi.Parameter(
@@ -886,7 +884,7 @@ class Hr_Employees(APIView):
                                 "employee_id": e_user.employee_id,
                                 "name": e_user.first_name + " " + e_user.last_name,
                                 "image_path": e_user.image.path,
-                                "designation": e_user.job_title,
+                                "job_title": e_user.job_title,
                                 "company": c_user.company_name,
                                 "active": True,
                             }
@@ -902,8 +900,8 @@ class Hr_Employees(APIView):
                 records = []
                 for emp in employees:
                     try:
-                        e_user = outsource_employees.objects.get(client_id=emp.email)
-                        if e_user:
+                        e_user = outsource_employees.objects.get(employee_id=emp.email)
+                        if not e_user:
                             record = {
                                 "id": emp.id,
                                 "employee_id": emp.employee_id,
@@ -1021,7 +1019,16 @@ class Hr_Employee(APIView):
                                         format=openapi.FORMAT_DATETIME,
                                     ),
                                     "assignee": openapi.Schema(
-                                        type=openapi.TYPE_STRING
+                                        type=openapi.TYPE_STRING,
+                                        properties={
+                                            "assignee_name": openapi.Schema(
+                                                type=openapi.TYPE_STRING
+                                            ),
+                                            "assignee_email": openapi.Schema(
+                                                type=openapi.TYPE_STRING,
+                                                format=openapi.FORMAT_EMAIL,
+                                            ),
+                                        },
                                     ),
                                 },
                             ),
@@ -1180,7 +1187,8 @@ class Hr_Employee(APIView):
                         "gadget": rec.gadget,
                         "asset_id": rec.asset_id,
                         "assigned_date": rec.assigned_date,
-                        "assignee": f"{rec.assignee_name}\n{rec.assignee_email}",
+                        "assignee_name": rec.assignee_name,
+                        "assignee_email": rec.assignee_email,
                     }
                     records.append(record)
                 if len(records) > 0:
@@ -1467,7 +1475,9 @@ class Start_Hiring(APIView):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "client_id": openapi.Schema(type=openapi.TYPE_STRING),
+                "client_id": openapi.Schema(
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
+                ),
                 "job_title": openapi.Schema(type=openapi.TYPE_STRING),
                 "role_type": openapi.Schema(type=openapi.TYPE_STRING),
                 "gender": openapi.Schema(type=openapi.TYPE_STRING),
@@ -1517,7 +1527,6 @@ class Start_Hiring(APIView):
     )
     def post(self, request, *args, **kwargs):
         serializer = start_requestSerializer(data=request.data)
-        print(serializer)
         if serializer.is_valid():
             hiring_request.objects.create(
                 client_id=serializer.validated_data["client_id"],
@@ -1870,6 +1879,7 @@ class Onboarding(APIView):
                 joining_date=serializer.validated_data["joining_date"],
                 notice_period=serializer.validated_data["notice_period"],
                 salary=serializer.validated_data["salary"],
+                benefits=serializer.validated_data["benefits"],
             )
             return Response(
                 {"message": "Resquest created"}, status=status.HTTP_201_CREATED
@@ -1926,8 +1936,9 @@ class Onboarding(APIView):
         operation_id="7",
     )
     def get(self, request, *args, **kwargs):
-        user = request.user
-        onboardings = onboarding.objects.filter(client_id=user)
+        record_id = request.quary_params.get("id")
+        client_data = client.objects.get(id=record_id)
+        onboardings = onboarding.objects.filter(client_id=client_data.email)
         records = []
         if onboardings:
             for data in onboardings:
@@ -1975,7 +1986,6 @@ class Onboarding(APIView):
         operation_id="8",
     )
     def delete(self, request, *args, **kwargs):
-        user = request.user
         delete_id = request.query_params.get("id")
         try:
             onboarding.objects.filter(id=delete_id).delete()
