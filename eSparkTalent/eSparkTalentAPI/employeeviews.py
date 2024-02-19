@@ -14,12 +14,13 @@ from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.parsers import MultiPartParser
-import calendar
+from .emp_dash_funcs import *
 
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Employee_Home(APIView):
+    parser_classes = (MultiPartParser,)
     @swagger_auto_schema(
         tags=["Dashboard"],
         manual_parameters=[
@@ -166,6 +167,14 @@ class Employee_Home(APIView):
                                     type=openapi.TYPE_INTEGER
                                 ),
                                 "leaves": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "absents": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "presents": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "missings": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "days_off": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "overtimes": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "short_durations": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "late_arrivals": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "break_minutes": openapi.Schema(type=openapi.TYPE_INTEGER),
                             },
                         ),
                         "statistics": openapi.Schema(
@@ -199,7 +208,27 @@ class Employee_Home(APIView):
                                 ),
                             },
                         ),
-                        "workspaces": openapi.Schema(type=openapi.TYPE_OBJECT),
+                        "workspaces": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Items(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "workspace_id": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "email": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_EMAIL,
+                                    ),
+                                    "client_name": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "company_name": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                },
+                            ),
+                        ),
                         "punch_timings": openapi.Schema(
                             type=openapi.TYPE_OBJECT,
                             properties={
@@ -211,21 +240,6 @@ class Employee_Home(APIView):
                                     type=openapi.TYPE_STRING,
                                     format=openapi.FORMAT_DATETIME,
                                 ),
-                            },
-                        ),
-                        "current_workspace_details": openapi.Schema(
-                            type=openapi.TYPE_OBJECT,
-                            properties={
-                                "client_id": openapi.Schema(type=openapi.TYPE_STRING),
-                                "client_email": openapi.Schema(
-                                    type=openapi.TYPE_STRING,
-                                    format=openapi.FORMAT_EMAIL,
-                                ),
-                                "company_name": openapi.Schema(
-                                    type=openapi.TYPE_STRING
-                                ),
-                                "client_name": openapi.Schema(type=openapi.TYPE_STRING),
-                                "image": openapi.Schema(type=openapi.TYPE_FILE),
                             },
                         ),
                         "employee_details": openapi.Schema(
@@ -242,6 +256,7 @@ class Employee_Home(APIView):
                                 "image": openapi.Schema(type=openapi.TYPE_FILE),
                             },
                         ),
+                        "company_image": openapi.Schema(type=openapi.TYPE_FILE),
                     },
                 ),
             ),
@@ -254,6 +269,7 @@ class Employee_Home(APIView):
     def get(self, request, *args, **kwargs):
         e_email = request.user
         workspace = request.query_params.get("workspace")
+
         current_employee = employee.objects.get(email=e_email)
         employee_details = {
             "employee_id": current_employee.employee_id,
@@ -263,19 +279,21 @@ class Employee_Home(APIView):
             "employee_email": current_employee.email,
             "image": current_employee.image.path,
         }
-        try:
-            current_client = client.objects.get(email=workspace)
-            current_workspace = {
-                "clinet_id": current_client.client_id,
-                "client_email": current_client.email,
-                "company_name": current_client.company_name,
-                "client_name": current_client.first_name
-                + " "
-                + current_client.last_name,
-                "image": current_client.image.path,
-            }
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        out_sourced_to = [
+            workspace.client_id
+            for workspace in outsource_employees.objects.filter(employee_id=e_email)
+        ]
+        clients = client.objects.filter(email__in=out_sourced_to)
+        if clients:
+            workspaces = []
+            for rec in clients:
+                record = {
+                    "workspace_id": rec.client_id,
+                    "email": rec.email,
+                    "client_name": rec.first_name + " " + rec.last_name,
+                    "company_name": rec.company_name,
+                }
+                workspaces.append(record)
         try:
             leave_records = leave_balance.objects.get(employee_id=e_email)
             leave_summary = {
@@ -289,216 +307,29 @@ class Employee_Home(APIView):
             }
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        out_sourced_to = [
-            workspace.client_id
-            for workspace in outsource_employees.objects.filter(employee_id=e_email)
-        ]
-        clients = client.objects.filter(email__in=out_sourced_to)
-        if clients:
-            workspaces = {}
-            for rec in clients:
-                workspaces[rec.email] = rec.company_name
 
-        current_month = datetime.now().strftime("%B")
-        current_year = datetime.now().year
-        today = datetime.now().strftime("%d-%m-%Y")
-        date_today = datetime.now()
-        _, last_day = calendar.monthrange(current_year, date_today.month)
+        today_activity = TodayActivity(e_email=e_email, workspace=workspace)
 
-        total_weekdays = 0
-
-        for day in range(1, last_day + 1):
-            weekday = calendar.weekday(current_year, date_today.month, day)
-            total_weekdays += 1 if weekday < 5 else 0
-
-        weekdays_up_to_today = 0
-        for day in range(1, date_today.day + 1):
-            weekday = calendar.weekday(current_year, date_today.month, day)
-            weekdays_up_to_today += 1 if weekday < 5 else 0
-
-        start_of_week = date_today - timedelta(days=date_today.weekday())
-        end_of_week = start_of_week + timedelta(days=4)
-
-        try:
-            time_sheet_record = time_sheet.objects.get(
-                employee_id=e_email,
-                client_id=workspace,
-                month=current_month,
-                year=current_year,
-            )
-
-            today_activity = {
-                "check_in": "-",
-                "check_out": "-",
-                "break": "-",
-                "resume": "-",
-            }
-
-            statistics = {
-                "today": 0,
-                "this_week": 0,
-                "this_month": 0,
-                "remaining": total_weekdays * 9,
-                "overtime": 0,
-            }
-
-            if (
-                today in time_sheet_record.record
-                and time_sheet_record.record[today]["check_in"] != "-"
-            ):
-                current_time = datetime.now().time()
-                check_in_time = datetime.strptime(
-                    time_sheet_record.record[today]["check_in"], "%H:%M:%S"
-                ).time()
-
-                time_difference = datetime.combine(
-                    datetime.today(), current_time
-                ) - datetime.combine(datetime.today(), check_in_time)
-
-                t_hours_worked = round(time_difference.total_seconds() / 3600, 2)
-                statistics["today"] = t_hours_worked
-
-            if today in time_sheet_record.record:
-                if "check_in" in time_sheet_record.record[today]:
-                    today_activity["check_in"] = time_sheet_record.record[today][
-                        "check_in"
-                    ]
-
-                if "check_out" in time_sheet_record.record[today]:
-                    today_activity["check_out"] = time_sheet_record.record[today][
-                        "check_out"
-                    ]
-
-                if "break" in time_sheet_record.record[today]:
-                    today_activity["break"] = time_sheet_record.record[today]["break"]
-
-                if "resume" in time_sheet_record.record[today]:
-                    today_activity["resume"] = time_sheet_record.record[today]["resume"]
-
-                if time_sheet_record.record[today]["check_in"] != "-":
-                    current_time = datetime.now().time()
-                    check_in_time = datetime.strptime(
-                        time_sheet_record.record[today]["check_in"], "%H:%M:%S"
-                    ).time()
-
-                    time_difference = datetime.combine(
-                        datetime.today(), current_time
-                    ) - datetime.combine(datetime.today(), check_in_time)
-
-                    t_hours_worked = round(time_difference.total_seconds() / 3600, 2)
-                    statistics["today"] = t_hours_worked
-
-            actual_shifts = 0
-            minutes_worked = 0
-            w_hours_worked = 0
-            leave = 0
-
-            for value in time_sheet_record.record:
-                if (
-                    time_sheet_record.record[value]["status"]["Day Off"] == False
-                    and time_sheet_record.record[value]["status"]["Full Leave"] == False
-                ):
-                    actual_shifts += 1
-
-                if time_sheet_record.record[value]["status"]["Full Leave"] == True:
-                    leave += 1
-
-                if (
-                    time_sheet_record.record[value]["check_in"] != "-"
-                    and time_sheet_record.record[value]["check_out"] != "-"
-                ):
-                    check_in_time = time_sheet_record.record[value]["check_in"]
-                    check_out_time = time_sheet_record.record[value]["check_out"]
-                    check_in_datetime = datetime.strptime(check_in_time, "%H:%M:%S")
-                    check_out_datetime = datetime.strptime(check_out_time, "%H:%M:%S")
-
-                    time_difference = check_out_datetime - check_in_datetime
-                    minutes_worked += time_difference.seconds // 60
-
-                record_date = datetime.strptime(value, "%d-%m-%Y")
-                if start_of_week <= record_date <= end_of_week:
-                    if (
-                        time_sheet_record.record[value]["check_in"] != "-"
-                        and time_sheet_record.record[value]["check_out"] != "-"
-                    ):
-                        check_in_time = time_sheet_record.record[value]["check_in"]
-                        check_out_time = time_sheet_record.record[value]["check_out"]
-                        check_in_datetime = datetime.strptime(check_in_time, "%H:%M:%S")
-                        check_out_datetime = datetime.strptime(
-                            check_out_time, "%H:%M:%S"
-                        )
-
-                        time_difference = check_out_datetime - check_in_datetime
-                        w_hours_worked += time_difference.seconds / 3600
-
-                    elif (
-                        value == today
-                        and time_sheet_record.record[value]["check_in"] != "-"
-                        and time_sheet_record.record[value]["check_out"] == "-"
-                    ):
-                        check_in_time = time_sheet_record.record[value]["check_in"]
-                        check_in_datetime = datetime.strptime(check_in_time, "%H:%M:%S")
-                        time_difference = datetime.combine(
-                            datetime.today(), current_time
-                        ) - datetime.combine(datetime.today(), check_in_datetime.time())
-                        w_hours_worked += time_difference.seconds / 3600
-
-            statistics["this_week"] = round(w_hours_worked, 2)
-            m_hours_worked = round(minutes_worked / 60, 2)
-            statistics["this_month"] = m_hours_worked
-            statistics["remaining"] = round(
-                (statistics["remaining"] - m_hours_worked), 2
-            )
-            overtime_threshold = weekdays_up_to_today * 9
-            if m_hours_worked > overtime_threshold:
-                statistics["overtime"] = round((m_hours_worked - overtime_threshold), 2)
-
-            workable_minutes = actual_shifts * 9 * 60
-            worked_minutes = minutes_worked
-            if workable_minutes > worked_minutes:
-                short_minutes = workable_minutes - worked_minutes
-            elif workable_minutes <= worked_minutes:
-                short_minutes = "0m"
-
-            attendence_summary = {
-                "shifts": actual_shifts,
-                "expected_minutes": workable_minutes,
-                "worked_minutes": worked_minutes,
-                "short_minutes": short_minutes,
-                "leaves": leave,
-            }
-        except:
-            statistics = {
-                "today": 0,
-                "this_week": 0,
-                "this_month": 0,
-                "remaining": total_weekdays * 9,
-                "overtime": 0,
-            }
-            today_activity = {
-                "check_in": "-",
-                "check_out": "-",
-                "break": "-",
-                "resume": "-",
-            }
-            attendence_summary = {}
+        statistics = Statistics(e_email=e_email, workspace=workspace)
 
         punch_timings = employee.objects.get(email=e_email).punch_timings
 
+        attendence_summary = AttendenceSummary(e_email=e_email, workspace=workspace)
+
         payload = {
-            "leave_summary": leave_summary,
-            "attendence_summary": attendence_summary,
-            "today_activity": today_activity,
-            "statistics": statistics,
-            "workspaces": workspaces,
-            "punch_timings": punch_timings,
-            "current_workspace_details": current_workspace,
             "employee_details": employee_details,
+            "company_image": company_data.objects.all()[0].image.path,
+            "workspaces": workspaces,
+            "attendence_summary": attendence_summary,
+            "punch_timings": punch_timings,
+            "leave_summary": leave_summary,
+            "statistics": statistics,
+            "today_activity": today_activity,
         }
         return Response(payload, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
-        tags=["Dashboard: Mark check in, Mark checkout, Mark break out, Resumed"],
+        tags=["Dashboard: Mark check in, Mark checkout, Mark break out, Mark resumed"],
         manual_parameters=[
             openapi.Parameter(
                 "workspace",
@@ -585,7 +416,7 @@ class Employee_Home(APIView):
                                 "Absent": False,
                                 "Day Off": False,
                                 "Full Leave": False,
-                                "Short Duration": "-",
+                                "Short Duration": False,
                             },
                         }
                         rec.save()
@@ -608,7 +439,7 @@ class Employee_Home(APIView):
                                 "Absent": False,
                                 "Day Off": False,
                                 "Full Leave": False,
-                                "Short Duration": "-",
+                                "Short Duration": False,
                             },
                         }
                     },
@@ -737,6 +568,7 @@ class Employee_Home(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Company_Contract(APIView):
+    parser_classes = (MultiPartParser,)
     @swagger_auto_schema(
         tags=["Company contracts"],
         responses={
@@ -793,6 +625,7 @@ class Company_Contract(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Offshore_Contract(APIView):
+    parser_classes = (MultiPartParser,)
     @swagger_auto_schema(
         tags=["Client contracts"],
         responses={
@@ -818,7 +651,7 @@ class Offshore_Contract(APIView):
         },
         manual_parameters=[
             openapi.Parameter(
-                "c_email",
+                "workspace",
                 openapi.IN_QUERY,
                 description="Specify current client email",
                 type=openapi.TYPE_STRING,
@@ -837,16 +670,16 @@ class Offshore_Contract(APIView):
     )
     def get(self, request, *args, **kwargs):
         e_email = request.user
-        c_email = request.query_params.get("c_email")
+        workspace = request.query_params.get("workspace")
         offsh_contract = offshore_contracts.objects.filter(
-            employee_id=e_email, client_id=c_email
+            employee_id=e_email, client_id=workspace
         )
         if offsh_contract:
             records = []
             for contract in offsh_contract:
                 record = {
                     "id": contract.id,
-                    "client_id": client.objects.get(email=c_email).client_id,
+                    "client_id": client.objects.get(email=workspace).client_id,
                     "employee_id": employee.objects.get(email=request.user).employee_id,
                     "contract_name": contract.contract_name,
                     "date": contract.date,
@@ -861,11 +694,12 @@ class Offshore_Contract(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Leave_Request(APIView):
+    parser_classes = (MultiPartParser,)
     @swagger_auto_schema(
         tags=["Leave"],
         manual_parameters=[
             openapi.Parameter(
-                "c_email",
+                "workspace",
                 openapi.IN_QUERY,
                 description="Specify current client email",
                 type=openapi.TYPE_STRING,
@@ -1135,7 +969,7 @@ class Leave_Request(APIView):
     )
     def get(self, request, *args, **kwargs):
         e_email = request.user
-        c_email = request.query_params.get("c_email")
+        workspace = request.query_params.get("workspace")
         tab = request.query_params.get("tab")
         from_date = request.query_params.get("from")
         to_date = request.query_params.get("to")
@@ -1144,32 +978,32 @@ class Leave_Request(APIView):
             to_date_object = parser.parse(to_date)
 
             pending = leave_request.objects.filter(
-                Q(employee_id=e_email, client_id=c_email),
+                Q(employee_id=e_email, client_id=workspace),
                 created_at__date__gte=from_date_object,
                 created_at__date__lte=to_date_object,
                 status="pending",
             ).count()
             rejected = leave_request.objects.filter(
-                Q(employee_id=e_email, client_id=c_email),
+                Q(employee_id=e_email, client_id=workspace),
                 created_at__date__gte=from_date_object,
                 created_at__date__lte=to_date_object,
                 status="rejected",
             ).count()
             completed = leave_request.objects.filter(
-                Q(employee_id=e_email, client_id=c_email),
+                Q(employee_id=e_email, client_id=workspace),
                 created_at__date__gte=from_date_object,
                 created_at__date__lte=to_date_object,
                 status="completed",
             ).count()
             all = leave_request.objects.filter(
-                Q(employee_id=e_email, client_id=c_email),
+                Q(employee_id=e_email, client_id=workspace),
                 created_at__date__gte=from_date_object,
                 created_at__date__lte=to_date_object,
             ).count()
 
             if tab == "pending" or tab == "completed" or tab == "rejected":
                 l_request = leave_request.objects.filter(
-                    Q(employee_id=e_email, client_id=c_email),
+                    Q(employee_id=e_email, client_id=workspace),
                     created_at__date__gte=from_date_object,
                     created_at__date__lte=to_date_object,
                     status=tab,
@@ -1203,7 +1037,7 @@ class Leave_Request(APIView):
                     request_record = []
             elif not tab:
                 l_request = leave_request.objects.filter(
-                    Q(employee_id=e_email, client_id=c_email),
+                    Q(employee_id=e_email, client_id=workspace),
                     created_at__date__gte=from_date_object,
                     created_at__date__lte=to_date_object,
                 )
@@ -1256,16 +1090,16 @@ class Leave_Request(APIView):
                 return Response(records, status=status.HTTP_204_NO_CONTENT)
         else:
             pending = leave_request.objects.filter(
-                employee_id=e_email, client_id=c_email, status="pending"
+                employee_id=e_email, client_id=workspace, status="pending"
             ).count()
             rejected = leave_request.objects.filter(
-                employee_id=e_email, client_id=c_email, status="rejected"
+                employee_id=e_email, client_id=workspace, status="rejected"
             ).count()
             completed = leave_request.objects.filter(
-                employee_id=e_email, client_id=c_email, status="completed"
+                employee_id=e_email, client_id=workspace, status="completed"
             ).count()
             all = leave_request.objects.filter(
-                employee_id=e_email, client_id=c_email
+                employee_id=e_email, client_id=workspace
             ).count()
             try:
                 l_balance = leave_balance.objects.get(employee_id=e_email)
@@ -1282,7 +1116,7 @@ class Leave_Request(APIView):
                 return Response(status=status.HTTP_400_BAD_REQUEST)
             if tab == "pending" or tab == "completed" or tab == "rejected":
                 l_request = leave_request.objects.filter(
-                    employee_id=e_email, client_id=c_email, status=tab
+                    employee_id=e_email, client_id=workspace, status=tab
                 )
                 request_record = []
                 if l_request:
@@ -1313,7 +1147,7 @@ class Leave_Request(APIView):
                     request_record = []
             elif not tab:
                 l_request = leave_request.objects.filter(
-                    employee_id=e_email, client_id=c_email
+                    employee_id=e_email, client_id=workspace
                 )
                 request_record = []
                 if l_request:
@@ -1490,11 +1324,12 @@ class Leave_Request(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Time_Sheet(APIView):
+    parser_classes = (MultiPartParser,)
     @swagger_auto_schema(
         tags=["Time sheet"],
         manual_parameters=[
             openapi.Parameter(
-                "c_email",
+                "workspace",
                 openapi.IN_QUERY,
                 description="Specify current client email",
                 type=openapi.TYPE_STRING,
@@ -1655,7 +1490,7 @@ class Time_Sheet(APIView):
     )
     def get(self, request, *args, **kwargs):
         e_email = request.user
-        c_email = request.query_params.get("c_email")
+        workspace = request.query_params.get("workspace")
         from_date = request.query_params.get("from")
         to_date = request.query_params.get("to")
 
@@ -1673,7 +1508,7 @@ class Time_Sheet(APIView):
                 )
             }
             time_sheet_records = time_sheet.objects.filter(
-                Q(employee_id=e_email, client_id=c_email),
+                Q(employee_id=e_email, client_id=workspace),
                 Q(
                     month__gte=month_mapping[from_month],
                     year__gte=from_year,
@@ -1740,12 +1575,9 @@ class Time_Sheet(APIView):
                     worked_hours = "0h"
 
                 actual_shifts = 0
-                for key, value in filtered_record.items():
-                    if (
-                        value["status"]["Day Off"] == False
-                        and value["status"]["Full Leave"] == False
-                    ):
-                        actual_shifts += 1
+                for day in range(1, date_today.day + 1):
+                    weekday = calendar.weekday(current_year, date_today.month, day)
+                    actual_shifts += 1 if weekday < 5 else 0
 
                 workable_minutes = actual_shifts * 9 * 60
                 worked_minutes = hours_worked * 60 + minutes_worked
@@ -1762,8 +1594,8 @@ class Time_Sheet(APIView):
                     short_hours = "0h 0m"
 
                 summary = {
-                    "workable_shifts": len(filtered_record),
-                    "workable_hours": f"{len(filtered_record)*9}h",
+                    "workable_shifts": actual_shifts,
+                    "workable_hours": f"{actual_shifts*9}h",
                     "worked_hours": worked_hours,
                     "short_hours": short_hours,
                     "overtime_hours": overtime_hours,
@@ -1775,9 +1607,9 @@ class Time_Sheet(APIView):
                     "leaves": leaves,
                 }
                 emp = employee.objects.get(email=e_email)
-                clnt = client.objects.get(email=c_email)
+                clnt = client.objects.get(email=workspace)
                 outsrc_emp = outsource_employees.objects.get(
-                    employee_id=e_email, client_id=c_email
+                    employee_id=e_email, client_id=workspace
                 )
 
                 employee_details = {
@@ -1800,7 +1632,7 @@ class Time_Sheet(APIView):
             try:
                 ts_record = time_sheet.objects.get(
                     employee_id=e_email,
-                    client_id=c_email,
+                    client_id=workspace,
                     year=datetime.now().year,
                     month=datetime.now().strftime("%B"),
                 )
@@ -1861,12 +1693,9 @@ class Time_Sheet(APIView):
                     worked_hours = "0h"
 
                 actual_shifts = 0
-                for value in ts_record.record:
-                    if (
-                        ts_record.record[value]["status"]["Day Off"] == False
-                        and ts_record.record[value]["status"]["Full Leave"] == False
-                    ):
-                        actual_shifts += 1
+                for day in range(1, date_today.day + 1):
+                    weekday = calendar.weekday(current_year, date_today.month, day)
+                    actual_shifts += 1 if weekday < 5 else 0
 
                 workable_minutes = actual_shifts * 9 * 60
                 worked_minutes = hours_worked * 60 + minutes_worked
@@ -1897,9 +1726,9 @@ class Time_Sheet(APIView):
                 }
 
                 emp = employee.objects.get(email=e_email)
-                clnt = client.objects.get(email=c_email)
+                clnt = client.objects.get(email=workspace)
                 outsrc_emp = outsource_employees.objects.get(
-                    employee_id=e_email, client_id=c_email
+                    employee_id=e_email, client_id=workspace
                 )
 
                 employee_details = {
@@ -1924,11 +1753,12 @@ class Time_Sheet(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Punch_Request(APIView):
+    parser_classes = (MultiPartParser,)
     @swagger_auto_schema(
         tags=["Punch requests"],
         manual_parameters=[
             openapi.Parameter(
-                "c_email",
+                "workspace",
                 openapi.IN_QUERY,
                 description="Specify current client email",
                 type=openapi.TYPE_STRING,
@@ -2016,7 +1846,7 @@ class Punch_Request(APIView):
     )
     def get(self, request, *args, **kwargs):
         e_email = request.user
-        c_email = request.query_params.get("c_email")
+        workspace = request.query_params.get("workspace")
         tab = request.query_params.get("tab")
         from_date = request.query_params.get("from")
         to_date = request.query_params.get("to")
@@ -2025,32 +1855,32 @@ class Punch_Request(APIView):
             to_date_object = parser.parse(to_date)
 
             pending = punch_request.objects.filter(
-                Q(employee_id=e_email, client_id=c_email),
+                Q(employee_id=e_email, client_id=workspace),
                 created_at__date__gte=from_date_object,
                 created_at__date__lte=to_date_object,
                 status="pending",
             ).count()
             rejected = punch_request.objects.filter(
-                Q(employee_id=e_email, client_id=c_email),
+                Q(employee_id=e_email, client_id=workspace),
                 created_at__date__gte=from_date_object,
                 created_at__date__lte=to_date_object,
                 status="rejected",
             ).count()
             completed = punch_request.objects.filter(
-                Q(employee_id=e_email, client_id=c_email),
+                Q(employee_id=e_email, client_id=workspace),
                 created_at__date__gte=from_date_object,
                 created_at__date__lte=to_date_object,
                 status="completed",
             ).count()
             all = punch_request.objects.filter(
-                Q(employee_id=e_email, client_id=c_email),
+                Q(employee_id=e_email, client_id=workspace),
                 created_at__date__gte=from_date_object,
                 created_at__date__lte=to_date_object,
             ).count()
 
             if tab == "pending" or tab == "completed" or tab == "rejected":
                 p_request = punch_request.objects.filter(
-                    Q(employee_id=e_email, client_id=c_email),
+                    Q(employee_id=e_email, client_id=workspace),
                     created_at__date__gte=from_date_object,
                     created_at__date__lte=to_date_object,
                     status=tab,
@@ -2079,7 +1909,7 @@ class Punch_Request(APIView):
                     req_record = []
             elif not tab:
                 p_request = punch_request.objects.filter(
-                    Q(employee_id=e_email, client_id=c_email),
+                    Q(employee_id=e_email, client_id=workspace),
                     created_at__date__gte=from_date_object,
                     created_at__date__lte=to_date_object,
                 )
@@ -2128,20 +1958,20 @@ class Punch_Request(APIView):
         else:
             req_record = []
             pending = punch_request.objects.filter(
-                employee_id=e_email, client_id=c_email, status="pending"
+                employee_id=e_email, client_id=workspace, status="pending"
             ).count()
             rejected = punch_request.objects.filter(
-                employee_id=e_email, client_id=c_email, status="rejected"
+                employee_id=e_email, client_id=workspace, status="rejected"
             ).count()
             completed = punch_request.objects.filter(
-                employee_id=e_email, client_id=c_email, status="completed"
+                employee_id=e_email, client_id=workspace, status="completed"
             ).count()
             all = punch_request.objects.filter(
-                employee_id=e_email, client_id=c_email
+                employee_id=e_email, client_id=workspace
             ).count()
             if tab == "pending" or tab == "completed" or tab == "rejected":
                 p_request = punch_request.objects.filter(
-                    employee_id=e_email, client_id=c_email, status=tab
+                    employee_id=e_email, client_id=workspace, status=tab
                 )
                 if p_request:
                     for req in p_request:
@@ -2166,7 +1996,7 @@ class Punch_Request(APIView):
                     req_record = []
             elif not tab:
                 p_request = punch_request.objects.filter(
-                    employee_id=e_email, client_id=c_email
+                    employee_id=e_email, client_id=workspace
                 )
                 if p_request:
                     for req in p_request:
@@ -2319,6 +2149,7 @@ class Punch_Request(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Policies(APIView):
+    parser_classes = (MultiPartParser,)
     @swagger_auto_schema(
         tags=["Policies"],
         responses={

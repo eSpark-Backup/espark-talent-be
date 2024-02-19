@@ -33,12 +33,12 @@ class Check_Punches(BaseCommand):
                                     "hours_worked": "-",
                                     "overtime": "-",
                                     "status": {
-                                        "Present": "-",
-                                        "Missing": "-",
-                                        "Absent": "-",
+                                        "Present": False,
+                                        "Missing": False,
+                                        "Absent": False,
                                         "Day Off": True,
-                                        "Full Leave": "-",
-                                        "Short Duration": "-",
+                                        "Full Leave": False,
+                                        "Short Duration": False,
                                     },
                                 }
                                 rec.save()
@@ -55,12 +55,12 @@ class Check_Punches(BaseCommand):
                                     "hours_worked": "-",
                                     "overtime": "-",
                                     "status": {
-                                        "Present": "-",
-                                        "Missing": "-",
-                                        "Absent": "-",
+                                        "Present": False,
+                                        "Missing": False,
+                                        "Absent": False,
                                         "Day Off": True,
-                                        "Full Leave": "-",
-                                        "Short Duration": "-",
+                                        "Full Leave": False,
+                                        "Short Duration": False,
                                     },
                                 }
                             },
@@ -84,12 +84,12 @@ class Check_Punches(BaseCommand):
                                     "hours_worked": "-",
                                     "overtime": "-",
                                     "status": {
-                                        "Present": "-",
+                                        "Present": False,
                                         "Missing": True,
-                                        "Absent": "-",
-                                        "Day Off": "-",
-                                        "Full Leave": "-",
-                                        "Short Duration": "-",
+                                        "Absent": False,
+                                        "Day Off": False,
+                                        "Full Leave": False,
+                                        "Short Duration": False,
                                     },
                                 }
                                 rec.save()
@@ -106,12 +106,12 @@ class Check_Punches(BaseCommand):
                                     "hours_worked": "-",
                                     "overtime": "-",
                                     "status": {
-                                        "Present": "-",
+                                        "Present": False,
                                         "Missing": True,
-                                        "Absent": "-",
-                                        "Day Off": "-",
-                                        "Full Leave": "-",
-                                        "Short Duration": "-",
+                                        "Absent": False,
+                                        "Day Off": False,
+                                        "Full Leave": False,
+                                        "Short Duration": False,
                                     },
                                 }
                             },
@@ -133,7 +133,7 @@ class Check_Punches(BaseCommand):
                             rec.record[now.date().strftime("%d-%m-%Y")]['hours_worked'] = "-"
                             rec.record[now.date().strftime("%d-%m-%Y")]['overtime'] = "-"
                             rec.record[now.date().strftime("%d-%m-%Y")]['status']['Missing'] = True
-                            rec.record[now.date().strftime("%d-%m-%Y")]['status']['Short Duration'] = "-"
+                            rec.record[now.date().strftime("%d-%m-%Y")]['status']['Short Duration'] = False
                             rec.save()
                     elif (
                         now.date().strftime("%d-%m-%Y")
@@ -147,6 +147,6 @@ class Check_Punches(BaseCommand):
                             rec.record[now.date().strftime("%d-%m-%Y")]['status']['Present'] = False
                             rec.record[now.date().strftime("%d-%m-%Y")]['status']['Absent'] = True
                             rec.record[now.date().strftime("%d-%m-%Y")]['status']['Missing'] = False
-                            rec.record[now.date().strftime("%d-%m-%Y")]['status']['Short Duration'] = "-"
+                            rec.record[now.date().strftime("%d-%m-%Y")]['status']['Short Duration'] = False
                             rec.save()
             time.sleep(20)
