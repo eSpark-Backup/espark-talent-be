@@ -1930,3 +1930,55 @@ class Employee_Contract(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
+        
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Policies(APIView):
+    parser_classes = (MultiPartParser,)
+    @swagger_auto_schema(
+        tags=["Policies"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "policy_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "policy_doc": openapi.Schema(type=openapi.TYPE_FILE),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve employee policies",
+        operation_id=".",
+    )
+    def get(self, request, *args, **kwargs):
+        client_policies = policy.objects.filter(employee=True)
+        policies = []
+        for client_pol in client_policies:
+            record = {
+                "id": client_pol.id,
+                "policy_name": client_pol.policy_name,
+                "policy_doc": client_pol.policy_doc.path,
+            }
+            policies.append(record)
+        if len(policies) > 0:
+            return Response(policies, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
