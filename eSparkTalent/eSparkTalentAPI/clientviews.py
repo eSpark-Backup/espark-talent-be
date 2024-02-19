@@ -1965,7 +1965,7 @@ class Policies(APIView):
                 type=openapi.TYPE_STRING,
             ),
         ],
-        operation_summary="Endpoint to retrieve employee policies",
+        operation_summary="Endpoint to retrieve Client policies",
         operation_id=".",
     )
     def get(self, request, *args, **kwargs):
