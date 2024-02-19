@@ -1969,7 +1969,7 @@ class Policies(APIView):
         operation_id=".",
     )
     def get(self, request, *args, **kwargs):
-        client_policies = policy.objects.filter(employee=True)
+        client_policies = policy.objects.filter(client=True)
         policies = []
         for client_pol in client_policies:
             record = {
