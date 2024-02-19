@@ -194,8 +194,7 @@ class hiring_request(models.Model):
 
     def __str__(self):
         return f"{self.client_id} - {self.id}"
-
-
+    
 class interview_schedule(models.Model):
     status = [
         ("short_list", "short_list"),
@@ -368,9 +367,9 @@ class employee_invoice(models.Model):
 
 class other_payment(models.Model):
     payment_status = [
-        ("Pending", "Pending"),
-        ("Processing", "Processing"),
-        ("Paid", "Paid"),
+        ("pending", "pending"),
+        ("processing", "processing"),
+        ("paid", "paid"),
     ]
     id = models.AutoField(primary_key=True)
     client_id = models.EmailField()
