@@ -280,8 +280,8 @@ class Employee_Home(APIView):
             "image": current_employee.image.path,
         }
         out_sourced_to = [
-            workspace.client_id
-            for workspace in outsource_employees.objects.filter(employee_id=e_email)
+            w_space.client_id
+            for w_space in outsource_employees.objects.filter(employee_id=e_email)
         ]
         clients = client.objects.filter(email__in=out_sourced_to)
         if clients:
@@ -307,27 +307,41 @@ class Employee_Home(APIView):
             }
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+        if workspace:
+            today_activity = TodayActivity(e_email=e_email, workspace=workspace)
+            statistics = Statistics(e_email=e_email, workspace=workspace)
+            punch_timings = employee.objects.get(email=e_email).punch_timings
+            attendence_summary = AttendenceSummary(e_email=e_email, workspace=workspace)
 
-        today_activity = TodayActivity(e_email=e_email, workspace=workspace)
+            payload = {
+                "employee_details": employee_details,
+                "company_image": company_data.objects.all()[0].image.path,
+                "workspaces": workspaces,
+                "attendence_summary": attendence_summary,
+                "punch_timings": punch_timings,
+                "leave_summary": leave_summary,
+                "statistics": statistics,
+                "today_activity": today_activity,
+            }
+            return Response(payload, status=status.HTTP_200_OK)
 
-        statistics = Statistics(e_email=e_email, workspace=workspace)
-
-        punch_timings = employee.objects.get(email=e_email).punch_timings
-
-        attendence_summary = AttendenceSummary(e_email=e_email, workspace=workspace)
-
-        payload = {
-            "employee_details": employee_details,
-            "company_image": company_data.objects.all()[0].image.path,
-            "workspaces": workspaces,
-            "attendence_summary": attendence_summary,
-            "punch_timings": punch_timings,
-            "leave_summary": leave_summary,
-            "statistics": statistics,
-            "today_activity": today_activity,
-        }
-        return Response(payload, status=status.HTTP_200_OK)
-
+        else:
+            today_activity = TodayActivity(e_email=e_email, workspace="talent@esparkconsultants.com")
+            statistics = Statistics(e_email=e_email, workspace="talent@esparkconsultants.com")
+            punch_timings = employee.objects.get(email=e_email).punch_timings
+            attendence_summary = AttendenceSummary(e_email=e_email, workspace="talent@esparkconsultants.com")
+            payload = {
+                "employee_details": employee_details,
+                "company_image": company_data.objects.all()[0].image.path,
+                "workspaces": workspaces,
+                "attendence_summary": attendence_summary,
+                "punch_timings": punch_timings,
+                "leave_summary": leave_summary,
+                "statistics": statistics,
+                "today_activity": today_activity,
+            }
+            return Response(payload, status=status.HTTP_200_OK)
+        
     @swagger_auto_schema(
         tags=["Dashboard: Mark check in, Mark checkout, Mark break out, Mark resumed"],
         manual_parameters=[
