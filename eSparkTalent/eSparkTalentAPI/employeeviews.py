@@ -153,7 +153,7 @@ class Employee_Home(APIView):
                                 ),
                             },
                         ),
-                        "attendence_summary": openapi.Schema(
+                        "attendance_summary": openapi.Schema(
                             type=openapi.TYPE_OBJECT,
                             properties={
                                 "shifts": openapi.Schema(type=openapi.TYPE_INTEGER),
@@ -311,13 +311,13 @@ class Employee_Home(APIView):
             today_activity = TodayActivity(e_email=e_email, workspace=workspace)
             statistics = Statistics(e_email=e_email, workspace=workspace)
             punch_timings = employee.objects.get(email=e_email).punch_timings
-            attendence_summary = AttendenceSummary(e_email=e_email, workspace=workspace)
+            attendance_summary = AttendanceSummary(e_email=e_email, workspace=workspace)
 
             payload = {
                 "employee_details": employee_details,
                 "company_image": company_data.objects.all()[0].image.path,
                 "workspaces": workspaces,
-                "attendence_summary": attendence_summary,
+                "attendance_summary": attendance_summary,
                 "punch_timings": punch_timings,
                 "leave_summary": leave_summary,
                 "statistics": statistics,
@@ -329,12 +329,12 @@ class Employee_Home(APIView):
             today_activity = TodayActivity(e_email=e_email, workspace="talent@esparkconsultants.com")
             statistics = Statistics(e_email=e_email, workspace="talent@esparkconsultants.com")
             punch_timings = employee.objects.get(email=e_email).punch_timings
-            attendence_summary = AttendenceSummary(e_email=e_email, workspace="talent@esparkconsultants.com")
+            attendance_summary = AttendanceSummary(e_email=e_email, workspace="talent@esparkconsultants.com")
             payload = {
                 "employee_details": employee_details,
                 "company_image": company_data.objects.all()[0].image.path,
                 "workspaces": workspaces,
-                "attendence_summary": attendence_summary,
+                "attendance_summary": attendance_summary,
                 "punch_timings": punch_timings,
                 "leave_summary": leave_summary,
                 "statistics": statistics,
@@ -483,8 +483,8 @@ class Employee_Home(APIView):
                         "check_in"
                     ]
                     hours_worked = datetime.strptime(
-                        check_out, "%H:%M:%S"
-                    ) - datetime.strptime(check_in_time, "%H:%M:%S")
+                        check_out, "%I:%M %p"
+                    ) - datetime.strptime(check_in_time, "%I:%M %p")
 
                     if hours_worked.total_seconds() // 3600 < 9:
                         rec.record[now.date().strftime("%d-%m-%Y")][
@@ -1521,6 +1521,7 @@ class Time_Sheet(APIView):
                     time_sheet.months, start=1
                 )
             }
+            
             time_sheet_records = time_sheet.objects.filter(
                 Q(employee_id=e_email, client_id=workspace),
                 Q(
@@ -1532,17 +1533,16 @@ class Time_Sheet(APIView):
                     year__lte=to_year,
                 ),
             )
+            
             filtered_record = {}
             for record in time_sheet_records:
                 for key, value in record.record.items():
-                    key_date = datetime.strptime(key, "%d-%m-%Y")
-                    date = key_date.day
-                    month = key_date.month
+                    date = datetime.strptime(key, "%d-%m-%Y")
                     if (
-                        from_date_object.day <= date and month == from_date_object.month
-                    ) or (date <= to_date_object.day and month == to_date_object.month):
+                        from_date_object <= date <= to_date_object
+                    ) :
                         filtered_record[key] = value
-
+            
             if len(filtered_record) > 0:
                 hours_worked = 0
                 minutes_worked = 0
@@ -1552,14 +1552,15 @@ class Time_Sheet(APIView):
                 leaves = 0
                 day_off = 0
                 absent = 0
+                actual_shifts=0
                 for date, rec in filtered_record.items():
                     if rec["check_in"] != "-" and rec["check_out"] != "-":
                         check_in_time = rec["check_in"]
                         check_out_time = rec["check_out"]
 
-                        check_in_datetime = datetime.strptime(check_in_time, "%H:%M:%S")
+                        check_in_datetime = datetime.strptime(check_in_time, "%I:%M %p")
                         check_out_datetime = datetime.strptime(
-                            check_out_time, "%H:%M:%S"
+                            check_out_time, "%I:%M %p"
                         )
 
                         time_difference = check_out_datetime - check_in_datetime
@@ -1579,6 +1580,8 @@ class Time_Sheet(APIView):
                         day_off += rec["status"]["Day Off"]
                     if rec["status"]["Absent"] == True:
                         absent += rec["status"]["Absent"]
+                    if rec["status"]["Day Off"] == False and rec["status"]["Full Leave"]==False:
+                        actual_shifts+=1
                 if minutes_worked and hours_worked:
                     worked_hours = f"{hours_worked}h {minutes_worked}m"
                 elif hours_worked and not minutes_worked:
@@ -1588,11 +1591,6 @@ class Time_Sheet(APIView):
                 else:
                     worked_hours = "0h"
 
-                actual_shifts = 0
-                for day in range(1, date_today.day + 1):
-                    weekday = calendar.weekday(current_year, date_today.month, day)
-                    actual_shifts += 1 if weekday < 5 else 0
-
                 workable_minutes = actual_shifts * 9 * 60
                 worked_minutes = hours_worked * 60 + minutes_worked
                 if workable_minutes > worked_minutes:
@@ -1601,7 +1599,7 @@ class Time_Sheet(APIView):
                     overtime_hours = "0h 0m"
                 elif workable_minutes < worked_minutes:
                     overtime_minutes = worked_minutes - workable_minutes
-                    short_hours = f"{overtime_minutes // 60}h {overtime_minutes%60}m"
+                    overtime_hours = f"{overtime_minutes // 60}h {overtime_minutes%60}m"
                     short_hours = "0h 0m"
                 else:
                     overtime_hours = "0h 0m"
@@ -1674,13 +1672,10 @@ class Time_Sheet(APIView):
                     if rec["check_in"] != "-" and rec["check_out"] != "-":
                         check_in_time = rec["check_in"]
                         check_out_time = rec["check_out"]
-                        check_in_datetime = datetime.strptime(check_in_time, "%H:%M:%S")
-                        check_out_datetime = datetime.strptime(
-                            check_out_time, "%H:%M:%S"
-                        )
-
+                        check_in_datetime = datetime.strptime(check_in_time, "%I:%M %p")
+                        check_out_datetime = datetime.strptime(check_out_time, "%I:%M %p")
                         time_difference = check_out_datetime - check_in_datetime
-
+                        
                         hours_worked += time_difference.seconds // 3600
                         minutes_worked += (time_difference.seconds // 60) % 60
 
@@ -1763,7 +1758,7 @@ class Time_Sheet(APIView):
             except:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-
+         
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Punch_Request(APIView):
