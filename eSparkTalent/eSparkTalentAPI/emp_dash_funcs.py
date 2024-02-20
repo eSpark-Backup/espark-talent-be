@@ -2,29 +2,24 @@ from datetime import datetime, timedelta
 import calendar
 from .models import *
 
-current_month = datetime.now().strftime("%B")
-current_year = datetime.now().year
-today = datetime.now().strftime("%d-%m-%Y")
-date_today = datetime.now()
-current_time = datetime.now().time()
-_, last_day = calendar.monthrange(current_year, date_today.month)
-
-total_weekdays = 0
-
-for day in range(1, last_day + 1):
-    weekday = calendar.weekday(current_year, date_today.month, day)
-    total_weekdays += 1 if weekday < 5 else 0
-
-weekdays_up_to_today = 0
-for day in range(1, date_today.day + 1):
-    weekday = calendar.weekday(current_year, date_today.month, day)
-    weekdays_up_to_today += 1 if weekday < 5 else 0
-
-start_of_week = (date_today - timedelta(days=date_today.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
-end_of_week = (start_of_week + timedelta(days=4)).replace(hour=0, minute=0, second=0, microsecond=0)
-
-
 def TodayActivity(e_email, workspace):
+    current_month = datetime.now().strftime("%B")
+    current_year = datetime.now().year
+    today = datetime.now().strftime("%d-%m-%Y")
+    date_today = datetime.now()
+    _, last_day = calendar.monthrange(current_year, date_today.month)
+
+    total_weekdays = 0
+
+    for day in range(1, last_day + 1):
+        weekday = calendar.weekday(current_year, date_today.month, day)
+        total_weekdays += 1 if weekday < 5 else 0
+
+    weekdays_up_to_today = 0
+    for day in range(1, date_today.day + 1):
+        weekday = calendar.weekday(current_year, date_today.month, day)
+        weekdays_up_to_today += 1 if weekday < 5 else 0
+
     today_activity = {
         "check_in": "-",
         "check_out": "-",
@@ -71,6 +66,27 @@ def TodayActivity(e_email, workspace):
 
 
 def Statistics(e_email, workspace):
+    current_month = datetime.now().strftime("%B")
+    current_year = datetime.now().year
+    today = datetime.now().strftime("%d-%m-%Y")
+    date_today = datetime.now()
+    current_time = datetime.now().time()
+    _, last_day = calendar.monthrange(current_year, date_today.month)
+
+    total_weekdays = 0
+
+    for day in range(1, last_day + 1):
+        weekday = calendar.weekday(current_year, date_today.month, day)
+        total_weekdays += 1 if weekday < 5 else 0
+
+    weekdays_up_to_today = 0
+    for day in range(1, date_today.day + 1):
+        weekday = calendar.weekday(current_year, date_today.month, day)
+        weekdays_up_to_today += 1 if weekday < 5 else 0
+
+    start_of_week = (date_today - timedelta(days=date_today.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_week = (start_of_week + timedelta(days=4)).replace(hour=0, minute=0, second=0, microsecond=0)
+
     statistics = {
         "today": "0/9 hrs",
         "this_week": "0/45 hrs",
@@ -162,6 +178,27 @@ def Statistics(e_email, workspace):
 
 
 def AttendanceSummary(e_email, workspace):
+    current_month = datetime.now().strftime("%B")
+    current_year = datetime.now().year
+    today = datetime.now().strftime("%d-%m-%Y")
+    date_today = datetime.now()
+    current_time = datetime.now().time()
+    _, last_day = calendar.monthrange(current_year, date_today.month)
+
+    total_weekdays = 0
+
+    for day in range(1, last_day + 1):
+        weekday = calendar.weekday(current_year, date_today.month, day)
+        total_weekdays += 1 if weekday < 5 else 0
+
+    weekdays_up_to_today = 0
+    for day in range(1, date_today.day + 1):
+        weekday = calendar.weekday(current_year, date_today.month, day)
+        weekdays_up_to_today += 1 if weekday < 5 else 0
+
+    start_of_week = (date_today - timedelta(days=date_today.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_week = (start_of_week + timedelta(days=4)).replace(hour=0, minute=0, second=0, microsecond=0)
+    
     try:
         time_sheet_record = time_sheet.objects.get(
             employee_id=e_email,

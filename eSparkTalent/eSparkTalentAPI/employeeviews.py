@@ -1700,7 +1700,8 @@ class Time_Sheet(APIView):
                     worked_hours = f"{minutes_worked}m"
                 else:
                     worked_hours = "0h"
-
+                current_year = datetime.now().year
+                date_today = datetime.now()
                 actual_shifts = 0
                 for day in range(1, date_today.day + 1):
                     weekday = calendar.weekday(current_year, date_today.month, day)
