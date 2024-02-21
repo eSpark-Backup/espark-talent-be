@@ -1,0 +1,2219 @@
+from .models import *
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+from rest_framework.decorators import authentication_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from .serializers import *
+from datetime import datetime, timedelta
+from dateutil import parser
+from django.db.models import Q
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from rest_framework.parsers import MultiPartParser
+from .emp_dash_funcs import *
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Employee_Home(APIView):
+    parser_classes = (MultiPartParser,)
+    @swagger_auto_schema(
+        tags=["Dashboard"],
+        manual_parameters=[
+            openapi.Parameter(
+                "workspace",
+                openapi.IN_QUERY,
+                description="Specify current client email",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "leave_summary": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "casual_leaves": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "balance": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "available": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "availed": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "pending": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                    },
+                                ),
+                                "sick_leaves": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "balance": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "available": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "availed": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "pending": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                    },
+                                ),
+                                "annual_leaves": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "balance": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "available": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "availed": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "pending": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                    },
+                                ),
+                                "unpaid_leaves": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "balance": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "available": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "availed": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "pending": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                    },
+                                ),
+                                "paid_leaves": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "balance": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "available": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "availed": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "pending": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                    },
+                                ),
+                                "hajj_leaves": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "balance": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "available": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "availed": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "pending": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                        "attendance_summary": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "shifts": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "expected_minutes": openapi.Schema(
+                                    type=openapi.TYPE_INTEGER
+                                ),
+                                "worked_minutes": openapi.Schema(
+                                    type=openapi.TYPE_INTEGER
+                                ),
+                                "short_minutes": openapi.Schema(
+                                    type=openapi.TYPE_INTEGER
+                                ),
+                                "leaves": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "absents": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "presents": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "missings": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "days_off": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "overtimes": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "short_durations": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "late_arrivals": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "break_minutes": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            },
+                        ),
+                        "statistics": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "today": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "this_week": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "this_month": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "remaining": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "overtime": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            },
+                        ),
+                        "today_activity": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "check_in": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
+                                "check_out": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
+                                "break": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
+                                "resume": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
+                            },
+                        ),
+                        "workspaces": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Items(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "email": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_EMAIL,
+                                    ),
+                                    "client_name": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "company_name": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                },
+                            ),
+                        ),
+                        "punch_timings": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "check_in": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
+                                "check_out": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
+                            },
+                        ),
+                        "employee_details": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                                "employee_name": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "employee_email": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_EMAIL,
+                                ),
+                                "image": openapi.Schema(type=openapi.TYPE_FILE),
+                            },
+                        ),
+                        "company_image": openapi.Schema(type=openapi.TYPE_FILE),
+                    },
+                ),
+            ),
+            401: openapi.Response(description="UnAuthorize"),
+            400: openapi.Response(description="Bad Request"),
+        },
+        operation_summary="Endpoint to employee home/dashboard.",
+        operation_id=".",
+    )
+    def get(self, request, *args, **kwargs):
+        e_email = request.user
+        workspace = request.query_params.get("workspace")
+
+        current_employee = employee.objects.get(email=e_email)
+        employee_details = {
+            "employee_id": current_employee.employee_id,
+            "employee_name": current_employee.first_name
+            + " "
+            + current_employee.last_name,
+            "employee_email": current_employee.email,
+            "image": current_employee.image.path,
+        }
+        out_sourced_to = [
+            w_space.client_id
+            for w_space in outsource_employees.objects.filter(employee_id=e_email)
+        ]
+        clients = client.objects.filter(email__in=out_sourced_to)
+        if clients:
+            workspaces = []
+            workspaces.append({
+                "email":"talent@esparkconsultants.com",
+                "client_name":"eSpark Talent",
+                "company_name":"eSpark"
+            })
+            for rec in clients:
+                record = {
+                    "email": rec.email,
+                    "client_name": rec.first_name + " " + rec.last_name,
+                    "company_name": rec.company_name,
+                }
+                workspaces.append(record)
+            
+        try:
+            leave_records = leave_balance.objects.get(employee_id=e_email)
+            leave_summary = {
+                "id": leave_records.id,
+                "casual_leaves": leave_records.casual_leaves,
+                "sick_leaves": leave_records.sick_leaves,
+                "annual_leaves": leave_records.annual_leaves,
+                "unpaid_leaves": leave_records.unpaid_leaves,
+                "hajj_leaves": leave_records.hajj_leaves,
+                "paid_leaves": leave_records.paid_leaves,
+            }
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        if workspace:
+            today_activity = TodayActivity(e_email=e_email, workspace=workspace)
+            statistics = Statistics(e_email=e_email, workspace=workspace)
+            punch_timings = employee.objects.get(email=e_email).punch_timings
+            attendance_summary = AttendanceSummary(e_email=e_email, workspace=workspace)
+
+            payload = {
+                "employee_details": employee_details,
+                "company_image": company_data.objects.all()[0].image.path,
+                "workspaces": workspaces,
+                "attendance_summary": attendance_summary,
+                "punch_timings": punch_timings,
+                "leave_summary": leave_summary,
+                "statistics": statistics,
+                "today_activity": today_activity,
+            }
+            return Response(payload, status=status.HTTP_200_OK)
+
+        else:
+            today_activity = TodayActivity(e_email=e_email, workspace="talent@esparkconsultants.com")
+            statistics = Statistics(e_email=e_email, workspace="talent@esparkconsultants.com")
+            punch_timings = employee.objects.get(email=e_email).punch_timings
+            attendance_summary = AttendanceSummary(e_email=e_email, workspace="talent@esparkconsultants.com")
+            payload = {
+                "employee_details": employee_details,
+                "company_image": company_data.objects.all()[0].image.path,
+                "workspaces": workspaces,
+                "attendance_summary": attendance_summary,
+                "punch_timings": punch_timings,
+                "leave_summary": leave_summary,
+                "statistics": statistics,
+                "today_activity": today_activity,
+            }
+            return Response(payload, status=status.HTTP_200_OK)
+        
+    @swagger_auto_schema(
+        tags=["Dashboard: Mark check in, Mark checkout, Mark break out, Mark resumed"],
+        manual_parameters=[
+            openapi.Parameter(
+                "workspace",
+                openapi.IN_QUERY,
+                description="Specify current client email",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
+                "check_in",
+                openapi.IN_QUERY,
+                description="Punch check in",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATETIME,
+            ),
+            openapi.Parameter(
+                "check_out",
+                openapi.IN_QUERY,
+                description="Punch check out",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATETIME,
+            ),
+            openapi.Parameter(
+                "break",
+                openapi.IN_QUERY,
+                description="Punch break",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATETIME,
+            ),
+            openapi.Parameter(
+                "resume",
+                openapi.IN_QUERY,
+                description="Punch resume",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATETIME,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: "Successful request",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        operation_summary="Mark punches",
+        operation_id=".",
+    )
+    def patch(self, request, *args, **kwargs):
+        e_email = request.user
+        workspace = request.query_params.get("workspace")
+        check_in = request.query_params.get("check_in")
+        check_out = request.query_params.get("check_out")
+        breaked = request.query_params.get("break")
+        resumed = request.query_params.get("resume")
+        now = datetime.now()
+        if check_in:
+            months_timesheet = time_sheet.objects.filter(
+                month=now.strftime("%B"),
+                employee_id=e_email,
+                client_id=workspace,
+                year=now.strftime("%Y"),
+            )
+            if months_timesheet:
+                for rec in months_timesheet:
+
+                    if (now.date().strftime("%d-%m-%Y") not in rec.record) or (
+                        "check_in" in rec.record[now.date().strftime("%d-%m-%Y")]
+                        and rec.record[now.date().strftime("%d-%m-%Y")]["check_in"]
+                        == "-"
+                    ):
+                        rec.record[now.date().strftime("%d-%m-%Y")] = {
+                            "check_in": check_in,
+                            "check_out": "-",
+                            "hours_worked": "-",
+                            "overtime": "-",
+                            "status": {
+                                "Present": True,
+                                "Missing": "False",
+                                "Absent": False,
+                                "Day Off": False,
+                                "Full Leave": False,
+                                "Short Duration": False,
+                            },
+                        }
+                        rec.save()
+                        return Response(status=status.HTTP_200_OK)
+            else:
+                time_sheet.objects.create(
+                    month=now.strftime("%B"),
+                    employee_id=e_email,
+                    client_id=workspace,
+                    year=now.year,
+                    record={
+                        now.date().strftime("%d-%m-%Y"): {
+                            "check_in": check_in,
+                            "check_out": "-",
+                            "hours_worked": "-",
+                            "overtime": "-",
+                            "status": {
+                                "Present": True,
+                                "Missing": False,
+                                "Absent": False,
+                                "Day Off": False,
+                                "Full Leave": False,
+                                "Short Duration": False,
+                            },
+                        }
+                    },
+                )
+                return Response(status=status.HTTP_200_OK)
+
+        if check_out:
+            months_timesheet = time_sheet.objects.filter(
+                month=now.strftime("%B"),
+                employee_id=e_email,
+                client_id=workspace,
+                year=now.strftime("%Y"),
+            )
+            if (
+                months_timesheet
+                and months_timesheet[0].record[now.date().strftime("%d-%m-%Y")][
+                    "check_out"
+                ]
+                == "-"
+                and months_timesheet[0].record[now.date().strftime("%d-%m-%Y")][
+                    "check_in"
+                ]
+                != "-"
+            ):
+                for rec in months_timesheet:
+                    check_in_time = rec.record[now.date().strftime("%d-%m-%Y")][
+                        "check_in"
+                    ]
+                    hours_worked = datetime.strptime(
+                        check_out, "%I:%M %p"
+                    ) - datetime.strptime(check_in_time, "%I:%M %p")
+
+                    if hours_worked.total_seconds() // 3600 < 9:
+                        rec.record[now.date().strftime("%d-%m-%Y")][
+                            "check_out"
+                        ] = check_out
+                        rec.record[now.date().strftime("%d-%m-%Y")]["overtime"] = "0h"
+                        rec.record[now.date().strftime("%d-%m-%Y")][
+                            "hours_worked"
+                        ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
+                        rec.record[now.date().strftime("%d-%m-%Y")]["status"][
+                            "Short Duration"
+                        ] = True
+                        rec.save()
+                        return Response(status=status.HTTP_200_OK)
+
+                    elif hours_worked.total_seconds() // 3600 >= 9:
+                        overtime = hours_worked - timedelta(hours=9)
+                        overtime_min = (overtime.seconds // 60) % 60
+                        overtime_hours = overtime.seconds // 3600
+                        rec.record[now.date().strftime("%d-%m-%Y")][
+                            "check_out"
+                        ] = check_out
+                        rec.record[now.date().strftime("%d-%m-%Y")][
+                            "hours_worked"
+                        ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
+                        rec.record[now.date().strftime("%d-%m-%Y")]["status"][
+                            "Short Duration"
+                        ] = False
+                        if overtime_hours and overtime_min:
+                            over_duration = f"{overtime_hours}h {overtime_min}m"
+                        elif overtime_hours and not overtime_min:
+                            over_duration = f"{overtime_hours}h"
+                        elif not overtime_hours and overtime_min:
+                            over_duration = f"{overtime_min}m"
+                        else:
+                            over_duration = "0h"
+
+                        rec.record[now.date().strftime("%d-%m-%Y")][
+                            "overtime"
+                        ] = over_duration
+
+                        rec.save()
+                        return Response(status=status.HTTP_200_OK)
+
+        if breaked:
+            months_timesheet = time_sheet.objects.filter(
+                month=now.strftime("%B"),
+                employee_id=e_email,
+                client_id=workspace,
+                year=now.strftime("%Y"),
+            )
+            if months_timesheet:
+                for rec in months_timesheet:
+                    if (
+                        now.date().strftime("%d-%m-%Y") in rec.record
+                        and "break" not in rec.record[now.date().strftime("%d-%m-%Y")]
+                        and (
+                            "check_in" in rec.record[now.date().strftime("%d-%m-%Y")]
+                            and rec.record[now.date().strftime("%d-%m-%Y")]["check_in"]
+                            != "-"
+                        )
+                    ):
+                        rec.record[now.date().strftime("%d-%m-%Y")]["break"] = breaked
+
+                        rec.save()
+                        return Response(status=status.HTTP_200_OK)
+
+        if resumed:
+            months_timesheet = time_sheet.objects.filter(
+                month=now.strftime("%B"),
+                employee_id=e_email,
+                client_id=workspace,
+                year=now.strftime("%Y"),
+            )
+            if months_timesheet:
+                for rec in months_timesheet:
+                    if (
+                        now.date().strftime("%d-%m-%Y") in rec.record
+                        and "break" in rec.record[now.date().strftime("%d-%m-%Y")]
+                        and "resume" not in rec.record[now.date().strftime("%d-%m-%Y")]
+                        and (
+                            "check_in" in rec.record[now.date().strftime("%d-%m-%Y")]
+                            and rec.record[now.date().strftime("%d-%m-%Y")]["check_in"]
+                            != "-"
+                        )
+                    ):
+                        rec.record[now.date().strftime("%d-%m-%Y")]["resume"] = resumed
+
+                        rec.save()
+                        return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Company_Contract(APIView):
+    parser_classes = (MultiPartParser,)
+    @swagger_auto_schema(
+        tags=["Company contracts"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                        "contract_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "date": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            format=openapi.FORMAT_DATETIME,
+                        ),
+                        "contract_doc": openapi.Schema(type=openapi.TYPE_FILE),
+                    },
+                ),
+            ),
+            400: openapi.Response(description="Bad Request"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve employee contracts.",
+        operation_id=".",
+    )
+    def get(self, request, *args, **kwargs):
+        e_email = request.user
+        emp_contract = employee_contract.objects.filter(employee_id=e_email)
+        if emp_contract:
+            records = []
+            for contract in emp_contract:
+                record = {
+                    "id": contract.id,
+                    "employee_id": employee.objects.get(email=request.user).employee_id,
+                    "contract_name": contract.contract_name,
+                    "date": contract.date,
+                    "contract_doc": contract.contract_doc.path,
+                }
+                records.append(record)
+
+            return Response(records, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Offshore_Contract(APIView):
+    parser_classes = (MultiPartParser,)
+    @swagger_auto_schema(
+        tags=["Client contracts"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "client_id": openapi.Schema(type=openapi.TYPE_STRING),
+                        "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                        "contract_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "date": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            format=openapi.FORMAT_DATETIME,
+                        ),
+                        "contract_doc": openapi.Schema(type=openapi.TYPE_FILE),
+                    },
+                ),
+            ),
+            400: openapi.Response(description="Bad Request"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "workspace",
+                openapi.IN_QUERY,
+                description="Specify current client email",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve offshore contracts.",
+        operation_id=".",
+    )
+    def get(self, request, *args, **kwargs):
+        e_email = request.user
+        workspace = request.query_params.get("workspace")
+        offsh_contract = offshore_contracts.objects.filter(
+            employee_id=e_email, client_id=workspace
+        )
+        if offsh_contract:
+            records = []
+            for contract in offsh_contract:
+                record = {
+                    "id": contract.id,
+                    "client_id": client.objects.get(email=workspace).client_id,
+                    "employee_id": employee.objects.get(email=request.user).employee_id,
+                    "contract_name": contract.contract_name,
+                    "date": contract.date,
+                    "contract_doc": contract.contract_doc.path,
+                }
+                records.append(record)
+            return Response(records, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Leave_Request(APIView):
+    parser_classes = (MultiPartParser,)
+    @swagger_auto_schema(
+        tags=["Leave"],
+        manual_parameters=[
+            openapi.Parameter(
+                "workspace",
+                openapi.IN_QUERY,
+                description="Specify current client email",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
+                "tab",
+                openapi.IN_QUERY,
+                description="Status filter (pending, completed, rejected) otherwise all",
+                type=openapi.TYPE_STRING,
+                enum=["","pending", "completed", "rejected"],
+            ),
+            openapi.Parameter(
+                "from",
+                openapi.IN_QUERY,
+                description="Date filter",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                example="December 21, 2023 or 12-21-2023",
+            ),
+            openapi.Parameter(
+                "to",
+                openapi.IN_QUERY,
+                description="Date filter",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                example="December 21, 2023 or 12-21-2023",
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "balance": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "casual_leaves": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "balance": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "available": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "availed": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "pending": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                    },
+                                ),
+                                "sick_leaves": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "balance": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "available": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "availed": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "pending": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                    },
+                                ),
+                                "annual_leaves": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "balance": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "available": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "availed": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "pending": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                    },
+                                ),
+                                "unpaid_leaves": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "balance": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "available": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "availed": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "pending": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                    },
+                                ),
+                                "paid_leaves": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "balance": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "available": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "availed": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "pending": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                    },
+                                ),
+                                "hajj_leaves": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "balance": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "available": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "availed": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "pending": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                        "months_timesheet": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "client_id": openapi.Schema(type=openapi.TYPE_STRING),
+                                "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                                "month": openapi.Schema(type=openapi.TYPE_STRING),
+                                "record": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "1-2-2024": openapi.Schema(
+                                            type=openapi.TYPE_OBJECT,
+                                            properties={
+                                                "check_in": openapi.Schema(
+                                                    type=openapi.TYPE_STRING,
+                                                    format=openapi.FORMAT_DATETIME,
+                                                ),
+                                                "check_out": openapi.Schema(
+                                                    type=openapi.TYPE_STRING,
+                                                    format=openapi.FORMAT_DATETIME,
+                                                ),
+                                                "breaK": openapi.Schema(
+                                                    type=openapi.TYPE_STRING,
+                                                    format=openapi.FORMAT_DATETIME,
+                                                ),
+                                                "resume": openapi.Schema(
+                                                    type=openapi.TYPE_STRING,
+                                                    format=openapi.FORMAT_DATETIME,
+                                                ),
+                                                "hours_worked": openapi.Schema(
+                                                    type=openapi.TYPE_STRING
+                                                ),
+                                                "overtime": openapi.Schema(
+                                                    type=openapi.TYPE_STRING
+                                                ),
+                                                "status": openapi.Schema(
+                                                    type=openapi.TYPE_OBJECT,
+                                                    properties={
+                                                        "Present": openapi.Schema(
+                                                            type=openapi.TYPE_BOOLEAN
+                                                        ),
+                                                        "Missing": openapi.Schema(
+                                                            type=openapi.TYPE_BOOLEAN
+                                                        ),
+                                                        "Absent": openapi.Schema(
+                                                            type=openapi.TYPE_BOOLEAN
+                                                        ),
+                                                        "Short Duration": openapi.Schema(
+                                                            type=openapi.TYPE_BOOLEAN
+                                                        ),
+                                                        "Day Off": openapi.Schema(
+                                                            type=openapi.TYPE_BOOLEAN
+                                                        ),
+                                                        "Full Leave": openapi.Schema(
+                                                            type=openapi.TYPE_BOOLEAN
+                                                        ),
+                                                    },
+                                                ),
+                                            },
+                                        ),
+                                        # Same structure for all dates
+                                    },
+                                ),
+                                "year": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            },
+                        ),
+                        "punch_timings": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "check_in": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
+                                "check_out": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
+                            },
+                        ),
+                        "current_workspace": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "client_id": openapi.Schema(type=openapi.TYPE_STRING),
+                                "client_email": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_EMAIL,
+                                ),
+                                "company_name": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "client_name": openapi.Schema(type=openapi.TYPE_STRING),
+                                "image": openapi.Schema(type=openapi.TYPE_FILE),
+                            },
+                        ),
+                        "employee_details": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                                "employee_email": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_EMAIL,
+                                ),
+                                "employee_name": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "image": openapi.Schema(type=openapi.TYPE_FILE),
+                            },
+                        ),
+                    },
+                ),
+            ),
+            204: openapi.Response(description="No content"),
+            206: openapi.Response(description="Partial content"),
+            401: openapi.Response(description="UnAuthorize"),
+            400: openapi.Response(description="Bad Request"),
+        },
+        operation_summary="Endpoint to retrieve leave request and leave balance data.",
+        operation_id=".",
+    )
+    def get(self, request, *args, **kwargs):
+        e_email = request.user
+        workspace = request.query_params.get("workspace")
+        tab = request.query_params.get("tab")
+        from_date = request.query_params.get("from")
+        to_date = request.query_params.get("to")
+        if from_date and to_date:
+            from_date_object = parser.parse(from_date)
+            to_date_object = parser.parse(to_date)
+
+            pending = leave_request.objects.filter(
+                Q(employee_id=e_email, client_id=workspace),
+                created_at__date__gte=from_date_object,
+                created_at__date__lte=to_date_object,
+                status="pending",
+            ).count()
+            rejected = leave_request.objects.filter(
+                Q(employee_id=e_email, client_id=workspace),
+                created_at__date__gte=from_date_object,
+                created_at__date__lte=to_date_object,
+                status="rejected",
+            ).count()
+            completed = leave_request.objects.filter(
+                Q(employee_id=e_email, client_id=workspace),
+                created_at__date__gte=from_date_object,
+                created_at__date__lte=to_date_object,
+                status="completed",
+            ).count()
+            all = leave_request.objects.filter(
+                Q(employee_id=e_email, client_id=workspace),
+                created_at__date__gte=from_date_object,
+                created_at__date__lte=to_date_object,
+            ).count()
+
+            if tab == "pending" or tab == "completed" or tab == "rejected":
+                l_request = leave_request.objects.filter(
+                    Q(employee_id=e_email, client_id=workspace),
+                    created_at__date__gte=from_date_object,
+                    created_at__date__lte=to_date_object,
+                    status=tab,
+                )
+                request_record = []
+                if l_request:
+                    for req in l_request:
+                        record = {
+                            "id": req.id,
+                            "employee_id": employee.objects.get(
+                                email=request.user
+                            ).employee_id,
+                            "employee_name": employee.objects.get(
+                                email=request.user
+                            ).first_name
+                            + " "
+                            + employee.objects.get(email=request.user).last_name,
+                            "department": employee.objects.get(
+                                email=request.user
+                            ).job_title,
+                            "leave_type": req.leave_type,
+                            "requested_at": req.created_at,
+                            "count": req.count,
+                            "status": req.status,
+                            "start_date": req.start_date,
+                            "end_date": req.end_date,
+                            "reason": req.reason,
+                        }
+                        request_record.append(record)
+                else:
+                    request_record = []
+            elif not tab:
+                l_request = leave_request.objects.filter(
+                    Q(employee_id=e_email, client_id=workspace),
+                    created_at__date__gte=from_date_object,
+                    created_at__date__lte=to_date_object,
+                )
+                request_record = []
+                if l_request:
+                    for req in l_request:
+                        record = {
+                            "id": req.id,
+                            "employee_id": employee.objects.get(
+                                email=request.user
+                            ).employee_id,
+                            "employee_name": employee.objects.get(
+                                email=request.user
+                            ).first_name
+                            + " "
+                            + employee.objects.get(email=request.user).last_name,
+                            "department": employee.objects.get(
+                                email=request.user
+                            ).job_title,
+                            "leave_type": req.leave_type,
+                            "requested_at": req.created_at,
+                            "count": req.count,
+                            "status": req.status,
+                            "start_date": req.start_date,
+                            "end_date": req.end_date,
+                            "reason": req.reason,
+                        }
+                        request_record.append(record)
+                else:
+                    request_record = []
+            else:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            if request_record:
+                records = {
+                    "requests": request_record,
+                    "pending": pending,
+                    "rejected": rejected,
+                    "completed": completed,
+                    "all": all,
+                }
+                return Response(records, status=status.HTTP_200_OK)
+            else:
+                records = {
+                    "requests": [],
+                    "pending": pending,
+                    "rejected": rejected,
+                    "completed": completed,
+                    "all": all,
+                }
+                return Response(records, status=status.HTTP_204_NO_CONTENT)
+        else:
+            pending = leave_request.objects.filter(
+                employee_id=e_email, client_id=workspace, status="pending"
+            ).count()
+            rejected = leave_request.objects.filter(
+                employee_id=e_email, client_id=workspace, status="rejected"
+            ).count()
+            completed = leave_request.objects.filter(
+                employee_id=e_email, client_id=workspace, status="completed"
+            ).count()
+            all = leave_request.objects.filter(
+                employee_id=e_email, client_id=workspace
+            ).count()
+            try:
+                l_balance = leave_balance.objects.get(employee_id=e_email)
+                balance_record = {
+                    "id": l_balance.id,
+                    "casual_leaves": l_balance.casual_leaves,
+                    "sick_leaves": l_balance.sick_leaves,
+                    "annual_leaves": l_balance.annual_leaves,
+                    "unpaid_leaves": l_balance.unpaid_leaves,
+                    "paid_leaves": l_balance.paid_leaves,
+                    "hajj_leaves": l_balance.hajj_leaves,
+                }
+            except:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            if tab == "pending" or tab == "completed" or tab == "rejected":
+                l_request = leave_request.objects.filter(
+                    employee_id=e_email, client_id=workspace, status=tab
+                )
+                request_record = []
+                if l_request:
+                    for req in l_request:
+                        record = {
+                            "id": req.id,
+                            "employee_id": employee.objects.get(
+                                email=request.user
+                            ).employee_id,
+                            "employee_name": employee.objects.get(
+                                email=request.user
+                            ).first_name
+                            + " "
+                            + employee.objects.get(email=request.user).last_name,
+                            "department": employee.objects.get(
+                                email=request.user
+                            ).job_title,
+                            "leave_type": req.leave_type,
+                            "requested_at": req.created_at,
+                            "count": req.count,
+                            "status": req.status,
+                            "start_date": req.start_date,
+                            "end_date": req.end_date,
+                            "reason": req.reason,
+                        }
+                        request_record.append(record)
+                else:
+                    request_record = []
+            elif not tab:
+                l_request = leave_request.objects.filter(
+                    employee_id=e_email, client_id=workspace
+                )
+                request_record = []
+                if l_request:
+                    for req in l_request:
+                        record = {
+                            "id": req.id,
+                            "employee_id": employee.objects.get(
+                                email=request.user
+                            ).employee_id,
+                            "employee_name": employee.objects.get(
+                                email=request.user
+                            ).first_name
+                            + " "
+                            + employee.objects.get(email=request.user).last_name,
+                            "department": employee.objects.get(
+                                email=request.user
+                            ).job_title,
+                            "leave_type": req.leave_type,
+                            "requested_at": req.created_at,
+                            "count": req.count,
+                            "status": req.status,
+                            "start_date": req.start_date,
+                            "end_date": req.end_date,
+                            "reason": req.reason,
+                        }
+                        request_record.append(record)
+                else:
+                    request_record = []
+            else:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            if request_record:
+                records = {
+                    "balance": balance_record,
+                    "requests": request_record,
+                    "pending": pending,
+                    "rejected": rejected,
+                    "completed": completed,
+                    "all": all,
+                }
+                return Response(records, status=status.HTTP_200_OK)
+            elif not request_record:
+                records = {
+                    "balance": balance_record,
+                    "requests": [],
+                    "pending": pending,
+                    "rejected": rejected,
+                    "completed": completed,
+                    "all": all,
+                }
+                return Response(records, status=status.HTTP_206_PARTIAL_CONTENT)
+
+    @swagger_auto_schema(
+        tags=["Leave : Create"],
+        responses={
+            201: "Request created",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="client_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="leave_type",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="start_date",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                example="2024-02-29(Y:M:D)",
+                required=True,
+            ),
+            openapi.Parameter(
+                name="end_date",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                example="2024-02-29(Y:M:D)",
+                required=True,
+            ),
+            openapi.Parameter(
+                name="count",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="reason",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="attachment",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required=True,
+            ),
+        ],
+        operation_summary="Create leave request.",
+        operation_id=".",
+    )
+    def post(self, request, *args, **kwargs):
+        e_email = request.user
+        try:
+            client_email = request.data["client_id"]
+            leave_type = request.data["leave_type"]
+            start_date = request.data["start_date"]
+            end_date = request.data["end_date"]
+            count = request.data["count"]
+            reason = request.data["reason"]
+            attachment = request.data["attachment"]
+            leave_request.objects.create(
+                employee_id=e_email,
+                client_id=client_email,
+                leave_type=leave_type,
+                start_date=start_date,
+                end_date=end_date,
+                count=count,
+                reason=reason,
+                attachment=attachment,
+                status="pending",
+            )
+            return Response(status=status.HTTP_201_CREATED)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        tags=["Leave : Actions : Delete"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="Unauthorize"),
+        },
+        operation_summary="Endpoint to delete a leave request.",
+        operation_id=".",
+    )
+    def delete(self, request, *args, **kwargs):
+        id = request.query_params.get("id")
+        try:
+            leave_request.objects.get(id=id).delete()
+            return Response(status=status.HTTP_200_OK)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Time_Sheet(APIView):
+    parser_classes = (MultiPartParser,)
+    @swagger_auto_schema(
+        tags=["Time sheet"],
+        manual_parameters=[
+            openapi.Parameter(
+                "workspace",
+                openapi.IN_QUERY,
+                description="Specify current client email",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
+                "from",
+                openapi.IN_QUERY,
+                description="Date filter",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                example="December 21, 2023 or 12-21-2023",
+            ),
+            openapi.Parameter(
+                "to",
+                openapi.IN_QUERY,
+                description="Date filter",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                example="December 21, 2023 or 12-21-2023",
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "time_sheet": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "month": openapi.Schema(type=openapi.TYPE_STRING),
+                                "record": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "13-02-2024": openapi.Schema(
+                                            type=openapi.TYPE_OBJECT,
+                                            properties={
+                                                "check_in": openapi.Schema(
+                                                    type=openapi.TYPE_STRING,
+                                                    format=openapi.FORMAT_DATETIME,
+                                                ),
+                                                "check_out": openapi.Schema(
+                                                    type=openapi.TYPE_STRING,
+                                                    format=openapi.FORMAT_DATETIME,
+                                                ),
+                                                "breaK": openapi.Schema(
+                                                    type=openapi.TYPE_STRING,
+                                                    format=openapi.FORMAT_DATETIME,
+                                                ),
+                                                "resume": openapi.Schema(
+                                                    type=openapi.TYPE_STRING,
+                                                    format=openapi.FORMAT_DATETIME,
+                                                ),
+                                                "hours_worked": openapi.Schema(
+                                                    type=openapi.TYPE_STRING
+                                                ),
+                                                "overtime": openapi.Schema(
+                                                    type=openapi.TYPE_STRING
+                                                ),
+                                                "status": openapi.Schema(
+                                                    type=openapi.TYPE_OBJECT,
+                                                    properties={
+                                                        "Present": openapi.Schema(
+                                                            type=openapi.TYPE_BOOLEAN
+                                                        ),
+                                                        "Missing": openapi.Schema(
+                                                            type=openapi.TYPE_BOOLEAN
+                                                        ),
+                                                        "Absent": openapi.Schema(
+                                                            type=openapi.TYPE_BOOLEAN
+                                                        ),
+                                                        "Short Duration": openapi.Schema(
+                                                            type=openapi.TYPE_BOOLEAN
+                                                        ),
+                                                        "Day Off": openapi.Schema(
+                                                            type=openapi.TYPE_BOOLEAN
+                                                        ),
+                                                        "Full Leave": openapi.Schema(
+                                                            type=openapi.TYPE_BOOLEAN
+                                                        ),
+                                                    },
+                                                ),
+                                            },
+                                        ),
+                                        # Same structure for all dates
+                                    },
+                                ),
+                                "year": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "expect_check_in": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
+                                "expect_check_out": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATETIME,
+                                ),
+                            },
+                        ),
+                        "time_sheet_summary": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "workable_shifts": openapi.Schema(
+                                    type=openapi.TYPE_INTEGER
+                                ),
+                                "workable_hours": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "worked_hours": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "short_hours": openapi.Schema(type=openapi.TYPE_STRING),
+                                "overtime_hours": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "short_duration": openapi.Schema(
+                                    type=openapi.TYPE_INTEGER
+                                ),
+                                "present": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "absent": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "day_off": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "missing_punch": openapi.Schema(
+                                    type=openapi.TYPE_INTEGER
+                                ),
+                                "leaves": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            },
+                        ),
+                        "employee_details": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                                "employee_name": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "company": openapi.Schema(type=openapi.TYPE_STRING),
+                                "location": openapi.Schema(type=openapi.TYPE_STRING),
+                                "job_title": openapi.Schema(type=openapi.TYPE_STRING),
+                                "joining_date": openapi.Schema(
+                                    type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
+                                ),
+                            },
+                        ),
+                    },
+                ),
+            ),
+            204: openapi.Response(description="No content"),
+            401: openapi.Response(description="UnAuthorize"),
+            400: openapi.Response(description="Bad Request"),
+        },
+        operation_summary="Endpoint to retrieve timesheet data.",
+        operation_id=".",
+    )
+    def get(self, request, *args, **kwargs):
+        e_email = request.user
+        workspace = request.query_params.get("workspace")
+        from_date = request.query_params.get("from")
+        to_date = request.query_params.get("to")
+
+        if from_date and to_date:
+            from_date_object = parser.parse(from_date)
+            to_date_object = parser.parse(to_date)
+            from_month = from_date_object.strftime("%B")
+            from_year = from_date_object.year
+            to_month = to_date_object.strftime("%B")
+            to_year = to_date_object.year
+            month_mapping = {
+                month_name: month_number
+                for month_number, (month_name, _) in enumerate(
+                    time_sheet.months, start=1
+                )
+            }
+            
+            time_sheet_records = time_sheet.objects.filter(
+                Q(employee_id=e_email, client_id=workspace),
+                Q(
+                    month__gte=month_mapping[from_month],
+                    year__gte=from_year,
+                )
+                & Q(
+                    month__gte=month_mapping[to_month],
+                    year__lte=to_year,
+                ),
+            )
+            
+            filtered_record = {}
+            for record in time_sheet_records:
+                for key, value in record.record.items():
+                    date = datetime.strptime(key, "%d-%m-%Y")
+                    if (
+                        from_date_object <= date <= to_date_object
+                    ) :
+                        filtered_record[key] = value
+            
+            if len(filtered_record) > 0:
+                hours_worked = 0
+                minutes_worked = 0
+                short_duration = 0
+                present = 0
+                missing_punch = 0
+                leaves = 0
+                day_off = 0
+                absent = 0
+                actual_shifts=0
+                for date, rec in filtered_record.items():
+                    if rec["check_in"] != "-" and rec["check_out"] != "-":
+                        check_in_time = rec["check_in"]
+                        check_out_time = rec["check_out"]
+
+                        check_in_datetime = datetime.strptime(check_in_time, "%I:%M %p")
+                        check_out_datetime = datetime.strptime(
+                            check_out_time, "%I:%M %p"
+                        )
+
+                        time_difference = check_out_datetime - check_in_datetime
+
+                        hours_worked += time_difference.seconds // 3600
+                        minutes_worked += (time_difference.seconds // 60) % 60
+
+                    if rec["status"]["Short Duration"] == True:
+                        short_duration += rec["status"]["Short Duration"]
+                    if rec["status"]["Present"] == True:
+                        present += rec["status"]["Present"]
+                    if rec["status"]["Missing"] == True:
+                        missing_punch += rec["status"]["Missing"]
+                    if rec["status"]["Full Leave"] == True:
+                        leaves += rec["status"]["Full Leave"]
+                    if rec["status"]["Day Off"] == True:
+                        day_off += rec["status"]["Day Off"]
+                    if rec["status"]["Absent"] == True:
+                        absent += rec["status"]["Absent"]
+                    if rec["status"]["Day Off"] == False and rec["status"]["Full Leave"]==False:
+                        actual_shifts+=1
+                if minutes_worked and hours_worked:
+                    worked_hours = f"{hours_worked}h {minutes_worked}m"
+                elif hours_worked and not minutes_worked:
+                    worked_hours = f"{hours_worked}h"
+                elif not hours_worked and minutes_worked:
+                    worked_hours = f"{minutes_worked}m"
+                else:
+                    worked_hours = "0h"
+
+                workable_minutes = actual_shifts * 9 * 60
+                worked_minutes = hours_worked * 60 + minutes_worked
+                if workable_minutes > worked_minutes:
+                    short_minutes = workable_minutes - worked_minutes
+                    short_hours = f"{short_minutes // 60}h {short_minutes%60}m"
+                    overtime_hours = "0h 0m"
+                elif workable_minutes < worked_minutes:
+                    overtime_minutes = worked_minutes - workable_minutes
+                    overtime_hours = f"{overtime_minutes // 60}h {overtime_minutes%60}m"
+                    short_hours = "0h 0m"
+                else:
+                    overtime_hours = "0h 0m"
+                    short_hours = "0h 0m"
+
+                summary = {
+                    "workable_shifts": actual_shifts,
+                    "workable_hours": f"{actual_shifts*9}h",
+                    "worked_hours": worked_hours,
+                    "short_hours": short_hours,
+                    "overtime_hours": overtime_hours,
+                    "short_duration": short_duration,
+                    "present": present,
+                    "absent": absent,
+                    "day_off": day_off,
+                    "missing_punch": missing_punch,
+                    "leaves": leaves,
+                }
+                emp = employee.objects.get(email=e_email)
+                clnt = client.objects.get(email=workspace)
+                outsrc_emp = outsource_employees.objects.get(
+                    employee_id=e_email, client_id=workspace
+                )
+
+                employee_details = {
+                    "employee_id": emp.employee_id,
+                    "employee_name": emp.first_name + " " + emp.last_name,
+                    "company": clnt.company_name,
+                    "location": clnt.address,
+                    "job_title": outsrc_emp.job_title,
+                    "joining_date": outsrc_emp.joining_date,
+                }
+
+                records = {
+                    "time_sheet": filtered_record,
+                    "time_sheet_summary": summary,
+                    "employee_details": employee_details,
+                }
+
+            return Response(records, status=status.HTTP_200_OK)
+        else:
+            try:
+                ts_record = time_sheet.objects.get(
+                    employee_id=e_email,
+                    client_id=workspace,
+                    year=datetime.now().year,
+                    month=datetime.now().strftime("%B"),
+                )
+                record = {
+                    "id": ts_record.id,
+                    "month": ts_record.month,
+                    "record": ts_record.record,
+                    "year": ts_record.year,
+                    "expect_check_in": employee.objects.get(
+                        email=e_email
+                    ).punch_timings["check_in"],
+                    "expect_check_out": employee.objects.get(
+                        email=e_email
+                    ).punch_timings["check_out"],
+                }
+                hours_worked = 0
+                minutes_worked = 0
+                short_duration = 0
+                present = 0
+                missing_punch = 0
+                leaves = 0
+                day_off = 0
+                absent = 0
+                for date, rec in record["record"].items():
+                    if rec["check_in"] != "-" and rec["check_out"] != "-":
+                        check_in_time = rec["check_in"]
+                        check_out_time = rec["check_out"]
+                        check_in_datetime = datetime.strptime(check_in_time, "%I:%M %p")
+                        check_out_datetime = datetime.strptime(check_out_time, "%I:%M %p")
+                        time_difference = check_out_datetime - check_in_datetime
+                        
+                        hours_worked += time_difference.seconds // 3600
+                        minutes_worked += (time_difference.seconds // 60) % 60
+
+                    if rec["status"]["Short Duration"] == True:
+                        short_duration += rec["status"]["Short Duration"]
+                    if rec["status"]["Present"] == True:
+                        present += rec["status"]["Present"]
+                    if rec["status"]["Missing"] == True:
+                        missing_punch += rec["status"]["Missing"]
+                    if rec["status"]["Full Leave"] == True:
+                        leaves += rec["status"]["Full Leave"]
+                    if rec["status"]["Day Off"] == True:
+                        day_off += rec["status"]["Day Off"]
+                    if rec["status"]["Absent"] == True:
+                        absent += rec["status"]["Absent"]
+
+                if minutes_worked and hours_worked:
+                    worked_hours = f"{hours_worked}h {minutes_worked}m"
+                elif hours_worked and not minutes_worked:
+                    worked_hours = f"{hours_worked}h"
+                elif not hours_worked and minutes_worked:
+                    worked_hours = f"{minutes_worked}m"
+                else:
+                    worked_hours = "0h"
+                current_year = datetime.now().year
+                date_today = datetime.now()
+                actual_shifts = 0
+                for day in range(1, date_today.day + 1):
+                    weekday = calendar.weekday(current_year, date_today.month, day)
+                    actual_shifts += 1 if weekday < 5 else 0
+
+                workable_minutes = actual_shifts * 9 * 60
+                worked_minutes = hours_worked * 60 + minutes_worked
+                if workable_minutes > worked_minutes:
+                    short_minutes = workable_minutes - worked_minutes
+                    short_hours = f"{short_minutes // 60}h {short_minutes%60}m"
+                    overtime_hours = "0h 0m"
+                elif workable_minutes < worked_minutes:
+                    overtime_minutes = worked_minutes - workable_minutes
+                    short_hours = f"{overtime_minutes // 60}h {overtime_minutes%60}m"
+                    short_hours = "0h 0m"
+                else:
+                    overtime_hours = "0h 0m"
+                    short_hours = "0h 0m"
+
+                summary = {
+                    "workable_shifts": actual_shifts,
+                    "workable_hours": f"{actual_shifts*9}h",
+                    "worked_hours": worked_hours,
+                    "short_hours": short_hours,
+                    "overtime_hours": overtime_hours,
+                    "short_duration": short_duration,
+                    "present": present,
+                    "absent": absent,
+                    "day_off": day_off,
+                    "missing_punch": missing_punch,
+                    "leaves": leaves,
+                }
+
+                emp = employee.objects.get(email=e_email)
+                clnt = client.objects.get(email=workspace)
+                outsrc_emp = outsource_employees.objects.get(
+                    employee_id=e_email, client_id=workspace
+                )
+
+                employee_details = {
+                    "employee_id": emp.employee_id,
+                    "employee_name": emp.first_name + " " + emp.last_name,
+                    "company": clnt.company_name,
+                    "location": clnt.address,
+                    "job_title": outsrc_emp.job_title,
+                    "joining_date": outsrc_emp.joining_date,
+                }
+
+                records = {
+                    "time_sheet": record,
+                    "time_sheet_summary": summary,
+                    "employee_details": employee_details,
+                }
+                return Response(records, status=status.HTTP_200_OK)
+            except:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
+         
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Punch_Request(APIView):
+    parser_classes = (MultiPartParser,)
+    @swagger_auto_schema(
+        tags=["Punch requests"],
+        manual_parameters=[
+            openapi.Parameter(
+                "workspace",
+                openapi.IN_QUERY,
+                description="Specify current client email",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
+                "tab",
+                openapi.IN_QUERY,
+                description="Status filter (pending, completed, rejected) otherwise all",
+                type=openapi.TYPE_STRING,
+                enum=["","pending", "completed", "rejected"],
+            ),
+            openapi.Parameter(
+                "from",
+                openapi.IN_QUERY,
+                description="Date filter",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                example="December 21, 2023 or 12-21-2023",
+            ),
+            openapi.Parameter(
+                "to",
+                openapi.IN_QUERY,
+                description="Date filter",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                example="December 21, 2023 or 12-21-2023",
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "requests": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    "employee_id": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "employee_name": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "date": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATE,
+                                        example="2024-02-29(Y:M:D)",
+                                    ),
+                                    "punch_type": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "punch_time": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATETIME,
+                                    ),
+                                    "description": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "status": openapi.Schema(type=openapi.TYPE_STRING),
+                                },
+                            ),
+                        ),
+                        "pending": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "rejected": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "completed": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "all": openapi.Schema(type=openapi.TYPE_INTEGER),
+                    },
+                ),
+            ),
+            204: openapi.Response(description="No content"),
+            206: openapi.Response(description="Partial content"),
+            401: openapi.Response(description="UnAuthorize"),
+            400: openapi.Response(description="Bad Request"),
+        },
+        operation_summary="Endpoint to retrieve punch request data.",
+        operation_id=".",
+    )
+    def get(self, request, *args, **kwargs):
+        e_email = request.user
+        workspace = request.query_params.get("workspace")
+        tab = request.query_params.get("tab")
+        from_date = request.query_params.get("from")
+        to_date = request.query_params.get("to")
+        if from_date and to_date:
+            from_date_object = parser.parse(from_date)
+            to_date_object = parser.parse(to_date)
+
+            pending = punch_request.objects.filter(
+                Q(employee_id=e_email, client_id=workspace),
+                created_at__date__gte=from_date_object,
+                created_at__date__lte=to_date_object,
+                status="pending",
+            ).count()
+            rejected = punch_request.objects.filter(
+                Q(employee_id=e_email, client_id=workspace),
+                created_at__date__gte=from_date_object,
+                created_at__date__lte=to_date_object,
+                status="rejected",
+            ).count()
+            completed = punch_request.objects.filter(
+                Q(employee_id=e_email, client_id=workspace),
+                created_at__date__gte=from_date_object,
+                created_at__date__lte=to_date_object,
+                status="completed",
+            ).count()
+            all = punch_request.objects.filter(
+                Q(employee_id=e_email, client_id=workspace),
+                created_at__date__gte=from_date_object,
+                created_at__date__lte=to_date_object,
+            ).count()
+
+            if tab == "pending" or tab == "completed" or tab == "rejected":
+                p_request = punch_request.objects.filter(
+                    Q(employee_id=e_email, client_id=workspace),
+                    created_at__date__gte=from_date_object,
+                    created_at__date__lte=to_date_object,
+                    status=tab,
+                )
+                req_record = []
+                if p_request:
+                    for req in p_request:
+                        record = {
+                            "id": req.id,
+                            "employee_id": employee.objects.get(
+                                email=request.user
+                            ).employee_id,
+                            "employee_name": employee.objects.get(
+                                email=request.user
+                            ).first_name
+                            + " "
+                            + employee.objects.get(email=request.user).last_name,
+                            "date": req.date,
+                            "punch_type": req.punch_type,
+                            "punch_time": req.punch_time,
+                            "description": req.description,
+                            "status": req.status,
+                        }
+                        req_record.append(record)
+                else:
+                    req_record = []
+            elif not tab:
+                p_request = punch_request.objects.filter(
+                    Q(employee_id=e_email, client_id=workspace),
+                    created_at__date__gte=from_date_object,
+                    created_at__date__lte=to_date_object,
+                )
+                req_record = []
+                if p_request:
+                    for req in p_request:
+                        record = {
+                            "id": req.id,
+                            "employee_id": employee.objects.get(
+                                email=request.user
+                            ).employee_id,
+                            "employee_name": employee.objects.get(
+                                email=request.user
+                            ).first_name
+                            + " "
+                            + employee.objects.get(email=request.user).last_name,
+                            "date": req.date,
+                            "punch_type": req.punch_type,
+                            "punch_time": req.punch_time,
+                            "description": req.description,
+                            "status": req.status,
+                        }
+                        req_record.append(record)
+                else:
+                    req_record = []
+            else:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            if req_record:
+                records = {
+                    "requests": req_record,
+                    "pending": pending,
+                    "rejected": rejected,
+                    "completed": completed,
+                    "all": all,
+                }
+                return Response(records, status=status.HTTP_200_OK)
+            else:
+                records = {
+                    "requests": [],
+                    "pending": pending,
+                    "rejected": rejected,
+                    "completed": completed,
+                    "all": all,
+                }
+                return Response(records, status=status.HTTP_204_NO_CONTENT)
+        else:
+            req_record = []
+            pending = punch_request.objects.filter(
+                employee_id=e_email, client_id=workspace, status="pending"
+            ).count()
+            rejected = punch_request.objects.filter(
+                employee_id=e_email, client_id=workspace, status="rejected"
+            ).count()
+            completed = punch_request.objects.filter(
+                employee_id=e_email, client_id=workspace, status="completed"
+            ).count()
+            all = punch_request.objects.filter(
+                employee_id=e_email, client_id=workspace
+            ).count()
+            if tab == "pending" or tab == "completed" or tab == "rejected":
+                p_request = punch_request.objects.filter(
+                    employee_id=e_email, client_id=workspace, status=tab
+                )
+                if p_request:
+                    for req in p_request:
+                        record = {
+                            "id": req.id,
+                            "employee_id": employee.objects.get(
+                                email=request.user
+                            ).employee_id,
+                            "employee_name": employee.objects.get(
+                                email=request.user
+                            ).first_name
+                            + " "
+                            + employee.objects.get(email=request.user).last_name,
+                            "date": req.date,
+                            "punch_type": req.punch_type,
+                            "punch_time": req.punch_time,
+                            "description": req.description,
+                            "status": req.status,
+                        }
+                        req_record.append(record)
+                else:
+                    req_record = []
+            elif not tab:
+                p_request = punch_request.objects.filter(
+                    employee_id=e_email, client_id=workspace
+                )
+                if p_request:
+                    for req in p_request:
+                        record = {
+                            "id": req.id,
+                            "employee_id": employee.objects.get(
+                                email=request.user
+                            ).employee_id,
+                            "employee_name": employee.objects.get(
+                                email=request.user
+                            ).first_name
+                            + " "
+                            + employee.objects.get(email=request.user).last_name,
+                            "date": req.date,
+                            "punch_type": req.punch_type,
+                            "punch_time": req.punch_time,
+                            "description": req.description,
+                            "status": req.status,
+                        }
+                        req_record.append(record)
+                else:
+                    req_record = []
+            else:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            if req_record:
+                records = {
+                    "requests": req_record,
+                    "pending": pending,
+                    "rejected": rejected,
+                    "completed": completed,
+                    "all": all,
+                }
+                return Response(records, status=status.HTTP_200_OK)
+            elif not req_record:
+                records = {
+                    "requests": req_record,
+                    "pending": pending,
+                    "rejected": rejected,
+                    "completed": completed,
+                    "all": all,
+                }
+                return Response(records, status=status.HTTP_206_PARTIAL_CONTENT)
+
+    @swagger_auto_schema(
+        tags=["Punch requests : Create"],
+        responses={
+            201: "Request created",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="client_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="punch_type",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="punch_time",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATETIME,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="date",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                example="2024-02-29(Y:M:D)",
+                required=True,
+            ),
+            openapi.Parameter(
+                name="description",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        operation_summary="Create punch request.",
+        operation_id=".",
+    )
+    def post(self, request, *args, **kwargs):
+        e_email = request.user
+        try:
+            client_email = request.data["client_id"]
+            punch_type = request.data["punch_type"]
+            punch_time = request.data["punch_time"]
+            date = request.data["date"]
+            description = request.data["description"]
+            punch_request.objects.create(
+                employee_id=e_email,
+                client_id=client_email,
+                punch_type=punch_type,
+                punch_time=punch_time,
+                date=date,
+                description=description,
+                status="pending",
+            )
+            return Response(status=status.HTTP_201_CREATED)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        tags=["Punch requests : Actions : Delete"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="Unauthorize"),
+        },
+        operation_summary="Endpoint to delete a punch request.",
+        operation_id=".",
+    )
+    def delete(self, request, *args, **kwargs):
+        id = request.query_params.get("id")
+        try:
+            punch_request.objects.get(id=id).delete()
+            return Response(status=status.HTTP_200_OK)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Policies(APIView):
+    parser_classes = (MultiPartParser,)
+    @swagger_auto_schema(
+        tags=["Policies"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "policy_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "policy_doc": openapi.Schema(type=openapi.TYPE_FILE),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve employee policies",
+        operation_id=".",
+    )
+    def get(self, request, *args, **kwargs):
+        emp_policies = policy.objects.filter(employee=True)
+        policies = []
+        for emp_pol in emp_policies:
+            record = {
+                "id": emp_pol.id,
+                "policy_name": emp_pol.policy_name,
+                "policy_doc": emp_pol.policy_doc.path,
+            }
+            policies.append(record)
+        if len(policies) > 0:
+            return Response(policies, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)

@@ -945,7 +945,7 @@ class Hr_Employees(APIView):
                     }
                     records.append(record)
                 return Response(records, status=status.HTTP_200_OK)
-
+            
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -1171,7 +1171,7 @@ class Hr_Employee(APIView):
                     "terminated_clients": terminated_clients,
                 }
                 return Response(data, status=status.HTTP_200_OK)
-
+              
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -1217,11 +1217,11 @@ class Hr_Employee(APIView):
                 return Response(record, status=status.HTTP_200_OK)
             except:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
-
+            
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-
-
+        
+        
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Update_Emp_Person_Info(APIView):
@@ -1273,7 +1273,7 @@ class Update_Emp_Person_Info(APIView):
             emp_record = employee.objects.get(id=record_id)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-
+                
         for key in updates:
             setattr(emp_record, key, updates[key])
         emp_record.save()
@@ -1343,12 +1343,12 @@ class Update_Emp_Emerg_Info(APIView):
             emp_record = employee.objects.get(id=record_id)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-
+        
         for key in updates:
             setattr(emp_record, key, updates[key])
         emp_record.save()
         return Response(status=status.HTTP_200_OK)
-
+    
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -1391,12 +1391,12 @@ class Update_Emp_Profile_Pic(APIView):
             emp_record = employee.objects.get(id=record_id)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-
+        
         for key in updates:
             setattr(emp_record, key, updates[key])
         emp_record.save()
         return Response(status=status.HTTP_200_OK)
-
+    
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -1445,26 +1445,26 @@ class Edit_Cridentials(APIView):
             end_user_instance = end_user.objects.get(email=employees.email)
         except employees.DoesNotExist:
             raise Http404("Employee does not exist")
-
+        
         if not end_user_instance.check_password(current_password):
             return Response(
                 {"error": "Incorrect current password"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
+        
         if new_password != confirm_password:
             return Response(
                 {"error": "New password and confirm password do not match"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
+        
         end_user_instance.set_password(new_password)
         end_user_instance.save()
 
         return Response(
             {"message": "Password updated successfully"}, status=status.HTTP_200_OK
         )
-
+    
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -1543,7 +1543,7 @@ class Start_Hiring(APIView):
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+        
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
         manual_parameters=[
@@ -1613,7 +1613,7 @@ class Start_Hiring(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
-
+        
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
         manual_parameters=[
@@ -1647,7 +1647,7 @@ class Start_Hiring(APIView):
             return Response(status=status.HTTP_200_OK)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-
+        
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -1715,7 +1715,7 @@ class Interview_Schedule(APIView):
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+        
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
         responses={
@@ -2120,7 +2120,7 @@ class Hr_Client(APIView):
 
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-
+        
     @swagger_auto_schema(
         tags=["Clients : Profile"],
         operation_id="2",

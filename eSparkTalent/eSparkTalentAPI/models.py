@@ -487,8 +487,21 @@ class company_data(models.Model):
                 old_image_path = os.path.join("media", old_logo.image.name)
                 if os.path.exists(old_image_path):
                     os.remove(old_image_path)
-        except client.DoesNotExist:
+        except company_data.DoesNotExist:
             pass
 
         super().save(*args, **kwargs)
 
+class policy(models.Model):
+    id = models.AutoField(primary_key=True)
+    policy_name = models.CharField(max_length=50, default="")
+    policy_doc = models.FileField(
+        upload_to="policies/",
+        validators=[pdf_ext_valid, valid_pdffile_type],
+        default="",
+    )
+    employee = models.BooleanField()
+    client = models.BooleanField()
+
+    def __str__(self):
+        return f"{self.policy_name} - {self.id}"
