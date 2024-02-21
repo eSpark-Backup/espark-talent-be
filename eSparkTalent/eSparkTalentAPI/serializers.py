@@ -17,6 +17,13 @@ class hiring_requestSerializer(serializers.ModelSerializer):
         # fields = "__all__"
         depth = 1
 
+class start_requestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = hiring_request
+        # exclude = ['client_id']
+        fields = "__all__"
+        depth = 1
+
 class interview_requestSerializer(serializers.ModelSerializer):
     class Meta:
         model = interview_schedule
@@ -62,4 +69,9 @@ class EmployeeInvoiceSerializer(serializers.ModelSerializer):
 class OtherPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = other_payment
+        fields = "__all__"
+
+class onboardingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = onboarding
         fields = "__all__"

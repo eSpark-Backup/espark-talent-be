@@ -194,8 +194,7 @@ class hiring_request(models.Model):
 
     def __str__(self):
         return f"{self.client_id} - {self.id}"
-
-
+    
 class interview_schedule(models.Model):
     status = [
         ("short_list", "short_list"),
@@ -230,7 +229,7 @@ class onboarding(models.Model):
     role_type = models.CharField(max_length=15)
     employment_term = models.CharField(max_length=15)
     joining_date = models.DateField()
-    notice_period = models.IntegerField(max_length=15)
+    notice_period = models.IntegerField()
     salary = models.IntegerField(null=True)
     benefits = models.JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -368,9 +367,9 @@ class employee_invoice(models.Model):
 
 class other_payment(models.Model):
     payment_status = [
-        ("Pending", "Pending"),
-        ("Processing", "Processing"),
-        ("Paid", "Paid"),
+        ("pending", "pending"),
+        ("processing", "processing"),
+        ("paid", "paid"),
     ]
     id = models.AutoField(primary_key=True)
     client_id = models.EmailField()
