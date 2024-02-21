@@ -213,9 +213,6 @@ class Employee_Home(APIView):
                             items=openapi.Items(
                                 type=openapi.TYPE_OBJECT,
                                 properties={
-                                    "workspace_id": openapi.Schema(
-                                        type=openapi.TYPE_STRING
-                                    ),
                                     "email": openapi.Schema(
                                         type=openapi.TYPE_STRING,
                                         format=openapi.FORMAT_EMAIL,
@@ -286,14 +283,19 @@ class Employee_Home(APIView):
         clients = client.objects.filter(email__in=out_sourced_to)
         if clients:
             workspaces = []
+            workspaces.append({
+                "email":"talent@esparkconsultants.com",
+                "client_name":"eSpark Talent",
+                "company_name":"eSpark"
+            })
             for rec in clients:
                 record = {
-                    "workspace_id": rec.client_id,
                     "email": rec.email,
                     "client_name": rec.first_name + " " + rec.last_name,
                     "company_name": rec.company_name,
                 }
                 workspaces.append(record)
+            
         try:
             leave_records = leave_balance.objects.get(employee_id=e_email)
             leave_summary = {
@@ -725,7 +727,7 @@ class Leave_Request(APIView):
                 openapi.IN_QUERY,
                 description="Status filter (pending, completed, rejected) otherwise all",
                 type=openapi.TYPE_STRING,
-                enum=["pending", "completed", "rejected"],
+                enum=["","pending", "completed", "rejected"],
             ),
             openapi.Parameter(
                 "from",
@@ -733,6 +735,7 @@ class Leave_Request(APIView):
                 description="Date filter",
                 type=openapi.TYPE_STRING,
                 format=openapi.FORMAT_DATE,
+                example="December 21, 2023 or 12-21-2023",
             ),
             openapi.Parameter(
                 "to",
@@ -740,6 +743,7 @@ class Leave_Request(APIView):
                 description="Date filter",
                 type=openapi.TYPE_STRING,
                 format=openapi.FORMAT_DATE,
+                example="December 21, 2023 or 12-21-2023",
             ),
             openapi.Parameter(
                 "Authorization",
@@ -1245,6 +1249,7 @@ class Leave_Request(APIView):
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
                 format=openapi.FORMAT_DATE,
+                example="2024-02-29(Y:M:D)",
                 required=True,
             ),
             openapi.Parameter(
@@ -1252,6 +1257,7 @@ class Leave_Request(APIView):
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
                 format=openapi.FORMAT_DATE,
+                example="2024-02-29(Y:M:D)",
                 required=True,
             ),
             openapi.Parameter(
@@ -1356,6 +1362,7 @@ class Time_Sheet(APIView):
                 description="Date filter",
                 type=openapi.TYPE_STRING,
                 format=openapi.FORMAT_DATE,
+                example="December 21, 2023 or 12-21-2023",
             ),
             openapi.Parameter(
                 "to",
@@ -1363,6 +1370,7 @@ class Time_Sheet(APIView):
                 description="Date filter",
                 type=openapi.TYPE_STRING,
                 format=openapi.FORMAT_DATE,
+                example="December 21, 2023 or 12-21-2023",
             ),
             openapi.Parameter(
                 "Authorization",
@@ -1385,7 +1393,7 @@ class Time_Sheet(APIView):
                                 "record": openapi.Schema(
                                     type=openapi.TYPE_OBJECT,
                                     properties={
-                                        "1-2-2024": openapi.Schema(
+                                        "13-02-2024": openapi.Schema(
                                             type=openapi.TYPE_OBJECT,
                                             properties={
                                                 "check_in": openapi.Schema(
@@ -1780,7 +1788,7 @@ class Punch_Request(APIView):
                 openapi.IN_QUERY,
                 description="Status filter (pending, completed, rejected) otherwise all",
                 type=openapi.TYPE_STRING,
-                enum=["pending", "completed", "rejected"],
+                enum=["","pending", "completed", "rejected"],
             ),
             openapi.Parameter(
                 "from",
@@ -1788,6 +1796,7 @@ class Punch_Request(APIView):
                 description="Date filter",
                 type=openapi.TYPE_STRING,
                 format=openapi.FORMAT_DATE,
+                example="December 21, 2023 or 12-21-2023",
             ),
             openapi.Parameter(
                 "to",
@@ -1795,6 +1804,7 @@ class Punch_Request(APIView):
                 description="Date filter",
                 type=openapi.TYPE_STRING,
                 format=openapi.FORMAT_DATE,
+                example="December 21, 2023 or 12-21-2023",
             ),
             openapi.Parameter(
                 "Authorization",
@@ -1824,6 +1834,7 @@ class Punch_Request(APIView):
                                     "date": openapi.Schema(
                                         type=openapi.TYPE_STRING,
                                         format=openapi.FORMAT_DATE,
+                                        example="2024-02-29(Y:M:D)",
                                     ),
                                     "punch_type": openapi.Schema(
                                         type=openapi.TYPE_STRING
@@ -2089,6 +2100,7 @@ class Punch_Request(APIView):
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
                 format=openapi.FORMAT_DATE,
+                example="2024-02-29(Y:M:D)",
                 required=True,
             ),
             openapi.Parameter(

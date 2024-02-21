@@ -65,7 +65,7 @@ class Check_Punches(BaseCommand):
                                 }
                             },
                         )
-                if now.strftime("%I:%M %p") >= p_time["check_in"]:
+                if now >=  datetime.strptime(p_time["check_in"], "%I:%M %p"):
                     time_record = time_sheet.objects.filter(
                         employee_id=emp.employee_id,
                         client_id=emp.client_id,
@@ -116,7 +116,7 @@ class Check_Punches(BaseCommand):
                                 }
                             },
                         )
-                if now.strftime("%I:%M %p") >= p_time["check_out"]:
+                if now >= datetime.strptime(p_time["check_in"], "%I:%M %p"):
                     time_record = time_sheet.objects.filter(
                         employee_id=emp.employee_id,
                         client_id=emp.client_id,
