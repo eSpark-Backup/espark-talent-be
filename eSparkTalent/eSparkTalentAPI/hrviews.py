@@ -10,8 +10,11 @@ from .serializers import *
 import datetime
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import MultiPartParser, JSONParser
 from django.core.exceptions import ObjectDoesNotExist
+from Crypto.Protocol.KDF import PBKDF2
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
 
 
 @authentication_classes([JWTAuthentication])
@@ -945,7 +948,7 @@ class Hr_Employees(APIView):
                     }
                     records.append(record)
                 return Response(records, status=status.HTTP_200_OK)
-            
+
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -1020,14 +1023,13 @@ class Hr_Employee(APIView):
                                         type=openapi.TYPE_STRING,
                                         format=openapi.FORMAT_DATETIME,
                                     ),
-                                    
                                     "assignee_name": openapi.Schema(
                                         type=openapi.TYPE_STRING
                                     ),
                                     "assignee_email": openapi.Schema(
                                         type=openapi.TYPE_STRING,
                                         format=openapi.FORMAT_EMAIL,
-                                    ),     
+                                    ),
                                 },
                             ),
                         ),
@@ -1171,7 +1173,7 @@ class Hr_Employee(APIView):
                     "terminated_clients": terminated_clients,
                 }
                 return Response(data, status=status.HTTP_200_OK)
-              
+
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -1187,7 +1189,6 @@ class Hr_Employee(APIView):
                         "assigned_date": rec.assigned_date,
                         "assignee_name": rec.assignee_name,
                         "assignee_email": rec.assignee_email,
-                
                     }
                     records.append(record)
                 if len(records) > 0:
@@ -1217,11 +1218,11 @@ class Hr_Employee(APIView):
                 return Response(record, status=status.HTTP_200_OK)
             except:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
-            
+
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
-        
+
+
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Update_Emp_Person_Info(APIView):
@@ -1273,7 +1274,7 @@ class Update_Emp_Person_Info(APIView):
             emp_record = employee.objects.get(id=record_id)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-                
+
         for key in updates:
             setattr(emp_record, key, updates[key])
         emp_record.save()
@@ -1343,12 +1344,12 @@ class Update_Emp_Emerg_Info(APIView):
             emp_record = employee.objects.get(id=record_id)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+
         for key in updates:
             setattr(emp_record, key, updates[key])
         emp_record.save()
         return Response(status=status.HTTP_200_OK)
-    
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -1391,12 +1392,12 @@ class Update_Emp_Profile_Pic(APIView):
             emp_record = employee.objects.get(id=record_id)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+
         for key in updates:
             setattr(emp_record, key, updates[key])
         emp_record.save()
         return Response(status=status.HTTP_200_OK)
-    
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -1445,26 +1446,26 @@ class Edit_Cridentials(APIView):
             end_user_instance = end_user.objects.get(email=employees.email)
         except employees.DoesNotExist:
             raise Http404("Employee does not exist")
-        
+
         if not end_user_instance.check_password(current_password):
             return Response(
                 {"error": "Incorrect current password"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         if new_password != confirm_password:
             return Response(
                 {"error": "New password and confirm password do not match"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         end_user_instance.set_password(new_password)
         end_user_instance.save()
 
         return Response(
             {"message": "Password updated successfully"}, status=status.HTTP_200_OK
         )
-    
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -1543,7 +1544,7 @@ class Start_Hiring(APIView):
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
         manual_parameters=[
@@ -1613,7 +1614,7 @@ class Start_Hiring(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
-        
+
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
         manual_parameters=[
@@ -1647,7 +1648,7 @@ class Start_Hiring(APIView):
             return Response(status=status.HTTP_200_OK)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -1715,7 +1716,7 @@ class Interview_Schedule(APIView):
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
         responses={
@@ -2120,7 +2121,7 @@ class Hr_Client(APIView):
 
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+
     @swagger_auto_schema(
         tags=["Clients : Profile"],
         operation_id="2",
@@ -2210,3 +2211,649 @@ class Hr_Client(APIView):
             setattr(client_record, key, updates[key])
         client_record.save()
         return Response(status=status.HTTP_200_OK)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Company_Settings(APIView):
+    parser_classes = (
+        MultiPartParser,
+        JSONParser,
+    )
+
+    @swagger_auto_schema(
+        tags=["Settings: Company settings"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "company_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "company_email": openapi.Schema(
+                            type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
+                        ),
+                        "website_url": openapi.Schema(
+                            type=openapi.TYPE_STRING, format=openapi.FORMAT_URI
+                        ),
+                        "image": openapi.Schema(type=openapi.TYPE_FILE),
+                    },
+                ),
+            ),
+            204: openapi.Response(description="No content"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        operation_id=".",
+        operation_summary="Endpoint to retrieve company data",
+    )
+    def get(self, request, *args, **kwargs):
+        company = company_data.objects.all()
+        if company:
+            data = company_data.objects.all()[0]
+            record = {
+                "id": data.id,
+                "company_name": data.company_name,
+                "company_email": data.company_email,
+                "website_url": data.website_url,
+                "image": data.image.path,
+            }
+            return Response(record, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        tags=["Settings: Company settings"],
+        responses={
+            200: "Successful request",
+            201: "Successful created",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="company_name",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="company_email",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+            ),
+            openapi.Parameter(
+                name="website_url",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_URI,
+            ),
+            openapi.Parameter(
+                name="image",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+            ),
+        ],
+        operation_summary="Endpoint to update company data.",
+        operation_id=".",
+    )
+    def patch(self, request, *args, **kwargs):
+        updates = request.data
+        comp_data = company_data.objects.all()
+        if comp_data:
+            try:
+                comp_data = company_data.objects.all()[0]
+                for key in updates:
+                    setattr(comp_data, key, updates[key])
+                comp_data.save()
+                return Response(status=status.HTTP_200_OK)
+            except:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+        else:
+            serializer = CompanyDataSerializer(data=request.data)
+            if serializer.is_valid():
+                try:
+                    company_data.objects.create(
+                        company_name=serializer.validated_data["company_name"],
+                        company_email=serializer.validated_data["company_email"],
+                        website_url=serializer.validated_data["website_url"],
+                        image=serializer.validated_data["image"],
+                    )
+                    return Response(status=status.HTTP_201_CREATED)
+                except:
+                    return Response(
+                        {"error": "Invalid form fields"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Accounts(APIView):
+    parser_classes = (
+        MultiPartParser,
+        JSONParser,
+    )
+    salt = b"\rN\xac\xec\xbd\xfc2\xbc^\xb69\xf6\x80&\x0b\x82{\xf7@\xd8\x14\x15\xca\xf9i\xfd0B\xf4|r\xea"
+    iv = b'2\xd36mo\xe2\xae\x921\xf8\xa8\xfd9\xd8+"'
+    pass_key = "admin@espark"
+
+    @swagger_auto_schema(
+        tags=["Settings: Accounts"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "account_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "email": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
+                            ),
+                            "image": openapi.Schema(type=openapi.TYPE_FILE),
+                            "password": openapi.Schema(type=openapi.TYPE_STRING),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response(description="No content"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        operation_id=".",
+        operation_summary="Endpoint to retrieve accounts data",
+    )
+    def get(self, request, *args, **kwargs):
+        accounts = account_n_persmission.objects.all()
+        if accounts:
+            accounts_record = []
+            for account in accounts:
+                key = PBKDF2(self.pass_key, self.salt, dkLen=32)
+                de_cipher = AES.new(key, AES.MODE_CBC, iv=self.iv)
+                unciphered_data = unpad(
+                    de_cipher.decrypt(account.password), AES.block_size
+                )
+                record = {
+                    "id": account.id,
+                    "account_name": account.account_name,
+                    "email": account.email,
+                    "image": account.image.path,
+                    "password": unciphered_data,
+                }
+                accounts_record.append(record)
+            return Response(accounts_record, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        tags=["Settings: Accounts"],
+        responses={
+            201: "Request created",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="account_name",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="email",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="image",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="password",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="confirm_password",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        operation_summary="Endpoint to create accounts record.",
+        operation_id=".",
+    )
+    def post(self, request, *args, **kwargs):
+        try:
+            password = request.data["password"]
+            confirm_password = request.data["confirm_password"]
+            if password == confirm_password:
+                serializer = AccountPermissionSerializer(data=request.data)
+                if serializer.is_valid():
+                    key = PBKDF2(self.pass_key, self.salt, dkLen=32)
+                    message = password
+                    message_bytes = message.encode("utf-8")
+                    en_cipher = AES.new(key, AES.MODE_CBC, iv=self.iv)
+                    ciphered_data = en_cipher.encrypt(
+                        pad(message_bytes, AES.block_size)
+                    )
+                    try:
+                        account_n_persmission.objects.create(
+                            account_name=serializer.validated_data["account_name"],
+                            email=serializer.validated_data["email"],
+                            image=serializer.validated_data["image"],
+                            password=ciphered_data,
+                            employee_perms={
+                                "read": False,
+                                "write": False,
+                                "delete": False,
+                                "download": False,
+                            },
+                            client_perms={
+                                "read": False,
+                                "write": False,
+                                "delete": False,
+                                "download": False,
+                            },
+                            leaves_perms={
+                                "read": False,
+                                "write": False,
+                                "delete": False,
+                                "download": False,
+                            },
+                            invoices_perms={
+                                "read": False,
+                                "write": False,
+                                "delete": False,
+                                "download": False,
+                            },
+                            policies_perms={
+                                "read": False,
+                                "write": False,
+                                "delete": False,
+                                "download": False,
+                            },
+                        )
+
+                        end_user.objects.create_user(
+                            username=serializer.validated_data["account_name"],
+                            role=serializer.validated_data["account_name"],
+                            email=serializer.validated_data["email"],
+                            password=password,
+                        )
+
+                        return Response(status=status.HTTP_201_CREATED)
+                    except:
+                        return Response(
+                            {"error": "Invalid form fields"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                else:
+                    return Response(
+                        serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                    )
+            else:
+                return Response(
+                    {"error": "New password and confirm password must be same"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except:
+            return Response(
+                {"error": "Invalid form fields"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @swagger_auto_schema(
+        tags=["Settings : Accounts"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="Unauthorize"),
+        },
+        operation_summary="Endpoint to delete an account.",
+        operation_id=".",
+    )
+    def delete(self, request, *args, **kwargs):
+        id = request.query_params.get("id")
+        try:
+            account_n_persmission.objects.get(id=id).delete()
+            return Response(status=status.HTTP_200_OK)
+        except:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Change_Password(APIView):
+    parser_classes = (
+        MultiPartParser,
+        JSONParser,
+    )
+
+    @swagger_auto_schema(
+        tags=["Settings: Change password"],
+        responses={
+            201: "Successful request",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="current_password",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="new_password",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="confirm_password",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        operation_summary="Endpoint to update password.",
+        operation_id=".",
+    )
+    def patch(self, request, *args, **kwargs):
+        current_password = request.data["current_password"]
+        new_password = request.data["new_password"]
+        confirm_password = request.data["confirm_password"]
+        if new_password != confirm_password:
+            return Response(
+                {"error": "New password and confirm password must be same"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            end_user_instance = end_user.objects.get(email=request.user)
+            if end_user_instance.check_password(current_password):
+                end_user_instance.set_password(new_password)
+                end_user_instance.save()
+                return Response(status=status.HTTP_200_OK)
+            else:
+                return Response(
+                    {"error": "Invalid current password"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Roles_n_Permissions(APIView):
+    parser_classes = (
+        MultiPartParser,
+        JSONParser,
+    )
+
+    @swagger_auto_schema(
+        tags=["Settings: Roles & permissions"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "role": openapi.Schema(type=openapi.TYPE_STRING),
+                            "employee_perms": openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                    "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                    "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                    "download": openapi.Schema(
+                                        type=openapi.TYPE_BOOLEAN
+                                    ),
+                                },
+                            ),
+                            "client_perms": openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                    "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                    "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                    "download": openapi.Schema(
+                                        type=openapi.TYPE_BOOLEAN
+                                    ),
+                                },
+                            ),
+                            "leaves_perms": openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                    "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                    "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                    "download": openapi.Schema(
+                                        type=openapi.TYPE_BOOLEAN
+                                    ),
+                                },
+                            ),
+                            "invoices_perms": openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                    "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                    "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                    "download": openapi.Schema(
+                                        type=openapi.TYPE_BOOLEAN
+                                    ),
+                                },
+                            ),
+                            "policies_perms": openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                    "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                    "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                    "download": openapi.Schema(
+                                        type=openapi.TYPE_BOOLEAN
+                                    ),
+                                },
+                            ),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        operation_id=".",
+        operation_summary="Endpoint to retrieve account data",
+    )
+    def get(self, request, *args, **kwargs):
+        permissions = account_n_persmission.objects.all()
+        records = []
+        for perm in permissions:
+            record = {
+                "id": perm.id,
+                "role": perm.account_name,
+                "employee_perms": perm.employee_perms,
+                "client_perms": perm.client_perms,
+                "leaves_perms": perm.leaves_perms,
+                "invoices_perms": perm.invoices_perms,
+                "policies_perms": perm.policies_perms,
+            }
+            records.append(record)
+        if records:
+            return Response(records, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        tags=["Settings: Roles & permissions"],
+        responses={
+            201: "Successful request",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to update",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="employee_perms",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                },
+                required=True,
+            ),
+            openapi.Parameter(
+                name="client_perms",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                },
+                required=True,
+            ),
+            openapi.Parameter(
+                name="leaves_perms",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                },
+                required=True,
+            ),
+            openapi.Parameter(
+                name="invoices_perms",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                },
+                required=True,
+            ),
+            openapi.Parameter(
+                name="policies_perms",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                },
+                required=True,
+            ),
+        ],
+        operation_summary="Endpoint to update permissions record.",
+        operation_id=".",
+    )
+    def patch(self, request, *args, **kwargs):
+        id = request.query_params.get("id")
+        updates = request.data
+        try:
+            account = account_n_persmission.objects.get(id=id)
+            for key in updates:
+                setattr(account, key, updates[key])
+            account.save()
+            return Response(status=status.HTTP_200_OK)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
