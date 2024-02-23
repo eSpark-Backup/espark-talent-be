@@ -75,3 +75,13 @@ class onboardingSerializer(serializers.ModelSerializer):
     class Meta:
         model = onboarding
         fields = "__all__"
+        
+class LeaveRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = leave_request
+        fields = "__all__"
+
+class PunchRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = punch_request
+        fields = "__all__"

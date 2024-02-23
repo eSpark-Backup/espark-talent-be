@@ -266,8 +266,10 @@ class Employee_Home(APIView):
     def get(self, request, *args, **kwargs):
         e_email = request.user
         workspace = request.query_params.get("workspace")
-
-        current_employee = employee.objects.get(email=e_email)
+        try:
+            current_employee = employee.objects.get(email=e_email)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         employee_details = {
             "employee_id": current_employee.employee_id,
             "employee_name": current_employee.first_name
@@ -1284,28 +1286,22 @@ class Leave_Request(APIView):
     )
     def post(self, request, *args, **kwargs):
         e_email = request.user
-        try:
-            client_email = request.data["client_id"]
-            leave_type = request.data["leave_type"]
-            start_date = request.data["start_date"]
-            end_date = request.data["end_date"]
-            count = request.data["count"]
-            reason = request.data["reason"]
-            attachment = request.data["attachment"]
+        serializer=LeaveRequestSerializer(data=request.data)
+        if serializer.is_valid():
             leave_request.objects.create(
                 employee_id=e_email,
-                client_id=client_email,
-                leave_type=leave_type,
-                start_date=start_date,
-                end_date=end_date,
-                count=count,
-                reason=reason,
-                attachment=attachment,
+                client_id=serializer.validated_data["client_id"],
+                leave_type=serializer.validated_data["leave_type"],
+                start_date=serializer.validated_data["start_date"],
+                end_date=serializer.validated_data["end_date"],
+                count=serializer.validated_data["count"],
+                reason=serializer.validated_data["reason"],
+                attachment=serializer.validated_data["attachment"],
                 status="pending",
             )
             return Response(status=status.HTTP_201_CREATED)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         tags=["Leave : Actions : Delete"],
@@ -1647,7 +1643,9 @@ class Time_Sheet(APIView):
                     "employee_details": employee_details,
                 }
 
-            return Response(records, status=status.HTTP_200_OK)
+                return Response(records, status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             try:
                 ts_record = time_sheet.objects.get(
@@ -2115,24 +2113,20 @@ class Punch_Request(APIView):
     )
     def post(self, request, *args, **kwargs):
         e_email = request.user
-        try:
-            client_email = request.data["client_id"]
-            punch_type = request.data["punch_type"]
-            punch_time = request.data["punch_time"]
-            date = request.data["date"]
-            description = request.data["description"]
+        serializer=PunchRequestSerializer(data=request.data)
+        if serializer.is_valid():
             punch_request.objects.create(
                 employee_id=e_email,
-                client_id=client_email,
-                punch_type=punch_type,
-                punch_time=punch_time,
-                date=date,
-                description=description,
+                client_id=serializer.validated_data["client_id"],
+                punch_type=serializer.validated_data["punch_type"],
+                punch_time=serializer.validated_data["punch_time"],
+                date=serializer.validated_data["date"],
+                description=serializer.validated_data["description"],
                 status="pending",
             )
             return Response(status=status.HTTP_201_CREATED)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         tags=["Punch requests : Actions : Delete"],
