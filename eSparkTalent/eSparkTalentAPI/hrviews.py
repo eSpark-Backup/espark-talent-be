@@ -10,7 +10,7 @@ from .serializers import *
 import datetime
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from rest_framework.parsers import MultiPartParser, JSONParser
+from rest_framework.parsers import MultiPartParser
 from django.core.exceptions import ObjectDoesNotExist
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Cipher import AES
@@ -2216,10 +2216,7 @@ class Hr_Client(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Company_Settings(APIView):
-    parser_classes = (
-        MultiPartParser,
-        JSONParser,
-    )
+    parser_classes = (MultiPartParser,)
 
     @swagger_auto_schema(
         tags=["Settings: Company settings"],
@@ -2348,10 +2345,7 @@ class Company_Settings(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Accounts(APIView):
-    parser_classes = (
-        MultiPartParser,
-        JSONParser,
-    )
+    parser_classes = (MultiPartParser,)
     salt = b"\rN\xac\xec\xbd\xfc2\xbc^\xb69\xf6\x80&\x0b\x82{\xf7@\xd8\x14\x15\xca\xf9i\xfd0B\xf4|r\xea"
     iv = b'2\xd36mo\xe2\xae\x921\xf8\xa8\xfd9\xd8+"'
     pass_key = "admin@espark"
@@ -2580,13 +2574,21 @@ class Accounts(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Change_Password(APIView):
-    parser_classes = (
-        MultiPartParser,
-        JSONParser,
-    )
-
     @swagger_auto_schema(
         tags=["Settings: Change password"],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "current_password": openapi.Schema(type=openapi.TYPE_STRING),
+                "new_password": openapi.Schema(type=openapi.TYPE_STRING),
+                "confirm_password": openapi.Schema(type=openapi.TYPE_STRING),
+            },
+            required=[
+                "current_password",
+                "new_password",
+                "confirm_password",
+            ],
+        ),
         responses={
             201: "Successful request",
             400: "Bad Request",
@@ -2597,24 +2599,6 @@ class Change_Password(APIView):
                 "Authorization",
                 openapi.IN_HEADER,
                 description="Bearer Token",
-                type=openapi.TYPE_STRING,
-                required=True,
-            ),
-            openapi.Parameter(
-                name="current_password",
-                in_=openapi.IN_FORM,
-                type=openapi.TYPE_STRING,
-                required=True,
-            ),
-            openapi.Parameter(
-                name="new_password",
-                in_=openapi.IN_FORM,
-                type=openapi.TYPE_STRING,
-                required=True,
-            ),
-            openapi.Parameter(
-                name="confirm_password",
-                in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
                 required=True,
             ),
@@ -2651,10 +2635,6 @@ class Change_Password(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Roles_n_Permissions(APIView):
-    parser_classes = (
-        MultiPartParser,
-        JSONParser,
-    )
 
     @swagger_auto_schema(
         tags=["Settings: Roles & permissions"],
@@ -2768,6 +2748,59 @@ class Roles_n_Permissions(APIView):
             400: "Bad Request",
             401: "Unauthorized",
         },
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "employee_perms": openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    },
+                ),"client_perms": openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    },
+                ),"leaves_perms": openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    },
+                ),"invoices_perms": openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    },
+                ),"policies_perms": openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                    },
+                ),
+            },
+            required=[
+                "employee_perms",
+                "client_perms",
+                "leaves_perms",
+                "invoices_perms",
+                "policies_perms",
+            ],
+        ),
         manual_parameters=[
             openapi.Parameter(
                 "Authorization",
@@ -2781,65 +2814,6 @@ class Roles_n_Permissions(APIView):
                 openapi.IN_QUERY,
                 description="ID of the record to update",
                 type=openapi.TYPE_STRING,
-            ),
-            openapi.Parameter(
-                name="employee_perms",
-                in_=openapi.IN_FORM,
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                },
-                required=True,
-            ),
-            openapi.Parameter(
-                name="client_perms",
-                in_=openapi.IN_FORM,
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                },
-                required=True,
-            ),
-            openapi.Parameter(
-                name="leaves_perms",
-                in_=openapi.IN_FORM,
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                },
-                required=True,
-            ),
-            openapi.Parameter(
-                name="invoices_perms",
-                in_=openapi.IN_FORM,
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                },
-                required=True,
-            ),
-            openapi.Parameter(
-                name="policies_perms",
-                in_=openapi.IN_FORM,
-                type=openapi.TYPE_OBJECT,
-                properties={
-                    "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                    "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                },
                 required=True,
             ),
         ],
