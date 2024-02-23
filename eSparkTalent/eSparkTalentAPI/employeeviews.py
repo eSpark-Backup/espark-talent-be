@@ -1288,18 +1288,21 @@ class Leave_Request(APIView):
         e_email = request.user
         serializer=LeaveRequestSerializer(data=request.data)
         if serializer.is_valid():
-            leave_request.objects.create(
-                employee_id=e_email,
-                client_id=serializer.validated_data["client_id"],
-                leave_type=serializer.validated_data["leave_type"],
-                start_date=serializer.validated_data["start_date"],
-                end_date=serializer.validated_data["end_date"],
-                count=serializer.validated_data["count"],
-                reason=serializer.validated_data["reason"],
-                attachment=serializer.validated_data["attachment"],
-                status="pending",
-            )
-            return Response(status=status.HTTP_201_CREATED)
+            try:
+                leave_request.objects.create(
+                    employee_id=e_email,
+                    client_id=serializer.validated_data["client_id"],
+                    leave_type=serializer.validated_data["leave_type"],
+                    start_date=serializer.validated_data["start_date"],
+                    end_date=serializer.validated_data["end_date"],
+                    count=serializer.validated_data["count"],
+                    reason=serializer.validated_data["reason"],
+                    attachment=serializer.validated_data["attachment"],
+                    status="pending",
+                )
+                return Response(status=status.HTTP_201_CREATED)
+            except:
+                return Response({"error":"Invalid form fields"},status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
@@ -2115,16 +2118,19 @@ class Punch_Request(APIView):
         e_email = request.user
         serializer=PunchRequestSerializer(data=request.data)
         if serializer.is_valid():
-            punch_request.objects.create(
-                employee_id=e_email,
-                client_id=serializer.validated_data["client_id"],
-                punch_type=serializer.validated_data["punch_type"],
-                punch_time=serializer.validated_data["punch_time"],
-                date=serializer.validated_data["date"],
-                description=serializer.validated_data["description"],
-                status="pending",
-            )
-            return Response(status=status.HTTP_201_CREATED)
+            try:
+                punch_request.objects.create(
+                    employee_id=e_email,
+                    client_id=serializer.validated_data["client_id"],
+                    punch_type=serializer.validated_data["punch_type"],
+                    punch_time=serializer.validated_data["punch_time"],
+                    date=serializer.validated_data["date"],
+                    description=serializer.validated_data["description"],
+                    status="pending",
+                )
+                return Response(status=status.HTTP_201_CREATED)
+            except:
+                return Response({"error":"Invalid form fields"},status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
