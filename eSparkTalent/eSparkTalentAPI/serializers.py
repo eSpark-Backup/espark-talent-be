@@ -79,9 +79,9 @@ class onboardingSerializer(serializers.ModelSerializer):
 class LeaveRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = leave_request
-        fields = "__all__"
+        exclude = ["employee_id","status"]
 
 class PunchRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = punch_request
-        fields = "__all__"
+        exclude = ["employee_id","status"]

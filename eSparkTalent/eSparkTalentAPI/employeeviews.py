@@ -314,12 +314,19 @@ class Employee_Home(APIView):
         if workspace:
             today_activity = TodayActivity(e_email=e_email, workspace=workspace)
             statistics = Statistics(e_email=e_email, workspace=workspace)
-            punch_timings = employee.objects.get(email=e_email).punch_timings
-            attendance_summary = AttendanceSummary(e_email=e_email, workspace=workspace)
+            attendance_summary = AttendanceSummary(e_email=e_email, workspace=workspace) 
+            try:
+                punch_timings = employee.objects.get(email=e_email).punch_timings
+            except:
+                punch_timings={}
+            try:
+                company_image=company_data.objects.all()[0].image.path
+            except:
+                company_image=""
 
             payload = {
                 "employee_details": employee_details,
-                "company_image": company_data.objects.all()[0].image.path,
+                "company_image": company_image,
                 "workspaces": workspaces,
                 "attendance_summary": attendance_summary,
                 "punch_timings": punch_timings,
@@ -332,11 +339,18 @@ class Employee_Home(APIView):
         else:
             today_activity = TodayActivity(e_email=e_email, workspace="talent@esparkconsultants.com")
             statistics = Statistics(e_email=e_email, workspace="talent@esparkconsultants.com")
-            punch_timings = employee.objects.get(email=e_email).punch_timings
             attendance_summary = AttendanceSummary(e_email=e_email, workspace="talent@esparkconsultants.com")
+            try:
+                punch_timings = employee.objects.get(email=e_email).punch_timings
+            except:
+                punch_timings={}
+            try:
+                company_image=company_data.objects.all()[0].image.path
+            except:
+                company_image=""
             payload = {
                 "employee_details": employee_details,
-                "company_image": company_data.objects.all()[0].image.path,
+                "company_image": company_image,
                 "workspaces": workspaces,
                 "attendance_summary": attendance_summary,
                 "punch_timings": punch_timings,
