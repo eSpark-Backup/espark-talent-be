@@ -30,12 +30,12 @@ class LoginView(APIView):
                 "email": openapi.Schema(
                     type=openapi.TYPE_STRING,
                     format=openapi.FORMAT_EMAIL,
-                    default="admin@esparkconsultants.com",
+                    default="superadmin@esparkconsultants.com",
                 ),
                 "password": openapi.Schema(
                     type=openapi.TYPE_STRING,
                     format=openapi.FORMAT_PASSWORD,
-                    default="admin@espark",
+                    default="super@espark",
                 ),
             },
             required=["email", "password"],

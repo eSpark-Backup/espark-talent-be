@@ -116,7 +116,7 @@ class Check_Punches(BaseCommand):
                                     }
                                 },
                             )
-                    if now >= datetime.strptime(p_time["check_in"], "%I:%M %p"):
+                    if now >= datetime.strptime(p_time["check_out"], "%I:%M %p"):
                         time_record = time_sheet.objects.filter(
                             employee_id=emp.employee_id,
                             client_id=emp.client_id,
@@ -149,4 +149,4 @@ class Check_Punches(BaseCommand):
                                 rec.record[now.date().strftime("%d-%m-%Y")]['status']['Missing'] = False
                                 rec.record[now.date().strftime("%d-%m-%Y")]['status']['Short Duration'] = False
                                 rec.save()
-            time.sleep(20)
+            time.sleep(30 * 60)

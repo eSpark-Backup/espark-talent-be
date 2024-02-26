@@ -30,13 +30,13 @@ class Employee_Home(APIView):
                 description="Specify current client email",
                 type=openapi.TYPE_STRING,
                 format=openapi.FORMAT_EMAIL,
-                required=True,
             ),
             openapi.Parameter(
                 "Authorization",
                 openapi.IN_HEADER,
                 description="Bearer Token",
                 type=openapi.TYPE_STRING,
+                required=True,
             ),
         ],
         responses={
@@ -283,13 +283,13 @@ class Employee_Home(APIView):
             for w_space in outsource_employees.objects.filter(employee_id=e_email)
         ]
         clients = client.objects.filter(email__in=out_sourced_to)
+        workspaces = []
+        workspaces.append({
+            "email":"talent@esparkconsultants.com",
+            "client_name":"eSpark Talent",
+            "company_name":"eSpark"
+        })
         if clients:
-            workspaces = []
-            workspaces.append({
-                "email":"talent@esparkconsultants.com",
-                "client_name":"eSpark Talent",
-                "company_name":"eSpark"
-            })
             for rec in clients:
                 record = {
                     "email": rec.email,

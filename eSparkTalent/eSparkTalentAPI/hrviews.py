@@ -151,7 +151,7 @@ class Add_Employee(APIView):
                 name="punch_timings",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_OBJECT,
-                default={"check_in": "10:00", "check_out": "19:00"},
+                default={"check_in": "10:00 AM", "check_out": "07:00 PM"},
                 required=True,
             ),
             openapi.Parameter(
@@ -292,7 +292,7 @@ class Add_Employee(APIView):
                     employee_id=serializer.validated_data["email"],
                     job_title=serializer.validated_data["job_title"],
                     country="Pakistan",
-                    role_type=serializer.validated_data["role_type"],
+                    role_type=serializer.validated_data["role"],
                     employment_term="",
                     joining_date=serializer.validated_data["joining_date"],
                     salary="",

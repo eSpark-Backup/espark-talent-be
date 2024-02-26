@@ -9,4 +9,5 @@ class EsparktalentapiConfig(AppConfig):
     def ready(self):
         from .threads import Check_Punches
         thread = threading.Thread(target=Check_Punches().check_punch)
+        thread.setDaemon(True)
         thread.start()
