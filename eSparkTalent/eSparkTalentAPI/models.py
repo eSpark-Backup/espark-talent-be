@@ -505,3 +505,22 @@ class policy(models.Model):
 
     def __str__(self):
         return f"{self.policy_name} - {self.id}"
+    
+class account_n_persmission(models.Model):
+    id = models.AutoField(primary_key=True)
+    account_name=models.CharField(max_length=30, default='')
+    email=models.EmailField(default='')
+    password=models.BinaryField(default=b'')
+    image = models.ImageField(
+        upload_to="accounts/profiles",
+        validators=[img_ext_valid, valid_imgfile_type],
+        default="",
+    )
+    employee_perms=models.JSONField()
+    client_perms=models.JSONField()
+    leaves_perms=models.JSONField()
+    invoices_perms=models.JSONField()
+    policies_perms=models.JSONField()
+    
+    def __str__(self):
+        return f"{self.account_name} - {self.id}"

@@ -75,6 +75,16 @@ class onboardingSerializer(serializers.ModelSerializer):
     class Meta:
         model = onboarding
         fields = "__all__"
+
+class AccountPermissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = account_n_persmission
+        fields = ["account_name","email","image"]
+
+class CompanyDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = company_data
+        fields = "__all__"
         
 class LeaveRequestSerializer(serializers.ModelSerializer):
     class Meta:

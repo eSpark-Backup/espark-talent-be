@@ -21,4 +21,8 @@ urlpatterns=[
     path('hr_is/', Interview_Schedule.as_view()),
     path('hr_clients/', Hr_Clients.as_view()),
     path('hr_client_prof/', Hr_Client.as_view()),
+    path('hr_compsett/', Company_Settings.as_view()),
+    path('hr_accounts/', Accounts.as_view()),
+    path('hr_rnp/', Roles_n_Permissions.as_view()),
+    path('hr_changepass/', Change_Password.as_view()),
 ]
