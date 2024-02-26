@@ -2833,3 +2833,196 @@ class Roles_n_Permissions(APIView):
             return Response(status=status.HTTP_200_OK)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+        
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Policies(APIView):
+    parser_classes = (MultiPartParser,)
+
+    @swagger_auto_schema(
+        tags=["Policies"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "policy_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "employee": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "client": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve HR policies",
+        operation_id="2",
+    )
+    # request 1
+    def get(self, request, *args, **kwargs):
+        hr_policies = policy.objects.all()
+        policies = []
+        for hr_pol in hr_policies:
+            record = {
+                "id": hr_pol.id,
+                "policy_name": hr_pol.policy_name,
+                "employee": hr_pol.employee,
+                "client": hr_pol.client,
+            }
+            policies.append(record)
+        if len(policies) > 0:
+            return Response(policies, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    # request 2
+    @swagger_auto_schema(
+        tags=["Policies"],
+        responses={
+            201: "Request created",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="policy_name",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="policy_doc",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required=True,
+            ),
+        ],
+        operation_summary="Add a new Policy",
+        operation_id="1",
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = PolicySerializer(data=request.data)
+        if serializer.is_valid():
+            policy.objects.create(
+                policy_name=serializer.validated_data["policy_name"],
+                policy_doc=serializer.validated_data["policy_doc"],
+                employee=False,
+                client=False,
+            )
+            return Response(
+                {"message": "Resquest created"}, status=status.HTTP_201_CREATED
+            )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        tags=["Policies"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            204: openapi.Response(description="No content"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="Unauthorize"),
+        },
+        operation_summary="Endpoint to delete a policy request.",
+        operation_id="4",
+    )
+    def delete(self, request, *args, **kwargs):
+        delete_id = request.query_params.get("id")
+        try:
+            policy.objects.filter(id=delete_id).delete()
+            return Response(status=status.HTTP_200_OK)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Policies_Edit(APIView):
+    @swagger_auto_schema(
+        tags=["Policies"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "data": openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "employee": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "client": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        },
+                    ),
+                ),
+            },
+            required=["data"],
+        ),
+        responses={
+            200: "Request processed successfully",
+            400: "Bad Request",
+            401: "Unauthorized",
+            404: "Policy not found",
+        },
+        operation_summary="Endpoint to edit a policy",
+        operation_id="3",
+    )
+    def patch(self, request, *args, **kwargs):
+        policy_ids_array = json.loads(request.body)
+
+        for policy_id_json in policy_ids_array['data']:
+            try:
+                policy_instance = policy.objects.get(id=policy_id_json["id"])
+            except policy.DoesNotExist:
+                return Response(
+                    {"error": "Policy not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+            del policy_id_json["id"]
+            for key in policy_id_json:
+                setattr(policy_instance, key, policy_id_json[key])
+            policy_instance.save()
+        return Response(status=status.HTTP_200_OK)
