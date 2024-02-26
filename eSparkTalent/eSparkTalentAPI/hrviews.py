@@ -2565,10 +2565,12 @@ class Accounts(APIView):
     def delete(self, request, *args, **kwargs):
         id = request.query_params.get("id")
         try:
-            account_n_persmission.objects.get(id=id).delete()
+            account=account_n_persmission.objects.get(id=id)
+            end_user.objects.get(email=account.email).delete()
+            account.delete()
             return Response(status=status.HTTP_200_OK)
         except:
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
