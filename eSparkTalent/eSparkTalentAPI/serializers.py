@@ -85,3 +85,13 @@ class CompanyDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = company_data
         fields = "__all__"
+        
+class LeaveRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = leave_request
+        exclude = ["employee_id","status"]
+
+class PunchRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = punch_request
+        exclude = ["employee_id","status"]
