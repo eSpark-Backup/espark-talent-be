@@ -95,3 +95,8 @@ class PunchRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = punch_request
         exclude = ["employee_id","status"]
+        
+class PolicySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = policy
+        fields = ["policy_name","policy_doc"]
