@@ -798,7 +798,39 @@ class Hr_Home(APIView):
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
-                        "user_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "user": openapi.Schema(type=openapi.TYPE_STRING),
+                        "company_image": openapi.Schema(type=openapi.TYPE_FILE),
+                        "user_image": openapi.Schema(type=openapi.TYPE_FILE),
+                        "employee_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
+                        "client_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
+                        "leaves_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
+                        "invoices_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
+                        "policies_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
                         "employees": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "clients": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "hiring_requests": openapi.Schema(type=openapi.TYPE_INTEGER),
