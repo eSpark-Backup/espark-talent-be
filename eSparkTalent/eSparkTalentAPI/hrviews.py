@@ -295,7 +295,7 @@ class Add_Employee(APIView):
                     role_type=serializer.validated_data["role"],
                     employment_term="",
                     joining_date=serializer.validated_data["joining_date"],
-                    salary="",
+                    salary=0,
                     benefits={},
                 )
                 return Response(

@@ -192,19 +192,19 @@ class Employee_Home(APIView):
                             properties={
                                 "check_in": openapi.Schema(
                                     type=openapi.TYPE_STRING,
-                                    format=openapi.FORMAT_DATETIME,
+                                    example="10:00 AM",
                                 ),
                                 "check_out": openapi.Schema(
                                     type=openapi.TYPE_STRING,
-                                    format=openapi.FORMAT_DATETIME,
+                                    example="10:00 PM",
                                 ),
                                 "break": openapi.Schema(
                                     type=openapi.TYPE_STRING,
-                                    format=openapi.FORMAT_DATETIME,
+                                    example="1:00 PM",
                                 ),
                                 "resume": openapi.Schema(
                                     type=openapi.TYPE_STRING,
-                                    format=openapi.FORMAT_DATETIME,
+                                    example="2:00 PM",
                                 ),
                             },
                         ),
@@ -231,11 +231,11 @@ class Employee_Home(APIView):
                             properties={
                                 "check_in": openapi.Schema(
                                     type=openapi.TYPE_STRING,
-                                    format=openapi.FORMAT_DATETIME,
+                                    example="10:00 AM",
                                 ),
                                 "check_out": openapi.Schema(
                                     type=openapi.TYPE_STRING,
-                                    format=openapi.FORMAT_DATETIME,
+                                    example="10:00 PM",
                                 ),
                             },
                         ),
@@ -376,28 +376,28 @@ class Employee_Home(APIView):
                 openapi.IN_QUERY,
                 description="Punch check in",
                 type=openapi.TYPE_STRING,
-                format=openapi.FORMAT_DATETIME,
+                example="10:00 AM",
             ),
             openapi.Parameter(
                 "check_out",
                 openapi.IN_QUERY,
                 description="Punch check out",
                 type=openapi.TYPE_STRING,
-                format=openapi.FORMAT_DATETIME,
+                example="10:00 PM",
             ),
             openapi.Parameter(
                 "break",
                 openapi.IN_QUERY,
                 description="Punch break",
                 type=openapi.TYPE_STRING,
-                format=openapi.FORMAT_DATETIME,
+                example="01:00 PM",
             ),
             openapi.Parameter(
                 "resume",
                 openapi.IN_QUERY,
                 description="Punch resume",
                 type=openapi.TYPE_STRING,
-                format=openapi.FORMAT_DATETIME,
+                example="02:00 PM",
             ),
             openapi.Parameter(
                 "Authorization",
@@ -897,19 +897,19 @@ class Leave_Request(APIView):
                                             properties={
                                                 "check_in": openapi.Schema(
                                                     type=openapi.TYPE_STRING,
-                                                    format=openapi.FORMAT_DATETIME,
+                                                    example="10:00 AM",
                                                 ),
                                                 "check_out": openapi.Schema(
                                                     type=openapi.TYPE_STRING,
-                                                    format=openapi.FORMAT_DATETIME,
+                                                    example="10:00 PM",
                                                 ),
                                                 "breaK": openapi.Schema(
                                                     type=openapi.TYPE_STRING,
-                                                    format=openapi.FORMAT_DATETIME,
+                                                    example="1:00 PM",
                                                 ),
                                                 "resume": openapi.Schema(
                                                     type=openapi.TYPE_STRING,
-                                                    format=openapi.FORMAT_DATETIME,
+                                                    example="2:00 PM",
                                                 ),
                                                 "hours_worked": openapi.Schema(
                                                     type=openapi.TYPE_STRING
@@ -953,11 +953,11 @@ class Leave_Request(APIView):
                             properties={
                                 "check_in": openapi.Schema(
                                     type=openapi.TYPE_STRING,
-                                    format=openapi.FORMAT_DATETIME,
+                                    example="10:00 AM",
                                 ),
                                 "check_out": openapi.Schema(
                                     type=openapi.TYPE_STRING,
-                                    format=openapi.FORMAT_DATETIME,
+                                    example="10:00 PM",
                                 ),
                             },
                         ),
@@ -1411,19 +1411,19 @@ class Time_Sheet(APIView):
                                             properties={
                                                 "check_in": openapi.Schema(
                                                     type=openapi.TYPE_STRING,
-                                                    format=openapi.FORMAT_DATETIME,
+                                                    example="10:00 AM",
                                                 ),
                                                 "check_out": openapi.Schema(
                                                     type=openapi.TYPE_STRING,
-                                                    format=openapi.FORMAT_DATETIME,
+                                                    example="10:00 PM",
                                                 ),
                                                 "breaK": openapi.Schema(
                                                     type=openapi.TYPE_STRING,
-                                                    format=openapi.FORMAT_DATETIME,
+                                                    example="1:00 PM",
                                                 ),
                                                 "resume": openapi.Schema(
                                                     type=openapi.TYPE_STRING,
-                                                    format=openapi.FORMAT_DATETIME,
+                                                    example="2:00 PM",
                                                 ),
                                                 "hours_worked": openapi.Schema(
                                                     type=openapi.TYPE_STRING
@@ -1462,11 +1462,11 @@ class Time_Sheet(APIView):
                                 "year": openapi.Schema(type=openapi.TYPE_INTEGER),
                                 "expect_check_in": openapi.Schema(
                                     type=openapi.TYPE_STRING,
-                                    format=openapi.FORMAT_DATETIME,
+                                    example="10:00 AM",
                                 ),
                                 "expect_check_out": openapi.Schema(
                                     type=openapi.TYPE_STRING,
-                                    format=openapi.FORMAT_DATETIME,
+                                    example="10:00 PM",
                                 ),
                             },
                         ),
@@ -1856,7 +1856,7 @@ class Punch_Request(APIView):
                                     ),
                                     "punch_time": openapi.Schema(
                                         type=openapi.TYPE_STRING,
-                                        format=openapi.FORMAT_DATETIME,
+                                        example="10:00 AM",
                                     ),
                                     "description": openapi.Schema(
                                         type=openapi.TYPE_STRING
@@ -2107,7 +2107,7 @@ class Punch_Request(APIView):
                 name="punch_time",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
-                format=openapi.FORMAT_DATETIME,
+                example="10:00 AM",
                 required=True,
             ),
             openapi.Parameter(
