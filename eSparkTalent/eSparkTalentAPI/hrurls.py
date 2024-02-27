@@ -27,4 +27,5 @@ urlpatterns=[
     path('hr_changepass/', Change_Password.as_view()),
     path('hr_policy/', Policies.as_view()),
     path('hr_policy_edit/', Policies_Edit.as_view()),
+    path('hr_compcontract/', company_contract.as_view()),
 ]
