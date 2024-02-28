@@ -15,7 +15,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
-
+import json
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -798,7 +798,39 @@ class Hr_Home(APIView):
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
-                        "user_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "user": openapi.Schema(type=openapi.TYPE_STRING),
+                        "company_image": openapi.Schema(type=openapi.TYPE_FILE),
+                        "user_image": openapi.Schema(type=openapi.TYPE_FILE),
+                        "employee_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
+                        "client_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
+                        "leaves_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
+                        "invoices_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
+                        "policies_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
                         "employees": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "clients": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "hiring_requests": openapi.Schema(type=openapi.TYPE_INTEGER),
@@ -823,14 +855,58 @@ class Hr_Home(APIView):
     )
     def get(self, request, *args, **kwargs):
         user = request.user.username
-        record = {
-            "user": user,
-            "employees": employee.objects.all().count(),
-            "clients": client.objects.all().count(),
-            "hiring_requests": hiring_request.objects.all().count(),
-            "interview_schedules": interview_schedule.objects.all().count(),
-        }
-        return Response(record, status=status.HTTP_200_OK)
+        role=request.user.role
+        if role=="super_admin":
+            company=company_data.objects.all()
+            if company:
+                comp_image=company[0].image.path
+            else:
+                comp_image=''
+            record = {
+                "user": user,
+                "company_image":comp_image,
+                "employees": employee.objects.all().count(),
+                "clients": client.objects.all().count(),
+                "hiring_requests": hiring_request.objects.all().count(),
+                "interview_schedules": interview_schedule.objects.all().count(),
+            }
+            return Response(record, status=status.HTTP_200_OK)
+        else:
+            company=company_data.objects.all()
+            try:
+                user_account=account_n_persmission.objects.get(email=request.user)
+                user_image=user_account.image.path,
+                employee_perms=user_account.employee_perms,
+                client_perms=user_account.client_perms,
+                leaves_perms=user_account.leaves_perms,
+                invoices_perms=user_account.invoices_perms,
+                policies_perms=user_account.policies_perms,
+            except:
+                user_image=''
+                employee_perms={}
+                client_perms={}
+                leaves_perms={}
+                invoices_perms={}
+                policies_perms={}
+            if company:
+                comp_image=company[0].image.path
+            else:
+                comp_image=''
+            record = {
+                "user": user,
+                "company_image":comp_image,
+                "user_image":user_image,
+                "employee_perms":employee_perms,
+                "client_perms":client_perms,
+                "leaves_perms":leaves_perms,
+                "invoices_perms":invoices_perms,
+                "policies_perms":policies_perms,
+                "employees": employee.objects.all().count(),
+                "clients": client.objects.all().count(),
+                "hiring_requests": hiring_request.objects.all().count(),
+                "interview_schedules": interview_schedule.objects.all().count(),
+            }
+            return Response(record, status=status.HTTP_200_OK)
 
 
 @authentication_classes([JWTAuthentication])
