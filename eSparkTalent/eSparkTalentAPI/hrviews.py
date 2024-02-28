@@ -3210,6 +3210,7 @@ class company_contract(APIView):
         return Response(
             {"message": "Invalid status parameter"}, status=status.HTTP_400_BAD_REQUEST
         )
+
     @swagger_auto_schema(
         tags=["Comapny Contract"],
         manual_parameters=[
@@ -3252,13 +3253,197 @@ class company_contract(APIView):
             elif get_status == "employees":
                 employee_contract.objects.filter(id=delete_id).delete()
             else:
-                return Response({"message": "Invalid status parameter"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"message": "Invalid status parameter"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-            return Response({"message": "Contract deleted successfully"}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Contract deleted successfully"}, status=status.HTTP_200_OK
+            )
 
         except client_contract.DoesNotExist:
-            return Response({"message": "Client contract not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"message": "Client contract not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
         except employee_contract.DoesNotExist:
-            return Response({"message": "Employee contract not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"message": "Employee contract not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
         except Exception as e:
-            return Response({"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class offshore_contract(APIView):
+    parser_classes = (MultiPartParser,)
+
+    @swagger_auto_schema(
+        tags=["Offshore Contract"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="client_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="employee_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="contract_name",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="date",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="contract_doc",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required=True,
+            ),
+        ],
+        responses={
+            201: "Request created",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        operation_id="1",
+    )
+    def post(self, request, *args, **kwargs):
+        posted_data = request.data
+        serializer = OffshoreContractSerializers(data=posted_data)
+        if serializer.is_valid():
+            offshore_contracts.objects.create(
+                employee_id=serializer.validated_data["employee_id"],
+                client_id=serializer.validated_data["client_id"],
+                contract_name=serializer.validated_data["contract_name"],
+                date=serializer.validated_data["date"],
+                contract_doc=serializer.validated_data["contract_doc"],
+            )
+            return Response(
+                {"message": "offshore contract created successfully"},
+                status=status.HTTP_201_CREATED,
+            )
+        else:
+            return Response(
+                {"message": "Invalid status parameter"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    @swagger_auto_schema(
+        tags=["Offshore Contract"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "contract_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "client_id": openapi.Schema(type=openapi.TYPE_STRING),
+                            "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                            "date": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
+                            ),
+                            "contract_doc": openapi.Schema(type=openapi.TYPE_STRING),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        operation_id="2",
+    )
+    def get(self, request, *args, **kwargs):
+        contracts = offshore_contracts.objects.all()
+        offshore_cont = []
+        for contract in contracts:
+            record = {
+                "id": contract.id,
+                "contract_name": contract.contract_name,
+                "client_id": contract.client_id,
+                "employee_id": contract.employee_id,
+                "date": contract.date,
+                "contract_doc": contract.contract_doc,
+            }
+        offshore_cont.append(record)
+        return Response(str(offshore_cont), status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        tags=["Offshore Contract"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            204: openapi.Response(description="No content"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="Unauthorize"),
+        },
+        operation_summary="Endpoint to delete a offshore contract request.",
+        operation_id="3",
+    )
+    def delete(self, request, *args, **kwargs):
+        delete_id = request.query_params.get("id")
+        try:
+            offshore_contracts.objects.filter(id=delete_id).delete()
+            return Response(
+                {"message": "Offshore Contract deleted successfully"},
+                status=status.HTTP_200_OK,
+            )
+
+        except offshore_contracts.DoesNotExist:
+            return Response(
+                {"message": "offshore contract not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            return Response(
+                {"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
