@@ -249,66 +249,59 @@ class Add_Employee(APIView):
                         password=password,
                     )
 
-                    leave_balance.objects.create(
-                        employee_id=serializer.validated_data["email"],
-                        casual_leaves={
-                            "total": casual_leaves,
-                            "availed": 0,
-                            "balance": casual_leaves,
-                            "status": "enable",
-                        },
-                        sick_leaves={
-                            "total": sick_leaves,
-                            "availed": 0,
-                            "balance": sick_leaves,
-                            "status": "enable",
-                        },
-                        annual_leaves={
-                            "total": annual_leaves,
-                            "availed": 0,
-                            "balance": annual_leaves,
-                            "status": "enable",
-                        },
-                        unpaid_leaves={
-                            "total": unpaid_leaves,
-                            "availed": 0,
-                            "balance": unpaid_leaves,
-                            "status": "enable",
-                        },
-                        hajj_leaves={
-                            "total": hajj_leaves,
-                            "availed": 0,
-                            "balance": hajj_leaves,
-                            "status": "enable",
-                        },
-                        paid_leaves={
-                            "total": paid_leaves,
-                            "availed": 0,
-                            "balance": paid_leaves,
-                            "status": "enable",
-                        },
-                    )
-                    outsource_employees.objects.create(
-                        client_id="talent@esparkconsultants.com",
-                        employee_id=serializer.validated_data["email"],
-                        job_title=serializer.validated_data["job_title"],
-                        country="Pakistan",
-                        role_type=serializer.validated_data["role"],
-                        employment_term="",
-                        joining_date=serializer.validated_data["joining_date"],
-                        salary="",
-                        benefits={},
-                    )
-                    return Response(
-                        {"message": "Resquest created"}, status=status.HTTP_201_CREATED
-                    )
-                except ValidationError as e:
-                    return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
-                except:
-                    return Response(
-                        {"error": "Invalid form fields"},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+                leave_balance.objects.create(
+                    employee_id=serializer.validated_data["email"],
+                    casual_leaves={
+                        "total": casual_leaves,
+                        "availed": 0,
+                        "balance": casual_leaves,
+                        "status": "enable",
+                    },
+                    sick_leaves={
+                        "total": sick_leaves,
+                        "availed": 0,
+                        "balance": sick_leaves,
+                        "status": "enable",
+                    },
+                    annual_leaves={
+                        "total": annual_leaves,
+                        "availed": 0,
+                        "balance": annual_leaves,
+                        "status": "enable",
+                    },
+                    unpaid_leaves={
+                        "total": unpaid_leaves,
+                        "availed": 0,
+                        "balance": unpaid_leaves,
+                        "status": "enable",
+                    },
+                    hajj_leaves={
+                        "total": hajj_leaves,
+                        "availed": 0,
+                        "balance": hajj_leaves,
+                        "status": "enable",
+                    },
+                    paid_leaves={
+                        "total": paid_leaves,
+                        "availed": 0,
+                        "balance": paid_leaves,
+                        "status": "enable",
+                    },
+                )
+                outsource_employees.objects.create(
+                    client_id="talent@esparkconsultants.com",
+                    employee_id=serializer.validated_data["email"],
+                    job_title=serializer.validated_data["job_title"],
+                    country="Pakistan",
+                    role_type=serializer.validated_data["role"],
+                    employment_term="",
+                    joining_date=serializer.validated_data["joining_date"],
+                    salary=0,
+                    benefits={},
+                )
+                return Response(
+                    {"message": "Resquest created"}, status=status.HTTP_201_CREATED
+                )
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -830,7 +823,39 @@ class Hr_Home(APIView):
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
-                        "user_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "user": openapi.Schema(type=openapi.TYPE_STRING),
+                        "company_image": openapi.Schema(type=openapi.TYPE_FILE),
+                        "user_image": openapi.Schema(type=openapi.TYPE_FILE),
+                        "employee_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
+                        "client_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
+                        "leaves_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
+                        "invoices_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
+                        "policies_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
                         "employees": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "clients": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "hiring_requests": openapi.Schema(type=openapi.TYPE_INTEGER),
@@ -855,14 +880,58 @@ class Hr_Home(APIView):
     )
     def get(self, request, *args, **kwargs):
         user = request.user.username
-        record = {
-            "user": user,
-            "employees": employee.objects.all().count(),
-            "clients": client.objects.all().count(),
-            "hiring_requests": hiring_request.objects.all().count(),
-            "interview_schedules": interview_schedule.objects.all().count(),
-        }
-        return Response(record, status=status.HTTP_200_OK)
+        role=request.user.role
+        if role=="super_admin":
+            company=company_data.objects.all()
+            if company:
+                comp_image=company[0].image.path
+            else:
+                comp_image=''
+            record = {
+                "user": user,
+                "company_image":comp_image,
+                "employees": employee.objects.all().count(),
+                "clients": client.objects.all().count(),
+                "hiring_requests": hiring_request.objects.all().count(),
+                "interview_schedules": interview_schedule.objects.all().count(),
+            }
+            return Response(record, status=status.HTTP_200_OK)
+        else:
+            company=company_data.objects.all()
+            try:
+                user_account=account_n_persmission.objects.get(email=request.user)
+                user_image=user_account.image.path,
+                employee_perms=user_account.employee_perms,
+                client_perms=user_account.client_perms,
+                leaves_perms=user_account.leaves_perms,
+                invoices_perms=user_account.invoices_perms,
+                policies_perms=user_account.policies_perms,
+            except:
+                user_image=''
+                employee_perms={}
+                client_perms={}
+                leaves_perms={}
+                invoices_perms={}
+                policies_perms={}
+            if company:
+                comp_image=company[0].image.path
+            else:
+                comp_image=''
+            record = {
+                "user": user,
+                "company_image":comp_image,
+                "user_image":user_image,
+                "employee_perms":employee_perms,
+                "client_perms":client_perms,
+                "leaves_perms":leaves_perms,
+                "invoices_perms":invoices_perms,
+                "policies_perms":policies_perms,
+                "employees": employee.objects.all().count(),
+                "clients": client.objects.all().count(),
+                "hiring_requests": hiring_request.objects.all().count(),
+                "interview_schedules": interview_schedule.objects.all().count(),
+            }
+            return Response(record, status=status.HTTP_200_OK)
 
 
 @authentication_classes([JWTAuthentication])
