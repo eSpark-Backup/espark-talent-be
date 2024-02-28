@@ -311,6 +311,7 @@ class leave_request(models.Model):
             valid_pdffile_type(self.attachment.file)
         except ValidationError as e:
             raise ValidationError(e)
+        super().save(*args, **kwargs)
 
 
 class punch_request(models.Model):
@@ -393,6 +394,7 @@ class employee_invoice(models.Model):
             valid_pdffile_type(self.invoice.file)
         except ValidationError as e:
             raise ValidationError(e)
+        super().save(*args, **kwargs)
 
 
 class other_payment(models.Model):
@@ -425,6 +427,7 @@ class other_payment(models.Model):
             valid_pdffile_type(self.invoice.file)
         except ValidationError as e:
             raise ValidationError(e)
+        super().save(*args, **kwargs)
 
 
 class client_contract(models.Model):
@@ -447,6 +450,7 @@ class client_contract(models.Model):
             valid_pdffile_type(self.contract_doc.file)
         except ValidationError as e:
             raise ValidationError(e)
+        super().save(*args, **kwargs)
 
 
 class employee_contract(models.Model):
@@ -469,6 +473,7 @@ class employee_contract(models.Model):
             valid_pdffile_type(self.contract_doc.file)
         except ValidationError as e:
             raise ValidationError(e)
+        super().save(*args, **kwargs)
     
 class offshore_contracts(models.Model):
     id = models.AutoField(primary_key=True)
@@ -491,6 +496,7 @@ class offshore_contracts(models.Model):
             valid_pdffile_type(self.contract_doc.file)
         except ValidationError as e:
             raise ValidationError(e)
+        super().save(*args, **kwargs)
 
 
 class asset(models.Model):
@@ -575,6 +581,7 @@ class policy(models.Model):
             valid_pdffile_type(self.policy_doc.file)
         except ValidationError as e:
             raise ValidationError(e)
+        super().save(*args, **kwargs)
     
 class account_n_persmission(models.Model):
     id = models.AutoField(primary_key=True)
@@ -601,3 +608,4 @@ class account_n_persmission(models.Model):
             valid_imgfile_type(self.image.file)
         except ValidationError as e:
             raise ValidationError(e)
+        super().save(*args, **kwargs)
