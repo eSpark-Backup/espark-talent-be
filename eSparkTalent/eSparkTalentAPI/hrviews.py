@@ -219,34 +219,35 @@ class Add_Employee(APIView):
         if password == confirm_password:
             serializer = EmployeeSerializer(data=posted_data)
             if serializer.is_valid():
-                employee.objects.create(
-                    employee_id=serializer.validated_data["employee_id"],
-                    first_name=serializer.validated_data["first_name"],
-                    last_name=serializer.validated_data["last_name"],
-                    gender=serializer.validated_data["gender"],
-                    dob=serializer.validated_data["dob"],
-                    phone_number=serializer.validated_data["phone_number"],
-                    email=serializer.validated_data["email"],
-                    marital_status=serializer.validated_data["marital_status"],
-                    image=serializer.validated_data["image"],
-                    emergency_no=serializer.validated_data["emergency_no"],
-                    resume=serializer.validated_data["resume"],
-                    emergency_contact=serializer.validated_data["emergency_contact"],
-                    joining_date=serializer.validated_data["joining_date"],
-                    job_title=serializer.validated_data["job_title"],
-                    role=serializer.validated_data["role"],
-                    company=serializer.validated_data["company"],
-                    punch_timings=serializer.validated_data["punch_timings"],
-                )
+                try:
+                    employee.objects.create(
+                        employee_id=serializer.validated_data["employee_id"],
+                        first_name=serializer.validated_data["first_name"],
+                        last_name=serializer.validated_data["last_name"],
+                        gender=serializer.validated_data["gender"],
+                        dob=serializer.validated_data["dob"],
+                        phone_number=serializer.validated_data["phone_number"],
+                        email=serializer.validated_data["email"],
+                        marital_status=serializer.validated_data["marital_status"],
+                        image=serializer.validated_data["image"],
+                        emergency_no=serializer.validated_data["emergency_no"],
+                        resume=serializer.validated_data["resume"],
+                        emergency_contact=serializer.validated_data["emergency_contact"],
+                        joining_date=serializer.validated_data["joining_date"],
+                        job_title=serializer.validated_data["job_title"],
+                        role=serializer.validated_data["role"],
+                        company=serializer.validated_data["company"],
+                        punch_timings=serializer.validated_data["punch_timings"],
+                    )
 
-                end_user.objects.create_user(
-                    username=serializer.validated_data["first_name"]
-                    + " "
-                    + serializer.validated_data["last_name"],
-                    role="employee",
-                    email=serializer.validated_data["email"],
-                    password=password,
-                )
+                    end_user.objects.create_user(
+                        username=serializer.validated_data["first_name"]
+                        + " "
+                        + serializer.validated_data["last_name"],
+                        role="employee",
+                        email=serializer.validated_data["email"],
+                        password=password,
+                    )
 
                 leave_balance.objects.create(
                     employee_id=serializer.validated_data["email"],
@@ -413,27 +414,35 @@ class Add_Client(APIView):
         if password == confirm_password:
             serializer = ClientSerializer(data=posted_data)
             if serializer.is_valid():
-                client.objects.create(
-                    client_id=serializer.validated_data["client_id"],
-                    first_name=serializer.validated_data["first_name"],
-                    last_name=serializer.validated_data["last_name"],
-                    company_name=serializer.validated_data["company_name"],
-                    email=serializer.validated_data["email"],
-                    phone_number=serializer.validated_data["phone_number"],
-                    join_date=serializer.validated_data["join_date"],
-                    country=serializer.validated_data["country"],
-                    address=serializer.validated_data["address"],
-                    image=serializer.validated_data["image"],
-                )
-                end_user.objects.create_user(
-                    username=serializer.validated_data["company_name"],
-                    role="client",
-                    email=serializer.validated_data["email"],
-                    password=password,
-                )
-                return Response(
-                    {"message": "Resquest created"}, status=status.HTTP_201_CREATED
-                )
+                try:
+                    client.objects.create(
+                        client_id=serializer.validated_data["client_id"],
+                        first_name=serializer.validated_data["first_name"],
+                        last_name=serializer.validated_data["last_name"],
+                        company_name=serializer.validated_data["company_name"],
+                        email=serializer.validated_data["email"],
+                        phone_number=serializer.validated_data["phone_number"],
+                        join_date=serializer.validated_data["join_date"],
+                        country=serializer.validated_data["country"],
+                        address=serializer.validated_data["address"],
+                        image=serializer.validated_data["image"],
+                    )
+                    end_user.objects.create_user(
+                        username=serializer.validated_data["company_name"],
+                        role="client",
+                        email=serializer.validated_data["email"],
+                        password=password,
+                    )
+                    return Response(
+                        {"message": "Resquest created"}, status=status.HTTP_201_CREATED
+                    )
+                except ValidationError as e:
+                    return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+                except:
+                    return Response(
+                        {"error": "Invalid form fields"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -583,18 +592,26 @@ class Employee_Invoice(APIView):
             serializer = EmployeeInvoiceSerializer(data=posted_data)
 
             if serializer.is_valid():
-                employee_invoice.objects.create(
-                    client_id=serializer.validated_data["client_id"],
-                    employee_id=serializer.validated_data["employee_id"],
-                    invoice_date=serializer.validated_data["invoice_date"],
-                    due_date=serializer.validated_data["due_date"],
-                    invoice_amount=serializer.validated_data["invoice_amount"],
-                    payment_status=serializer.validated_data["payment_status"],
-                    invoice=serializer.validated_data["invoice"],
-                )
-                return Response(
-                    {"message": "Request created"}, status=status.HTTP_201_CREATED
-                )
+                try:
+                    employee_invoice.objects.create(
+                        client_id=serializer.validated_data["client_id"],
+                        employee_id=serializer.validated_data["employee_id"],
+                        invoice_date=serializer.validated_data["invoice_date"],
+                        due_date=serializer.validated_data["due_date"],
+                        invoice_amount=serializer.validated_data["invoice_amount"],
+                        payment_status=serializer.validated_data["payment_status"],
+                        invoice=serializer.validated_data["invoice"],
+                    )
+                    return Response(
+                        {"message": "Request created"}, status=status.HTTP_201_CREATED
+                    )
+                except ValidationError as e:
+                    return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+                except:
+                    return Response(
+                        {"error": "Invalid form fields"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except ObjectDoesNotExist:
@@ -724,18 +741,26 @@ class Other_Payment(APIView):
     def post(self, request, *args, **kwargs):
         serializer = OtherPaymentSerializer(data=request.data)
         if serializer.is_valid():
-            other_payment.objects.create(
-                client_id=serializer.validated_data["client_id"],
-                invoice_reference=serializer.validated_data["invoice_reference"],
-                invoice_date=serializer.validated_data["invoice_date"],
-                due_date=serializer.validated_data["due_date"],
-                invoice_amount=serializer.validated_data["invoice_amount"],
-                payment_status=serializer.validated_data["payment_status"],
-                invoice=serializer.validated_data["invoice"],
-            )
-            return Response(
-                {"message": "Resquest created"}, status=status.HTTP_201_CREATED
-            )
+            try:
+                other_payment.objects.create(
+                    client_id=serializer.validated_data["client_id"],
+                    invoice_reference=serializer.validated_data["invoice_reference"],
+                    invoice_date=serializer.validated_data["invoice_date"],
+                    due_date=serializer.validated_data["due_date"],
+                    invoice_amount=serializer.validated_data["invoice_amount"],
+                    payment_status=serializer.validated_data["payment_status"],
+                    invoice=serializer.validated_data["invoice"],
+                )
+                return Response(
+                    {"message": "Resquest created"}, status=status.HTTP_201_CREATED
+                )
+            except ValidationError as e:
+                return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+            except:
+                return Response(
+                    {"error": "Invalid form fields"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1471,7 +1496,10 @@ class Update_Emp_Profile_Pic(APIView):
 
         for key in updates:
             setattr(emp_record, key, updates[key])
-        emp_record.save()
+        try:
+            emp_record.save()
+        except ValidationError as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_200_OK)
 
 
@@ -2285,7 +2313,10 @@ class Hr_Client(APIView):
 
         for key in updates:
             setattr(client_record, key, updates[key])
-        client_record.save()
+        try:
+            client_record.save()
+        except ValidationError as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_200_OK)
 
 
@@ -2394,7 +2425,15 @@ class Company_Settings(APIView):
                 comp_data = company_data.objects.all()[0]
                 for key in updates:
                     setattr(comp_data, key, updates[key])
-                comp_data.save()
+                try:
+                    comp_data.save()                
+                except ValidationError as e:
+                    return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+                except:
+                    return Response(
+                        {"error": "Invalid form fields"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
                 return Response(status=status.HTTP_200_OK)
             except:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -2409,6 +2448,8 @@ class Company_Settings(APIView):
                         image=serializer.validated_data["image"],
                     )
                     return Response(status=status.HTTP_201_CREATED)
+                except ValidationError as e:
+                    return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
                 except:
                     return Response(
                         {"error": "Invalid form fields"},
@@ -2583,7 +2624,7 @@ class Accounts(APIView):
                                 "write": False,
                                 "delete": False,
                                 "download": False,
-                            },
+                            }
                         )
 
                         end_user.objects.create_user(
@@ -2594,6 +2635,10 @@ class Accounts(APIView):
                         )
 
                         return Response(status=status.HTTP_201_CREATED)
+                    except ValidationError as e:
+                        return Response(
+                            {"error": e}, status=status.HTTP_400_BAD_REQUEST
+                        )
                     except:
                         return Response(
                             {"error": "Invalid form fields"},
@@ -3001,15 +3046,25 @@ class Policies(APIView):
     def post(self, request, *args, **kwargs):
         serializer = PolicySerializer(data=request.data)
         if serializer.is_valid():
-            policy.objects.create(
-                policy_name=serializer.validated_data["policy_name"],
-                policy_doc=serializer.validated_data["policy_doc"],
-                employee=False,
-                client=False,
-            )
-            return Response(
-                {"message": "Resquest created"}, status=status.HTTP_201_CREATED
-            )
+            try:
+                policy.objects.create(
+                    policy_name=serializer.validated_data["policy_name"],
+                    policy_doc=serializer.validated_data["policy_doc"],
+                    employee=False,
+                    client=False,
+                )
+                return Response(
+                    {"message": "Resquest created"}, status=status.HTTP_201_CREATED
+                )
+            except ValidationError as e:
+                return Response(
+                    {"error": e}, status=status.HTTP_400_BAD_REQUEST
+                )
+            except:
+                return Response(
+                    {"error": "Invalid form fields"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )            
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
