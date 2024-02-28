@@ -3034,7 +3034,7 @@ class Policies_Edit(APIView):
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-class company_contract(APIView):
+class Company_Contract(APIView):
     parser_classes = (MultiPartParser,)
 
     @swagger_auto_schema(
@@ -3095,40 +3095,51 @@ class company_contract(APIView):
         get_status = request.query_params.get("status")
         if get_status:
             if get_status == "clients":
-                serializer = ClientContractSerializers(data=posted_data)
-                if serializer.is_valid():
-                    client_contract.objects.create(
-                        client_id=serializer.validated_data["client_id"],
-                        contract_name=serializer.validated_data["contract_name"],
-                        date=serializer.validated_data["date"],
-                        contract_doc=serializer.validated_data["contract_doc"],
-                    )
+                try:
+                    serializer = ClientContractSerializers(data=posted_data)
+                    if serializer.is_valid():
+                        client_contract.objects.create(
+                            client_id=serializer.validated_data["client_id"],
+                            contract_name=serializer.validated_data["contract_name"],
+                            date=serializer.validated_data["date"],
+                            contract_doc=serializer.validated_data["contract_doc"],
+                        )
+                        return Response(
+                            {"message": "Client contract created successfully"},
+                            status=status.HTTP_201_CREATED,
+                        )
+                    else:
+                        return Response(
+                            serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                        )
+                except serializers.ValidationError as e:
                     return Response(
-                        {"message": "Client contract created successfully"},
-                        status=status.HTTP_201_CREATED,
-                    )
-                else:
-                    return Response(
-                        serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                        {"message": "Invalid client contract data", "errors": e.detail},
+                        status=status.HTTP_400_BAD_REQUEST,
                     )
             elif get_status == "employees":
-                serializer = EmployeeContractSerializers(data=posted_data)
-                if serializer.is_valid():
-                    employee_contract.objects.create(
-                        employee_id=serializer.validated_data["employee_id"],
-                        contract_name=serializer.validated_data["contract_name"],
-                        date=serializer.validated_data["date"],
-                        contract_doc=serializer.validated_data["contract_doc"],
-                    )
+                try:
+                    serializer = EmployeeContractSerializers(data=posted_data)
+                    if serializer.is_valid():
+                        employee_contract.objects.create(
+                            employee_id=serializer.validated_data["employee_id"],
+                            contract_name=serializer.validated_data["contract_name"],
+                            date=serializer.validated_data["date"],
+                            contract_doc=serializer.validated_data["contract_doc"],
+                        )
+                        return Response(
+                            {"message": "Employee contract created successfully"},
+                            status=status.HTTP_201_CREATED,
+                        )
+                    else:
+                        return Response(
+                            serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                        )
+                except serializers.ValidationError as e:
                     return Response(
-                        {"message": "Employee contract created successfully"},
-                        status=status.HTTP_201_CREATED,
+                        {"message": "Invalid client contract data", "errors": e.detail},
+                        status=status.HTTP_400_BAD_REQUEST,
                     )
-                else:
-                    return Response(
-                        serializer.errors, status=status.HTTP_400_BAD_REQUEST
-                    )
-
         return Response(
             {"message": "Invalid status parameter"}, status=status.HTTP_400_BAD_REQUEST
         )
@@ -3161,8 +3172,7 @@ class company_contract(APIView):
                         properties={
                             "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "contract_name": openapi.Schema(type=openapi.TYPE_STRING),
-                            "client_id": openapi.Schema(type=openapi.TYPE_STRING),
-                            "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                            "client_id/employee_id": openapi.Schema(type=openapi.TYPE_STRING),
                             "date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
@@ -3188,9 +3198,10 @@ class company_contract(APIView):
                         "contract_name": contract.contract_name,
                         "client_id": contract.client_id,
                         "date": contract.date,
-                        "contract_doc": contract.contract_doc,
+                        "contract_doc": contract.contract_doc.path,
                     }
-                client_cont.append(record)
+                if not client_cont:
+                    return Response({"message": "No client contracts available"}, status=status.HTTP_204_NO_CONTENT)
                 return Response(str(client_cont), status=status.HTTP_200_OK)
 
             elif get_status == "employees":
@@ -3202,11 +3213,12 @@ class company_contract(APIView):
                         "contract_name": contract.contract_name,
                         "employee_id": contract.employee_id,
                         "date": contract.date,
-                        "contract_doc": contract.contract_doc,
+                        "contract_doc": contract.contract_doc.path,
                     }
                 employee_cont.append(record)
+                if not employee_cont:
+                    return Response({"message": "No employee contracts available"}, status=status.HTTP_204_NO_CONTENT)
                 return Response(str(employee_cont), status=status.HTTP_200_OK)
-
         return Response(
             {"message": "Invalid status parameter"}, status=status.HTTP_400_BAD_REQUEST
         )
@@ -3280,7 +3292,7 @@ class company_contract(APIView):
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-class offshore_contract(APIView):
+class Offshore_Contract(APIView):
     parser_classes = (MultiPartParser,)
 
     @swagger_auto_schema(
@@ -3296,12 +3308,14 @@ class offshore_contract(APIView):
                 name="client_id",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
                 required=True,
             ),
             openapi.Parameter(
                 name="employee_id",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
                 required=True,
             ),
             openapi.Parameter(
@@ -3333,24 +3347,30 @@ class offshore_contract(APIView):
     )
     def post(self, request, *args, **kwargs):
         posted_data = request.data
-        serializer = OffshoreContractSerializers(data=posted_data)
-        if serializer.is_valid():
-            offshore_contracts.objects.create(
-                employee_id=serializer.validated_data["employee_id"],
-                client_id=serializer.validated_data["client_id"],
-                contract_name=serializer.validated_data["contract_name"],
-                date=serializer.validated_data["date"],
-                contract_doc=serializer.validated_data["contract_doc"],
-            )
-            return Response(
-                {"message": "offshore contract created successfully"},
-                status=status.HTTP_201_CREATED,
-            )
-        else:
-            return Response(
-                {"message": "Invalid status parameter"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        try:
+            serializer = OffshoreContractSerializers(data=posted_data)
+            if serializer.is_valid():
+                offshore_contracts.objects.create(
+                    employee_id=serializer.validated_data["employee_id"],
+                    client_id=serializer.validated_data["client_id"],
+                    contract_name=serializer.validated_data["contract_name"],
+                    date=serializer.validated_data["date"],
+                    contract_doc=serializer.validated_data["contract_doc"],
+                )
+                return Response(
+                    {"message": "offshore contract created successfully"},
+                    status=status.HTTP_201_CREATED,
+                )
+            else:
+                return Response(
+                    {"message": "Invalid status parameter"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except serializers.ValidationError as e:
+                    return Response(
+                        {"message": "Invalid offshore contract data", "errors": e.detail},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
     @swagger_auto_schema(
         tags=["Offshore Contract"],
@@ -3398,11 +3418,13 @@ class offshore_contract(APIView):
                 "client_id": contract.client_id,
                 "employee_id": contract.employee_id,
                 "date": contract.date,
-                "contract_doc": contract.contract_doc,
+                "contract_doc": contract.contract_doc.path,
             }
         offshore_cont.append(record)
+        if not offshore_cont:
+            return Response({"message": "No offshore contracts available"}, status=status.HTTP_204_NO_CONTENT)
         return Response(str(offshore_cont), status=status.HTTP_200_OK)
-
+    
     @swagger_auto_schema(
         tags=["Offshore Contract"],
         manual_parameters=[
