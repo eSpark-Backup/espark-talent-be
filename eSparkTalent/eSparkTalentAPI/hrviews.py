@@ -249,59 +249,66 @@ class Add_Employee(APIView):
                         password=password,
                     )
 
-                leave_balance.objects.create(
-                    employee_id=serializer.validated_data["email"],
-                    casual_leaves={
-                        "total": casual_leaves,
-                        "availed": 0,
-                        "balance": casual_leaves,
-                        "status": "enable",
-                    },
-                    sick_leaves={
-                        "total": sick_leaves,
-                        "availed": 0,
-                        "balance": sick_leaves,
-                        "status": "enable",
-                    },
-                    annual_leaves={
-                        "total": annual_leaves,
-                        "availed": 0,
-                        "balance": annual_leaves,
-                        "status": "enable",
-                    },
-                    unpaid_leaves={
-                        "total": unpaid_leaves,
-                        "availed": 0,
-                        "balance": unpaid_leaves,
-                        "status": "enable",
-                    },
-                    hajj_leaves={
-                        "total": hajj_leaves,
-                        "availed": 0,
-                        "balance": hajj_leaves,
-                        "status": "enable",
-                    },
-                    paid_leaves={
-                        "total": paid_leaves,
-                        "availed": 0,
-                        "balance": paid_leaves,
-                        "status": "enable",
-                    },
-                )
-                outsource_employees.objects.create(
-                    client_id="talent@esparkconsultants.com",
-                    employee_id=serializer.validated_data["email"],
-                    job_title=serializer.validated_data["job_title"],
-                    country="Pakistan",
-                    role_type=serializer.validated_data["role"],
-                    employment_term="",
-                    joining_date=serializer.validated_data["joining_date"],
-                    salary=0,
-                    benefits={},
-                )
-                return Response(
-                    {"message": "Resquest created"}, status=status.HTTP_201_CREATED
-                )
+                    leave_balance.objects.create(
+                        employee_id=serializer.validated_data["email"],
+                        casual_leaves={
+                            "total": casual_leaves,
+                            "availed": 0,
+                            "balance": casual_leaves,
+                            "status": "enable",
+                        },
+                        sick_leaves={
+                            "total": sick_leaves,
+                            "availed": 0,
+                            "balance": sick_leaves,
+                            "status": "enable",
+                        },
+                        annual_leaves={
+                            "total": annual_leaves,
+                            "availed": 0,
+                            "balance": annual_leaves,
+                            "status": "enable",
+                        },
+                        unpaid_leaves={
+                            "total": unpaid_leaves,
+                            "availed": 0,
+                            "balance": unpaid_leaves,
+                            "status": "enable",
+                        },
+                        hajj_leaves={
+                            "total": hajj_leaves,
+                            "availed": 0,
+                            "balance": hajj_leaves,
+                            "status": "enable",
+                        },
+                        paid_leaves={
+                            "total": paid_leaves,
+                            "availed": 0,
+                            "balance": paid_leaves,
+                            "status": "enable",
+                        },
+                    )
+                    outsource_employees.objects.create(
+                        client_id="talent@esparkconsultants.com",
+                        employee_id=serializer.validated_data["email"],
+                        job_title=serializer.validated_data["job_title"],
+                        country="Pakistan",
+                        role_type=serializer.validated_data["role"],
+                        employment_term="",
+                        joining_date=serializer.validated_data["joining_date"],
+                        salary=0,
+                        benefits={},
+                    )
+                    return Response(
+                        {"message": "Resquest created"}, status=status.HTTP_201_CREATED
+                    )
+                except ValidationError as e:
+                    return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+                except:
+                    return Response(
+                        {"error": "Invalid form fields"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -2500,7 +2507,7 @@ class Accounts(APIView):
             204: openapi.Response(description="No content"),
             401: openapi.Response(description="Unauthorized"),
         },
-        operation_id=".",
+        operation_id="1",
         operation_summary="Endpoint to retrieve accounts data",
     )
     def get(self, request, *args, **kwargs):
@@ -2573,7 +2580,7 @@ class Accounts(APIView):
             ),
         ],
         operation_summary="Endpoint to create accounts record.",
-        operation_id=".",
+        operation_id="2",
     )
     def post(self, request, *args, **kwargs):
         try:
@@ -2659,7 +2666,7 @@ class Accounts(APIView):
             )
 
     @swagger_auto_schema(
-        tags=["Settings : Accounts"],
+        tags=["Settings: Accounts"],
         manual_parameters=[
             openapi.Parameter(
                 "id",
@@ -2681,7 +2688,7 @@ class Accounts(APIView):
             401: openapi.Response(description="Unauthorize"),
         },
         operation_summary="Endpoint to delete an account.",
-        operation_id=".",
+        operation_id="3",
     )
     def delete(self, request, *args, **kwargs):
         id = request.query_params.get("id")
@@ -2842,7 +2849,7 @@ class Roles_n_Permissions(APIView):
             204: openapi.Response(description="Bad request"),
             401: openapi.Response(description="Unauthorized"),
         },
-        operation_id=".",
+        operation_id="1",
         operation_summary="Endpoint to retrieve account data",
     )
     def get(self, request, *args, **kwargs):
@@ -2941,7 +2948,7 @@ class Roles_n_Permissions(APIView):
             ),
         ],
         operation_summary="Endpoint to update permissions record.",
-        operation_id=".",
+        operation_id="2",
     )
     def patch(self, request, *args, **kwargs):
         id = request.query_params.get("id")
