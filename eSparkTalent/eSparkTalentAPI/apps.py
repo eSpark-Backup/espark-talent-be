@@ -6,8 +6,8 @@ class EsparktalentapiConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'eSparkTalentAPI'
 
-    def ready(self):
-        from .threads import Check_Punches
-        thread = threading.Thread(target=Check_Punches().check_punch)
-        thread.setDaemon(True)
-        thread.start()
+    # def ready(self):
+    #     from .threads import Check_Punches
+    #     thread = threading.Thread(target=Check_Punches().check_punch)
+    #     thread.setDaemon(True)
+    #     thread.start()
