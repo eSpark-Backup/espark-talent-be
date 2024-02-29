@@ -64,9 +64,9 @@ def valid_imgfile_type(file):
         raise ValidationError(
             "Unsupported file type. Only PNG and JPEG images are allowed."
         )
-    limit = 2 * 1024 * 1024
+    limit = 5 * 1024 * 1024
     if file.size > limit:
-        raise ValidationError("File too large. Size should not exceed 2 MB.")
+        raise ValidationError("File too large. Size should not exceed 5 MB.")
 
 
 pdf_ext_valid = FileExtensionValidator(["pdf"])
@@ -77,9 +77,9 @@ def valid_pdffile_type(file):
     file_type = magic.from_buffer(file.read(1024), mime=True)
     if file_type not in accept:
         raise ValidationError("Unsupported file type. Only PDFs are allowed.")
-    limit = 2 * 1024 * 1024
+    limit = 5 * 1024 * 1024
     if file.size > limit:
-        raise ValidationError("File too large. Size should not exceed 2 MB.")
+        raise ValidationError("File too large. Size should not exceed 5 MB.")
 
 
 ext_valid = FileExtensionValidator(["png", "jpg", "pdf"])
@@ -92,9 +92,9 @@ def valid_file_type(file):
         raise ValidationError(
             "Unsupported file type. Only PNG JPEG and PDFs are allowed."
         )
-    limit = 2 * 1024 * 1024
+    limit = 5 * 1024 * 1024
     if file.size > limit:
-        raise ValidationError("File too large. Size should not exceed 2 MB.")
+        raise ValidationError("File too large. Size should not exceed 5 MB.")
 
 
 class employee(models.Model):
@@ -131,6 +131,16 @@ class employee(models.Model):
         return f"{self.email} - {self.id}"
 
     def save(self, *args, **kwargs):
+        try:
+            file_content = self.image.file.seek(0)
+            valid_imgfile_type(self.image.file)
+        except ValidationError as e:
+            raise ValidationError(e)
+        try:
+            file_content = self.resume.file.seek(0)
+            valid_pdffile_type(self.resume.file)
+        except ValidationError as e:
+            raise ValidationError(e)
         # Delete the old image when updating
         try:
             old_employee = employee.objects.get(id=self.id)
@@ -167,6 +177,11 @@ class client(models.Model):
         return f"{self.email} - {self.id}"
 
     def save(self, *args, **kwargs):
+        try:
+            file_content = self.image.file.seek(0)
+            valid_imgfile_type(self.image.file)
+        except ValidationError as e:
+            raise ValidationError(e)
         try:
             old_client = client.objects.get(id=self.id)
             if old_client.image.name != self.image.name:
@@ -290,6 +305,14 @@ class leave_request(models.Model):
     def __str__(self):
         return f"{self.client_id} - {self.employee_id} - {self.id}"
 
+    def save(self, *args, **kwargs):
+        try:
+            file_content = self.attachment.file.seek(0)
+            valid_pdffile_type(self.attachment.file)
+        except ValidationError as e:
+            raise ValidationError(e)
+        super().save(*args, **kwargs)
+
 
 class punch_request(models.Model):
     punch_type = [("check_in", "check_in"), ("check_out", "check_out")]
@@ -365,6 +388,14 @@ class employee_invoice(models.Model):
     def __str__(self):
         return f"{self.client_id} - {self.employee_id} - {self.id}"
 
+    def save(self, *args, **kwargs):
+        try:
+            file_content = self.invoice.file.seek(0)
+            valid_pdffile_type(self.invoice.file)
+        except ValidationError as e:
+            raise ValidationError(e)
+        super().save(*args, **kwargs)
+
 
 class other_payment(models.Model):
     payment_status = [
@@ -390,6 +421,14 @@ class other_payment(models.Model):
     def __str__(self):
         return f"{self.client_id} - {self.id}"
 
+    def save(self, *args, **kwargs):
+        try:
+            file_content = self.invoice.file.seek(0)
+            valid_pdffile_type(self.invoice.file)
+        except ValidationError as e:
+            raise ValidationError(e)
+        super().save(*args, **kwargs)
+
 
 class client_contract(models.Model):
     id = models.AutoField(primary_key=True)
@@ -405,6 +444,14 @@ class client_contract(models.Model):
     def __str__(self):
         return f"{self.client_id} - {self.id}"
 
+    def save(self, *args, **kwargs):
+        try:
+            file_content = self.contract_doc.file.seek(0)
+            valid_pdffile_type(self.contract_doc.file)
+        except ValidationError as e:
+            raise ValidationError(e)
+        super().save(*args, **kwargs)
+
 
 class employee_contract(models.Model):
     id = models.AutoField(primary_key=True)
@@ -419,6 +466,14 @@ class employee_contract(models.Model):
 
     def __str__(self):
         return f"{self.employee_id}  - {self.id}"
+
+    def save(self, *args, **kwargs):
+        try:
+            file_content = self.contract_doc.file.seek(0)
+            valid_pdffile_type(self.contract_doc.file)
+        except ValidationError as e:
+            raise ValidationError(e)
+        super().save(*args, **kwargs)
     
 class offshore_contracts(models.Model):
     id = models.AutoField(primary_key=True)
@@ -434,6 +489,14 @@ class offshore_contracts(models.Model):
 
     def __str__(self):
         return f"{self.employee_id}  - {self.client_id} - {self.id}"
+
+    def save(self, *args, **kwargs):
+        try:
+            file_content = self.contract_doc.file.seek(0)
+            valid_pdffile_type(self.contract_doc.file)
+        except ValidationError as e:
+            raise ValidationError(e)
+        super().save(*args, **kwargs)
 
 
 class asset(models.Model):
@@ -483,6 +546,11 @@ class company_data(models.Model):
 
     def save(self, *args, **kwargs):
         try:
+            file_content = self.image.file.seek(0)
+            valid_imgfile_type(self.image.file)
+        except ValidationError as e:
+            raise ValidationError(e)
+        try:
             old_logo = company_data.objects.get(id=self.id)
             if old_logo.image.name != self.image.name:
                 old_image_path = os.path.join("media", old_logo.image.name)
@@ -506,6 +574,14 @@ class policy(models.Model):
 
     def __str__(self):
         return f"{self.policy_name} - {self.id}"
+
+    def save(self, *args, **kwargs):
+        try:
+            file_content = self.policy_doc.file.seek(0)
+            valid_pdffile_type(self.policy_doc.file)
+        except ValidationError as e:
+            raise ValidationError(e)
+        super().save(*args, **kwargs)
     
 class account_n_persmission(models.Model):
     id = models.AutoField(primary_key=True)
@@ -525,3 +601,11 @@ class account_n_persmission(models.Model):
     
     def __str__(self):
         return f"{self.account_name} - {self.id}"
+
+    def save(self, *args, **kwargs):
+        try:
+            file_content = self.image.file.seek(0)
+            valid_imgfile_type(self.image.file)
+        except ValidationError as e:
+            raise ValidationError(e)
+        super().save(*args, **kwargs)

@@ -1387,11 +1387,16 @@ class UploadPictureView(APIView):
         if picture_file:
             record = client.objects.get(email=user)
             record.image = picture_file
-            record.save()
-            return Response(
-                {"message": "Picture uploaded successfully"},
-                status=status.HTTP_201_CREATED,
-            )
+            try:
+                record.save()
+                return Response(
+                    {"message": "Picture uploaded successfully"},
+                    status=status.HTTP_201_CREATED,
+                )
+            except ValidationError as e:
+                return Response(
+                    {"error": e}, status=status.HTTP_400_BAD_REQUEST
+                )
         else:
             return Response(
                 {"error": "No picture provided"}, status=status.HTTP_400_BAD_REQUEST

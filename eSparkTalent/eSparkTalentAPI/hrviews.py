@@ -16,7 +16,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
-
+import json
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -220,88 +220,96 @@ class Add_Employee(APIView):
         if password == confirm_password:
             serializer = EmployeeSerializer(data=posted_data)
             if serializer.is_valid():
-                employee.objects.create(
-                    employee_id=serializer.validated_data["employee_id"],
-                    first_name=serializer.validated_data["first_name"],
-                    last_name=serializer.validated_data["last_name"],
-                    gender=serializer.validated_data["gender"],
-                    dob=serializer.validated_data["dob"],
-                    phone_number=serializer.validated_data["phone_number"],
-                    email=serializer.validated_data["email"],
-                    marital_status=serializer.validated_data["marital_status"],
-                    image=serializer.validated_data["image"],
-                    emergency_no=serializer.validated_data["emergency_no"],
-                    resume=serializer.validated_data["resume"],
-                    emergency_contact=serializer.validated_data["emergency_contact"],
-                    joining_date=serializer.validated_data["joining_date"],
-                    job_title=serializer.validated_data["job_title"],
-                    role=serializer.validated_data["role"],
-                    company=serializer.validated_data["company"],
-                    punch_timings=serializer.validated_data["punch_timings"],
-                )
+                try:
+                    employee.objects.create(
+                        employee_id=serializer.validated_data["employee_id"],
+                        first_name=serializer.validated_data["first_name"],
+                        last_name=serializer.validated_data["last_name"],
+                        gender=serializer.validated_data["gender"],
+                        dob=serializer.validated_data["dob"],
+                        phone_number=serializer.validated_data["phone_number"],
+                        email=serializer.validated_data["email"],
+                        marital_status=serializer.validated_data["marital_status"],
+                        image=serializer.validated_data["image"],
+                        emergency_no=serializer.validated_data["emergency_no"],
+                        resume=serializer.validated_data["resume"],
+                        emergency_contact=serializer.validated_data["emergency_contact"],
+                        joining_date=serializer.validated_data["joining_date"],
+                        job_title=serializer.validated_data["job_title"],
+                        role=serializer.validated_data["role"],
+                        company=serializer.validated_data["company"],
+                        punch_timings=serializer.validated_data["punch_timings"],
+                    )
 
-                end_user.objects.create_user(
-                    username=serializer.validated_data["first_name"]
-                    + " "
-                    + serializer.validated_data["last_name"],
-                    role="employee",
-                    email=serializer.validated_data["email"],
-                    password=password,
-                )
+                    end_user.objects.create_user(
+                        username=serializer.validated_data["first_name"]
+                        + " "
+                        + serializer.validated_data["last_name"],
+                        role="employee",
+                        email=serializer.validated_data["email"],
+                        password=password,
+                    )
 
-                leave_balance.objects.create(
-                    employee_id=serializer.validated_data["email"],
-                    casual_leaves={
-                        "total": casual_leaves,
-                        "availed": 0,
-                        "balance": casual_leaves,
-                        "status": "enable",
-                    },
-                    sick_leaves={
-                        "total": sick_leaves,
-                        "availed": 0,
-                        "balance": sick_leaves,
-                        "status": "enable",
-                    },
-                    annual_leaves={
-                        "total": annual_leaves,
-                        "availed": 0,
-                        "balance": annual_leaves,
-                        "status": "enable",
-                    },
-                    unpaid_leaves={
-                        "total": unpaid_leaves,
-                        "availed": 0,
-                        "balance": unpaid_leaves,
-                        "status": "enable",
-                    },
-                    hajj_leaves={
-                        "total": hajj_leaves,
-                        "availed": 0,
-                        "balance": hajj_leaves,
-                        "status": "enable",
-                    },
-                    paid_leaves={
-                        "total": paid_leaves,
-                        "availed": 0,
-                        "balance": paid_leaves,
-                        "status": "enable",
-                    },
-                )
-                outsource_employees.objects.create(
-                    client_id="talent@esparkconsultants.com",
-                    employee_id=serializer.validated_data["email"],
-                    job_title=serializer.validated_data["job_title"],
-                    country="Pakistan",
-                    role_type=serializer.validated_data["role"],
-                    employment_term="",
-                    joining_date=serializer.validated_data["joining_date"],
-                    salary="",
-                    benefits={},
-                )
-                return Response(
-                    {"message": "Resquest created"}, status=status.HTTP_201_CREATED
-                )
+                    leave_balance.objects.create(
+                        employee_id=serializer.validated_data["email"],
+                        casual_leaves={
+                            "total": casual_leaves,
+                            "availed": 0,
+                            "balance": casual_leaves,
+                            "status": "enable",
+                        },
+                        sick_leaves={
+                            "total": sick_leaves,
+                            "availed": 0,
+                            "balance": sick_leaves,
+                            "status": "enable",
+                        },
+                        annual_leaves={
+                            "total": annual_leaves,
+                            "availed": 0,
+                            "balance": annual_leaves,
+                            "status": "enable",
+                        },
+                        unpaid_leaves={
+                            "total": unpaid_leaves,
+                            "availed": 0,
+                            "balance": unpaid_leaves,
+                            "status": "enable",
+                        },
+                        hajj_leaves={
+                            "total": hajj_leaves,
+                            "availed": 0,
+                            "balance": hajj_leaves,
+                            "status": "enable",
+                        },
+                        paid_leaves={
+                            "total": paid_leaves,
+                            "availed": 0,
+                            "balance": paid_leaves,
+                            "status": "enable",
+                        },
+                    )
+                    outsource_employees.objects.create(
+                        client_id="talent@esparkconsultants.com",
+                        employee_id=serializer.validated_data["email"],
+                        job_title=serializer.validated_data["job_title"],
+                        country="Pakistan",
+                        role_type=serializer.validated_data["role"],
+                        employment_term="",
+                        joining_date=serializer.validated_data["joining_date"],
+                        salary=0,
+                        benefits={},
+                    )
+                    return Response(
+                        {"message": "Resquest created"}, status=status.HTTP_201_CREATED
+                    )
+                except ValidationError as e:
+                    return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+                except:
+                    return Response(
+                        {"error": "Invalid form fields"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -414,27 +422,35 @@ class Add_Client(APIView):
         if password == confirm_password:
             serializer = ClientSerializer(data=posted_data)
             if serializer.is_valid():
-                client.objects.create(
-                    client_id=serializer.validated_data["client_id"],
-                    first_name=serializer.validated_data["first_name"],
-                    last_name=serializer.validated_data["last_name"],
-                    company_name=serializer.validated_data["company_name"],
-                    email=serializer.validated_data["email"],
-                    phone_number=serializer.validated_data["phone_number"],
-                    join_date=serializer.validated_data["join_date"],
-                    country=serializer.validated_data["country"],
-                    address=serializer.validated_data["address"],
-                    image=serializer.validated_data["image"],
-                )
-                end_user.objects.create_user(
-                    username=serializer.validated_data["company_name"],
-                    role="client",
-                    email=serializer.validated_data["email"],
-                    password=password,
-                )
-                return Response(
-                    {"message": "Resquest created"}, status=status.HTTP_201_CREATED
-                )
+                try:
+                    client.objects.create(
+                        client_id=serializer.validated_data["client_id"],
+                        first_name=serializer.validated_data["first_name"],
+                        last_name=serializer.validated_data["last_name"],
+                        company_name=serializer.validated_data["company_name"],
+                        email=serializer.validated_data["email"],
+                        phone_number=serializer.validated_data["phone_number"],
+                        join_date=serializer.validated_data["join_date"],
+                        country=serializer.validated_data["country"],
+                        address=serializer.validated_data["address"],
+                        image=serializer.validated_data["image"],
+                    )
+                    end_user.objects.create_user(
+                        username=serializer.validated_data["company_name"],
+                        role="client",
+                        email=serializer.validated_data["email"],
+                        password=password,
+                    )
+                    return Response(
+                        {"message": "Resquest created"}, status=status.HTTP_201_CREATED
+                    )
+                except ValidationError as e:
+                    return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+                except:
+                    return Response(
+                        {"error": "Invalid form fields"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -584,18 +600,26 @@ class Employee_Invoice(APIView):
             serializer = EmployeeInvoiceSerializer(data=posted_data)
 
             if serializer.is_valid():
-                employee_invoice.objects.create(
-                    client_id=serializer.validated_data["client_id"],
-                    employee_id=serializer.validated_data["employee_id"],
-                    invoice_date=serializer.validated_data["invoice_date"],
-                    due_date=serializer.validated_data["due_date"],
-                    invoice_amount=serializer.validated_data["invoice_amount"],
-                    payment_status=serializer.validated_data["payment_status"],
-                    invoice=serializer.validated_data["invoice"],
-                )
-                return Response(
-                    {"message": "Request created"}, status=status.HTTP_201_CREATED
-                )
+                try:
+                    employee_invoice.objects.create(
+                        client_id=serializer.validated_data["client_id"],
+                        employee_id=serializer.validated_data["employee_id"],
+                        invoice_date=serializer.validated_data["invoice_date"],
+                        due_date=serializer.validated_data["due_date"],
+                        invoice_amount=serializer.validated_data["invoice_amount"],
+                        payment_status=serializer.validated_data["payment_status"],
+                        invoice=serializer.validated_data["invoice"],
+                    )
+                    return Response(
+                        {"message": "Request created"}, status=status.HTTP_201_CREATED
+                    )
+                except ValidationError as e:
+                    return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+                except:
+                    return Response(
+                        {"error": "Invalid form fields"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except ObjectDoesNotExist:
@@ -725,18 +749,26 @@ class Other_Payment(APIView):
     def post(self, request, *args, **kwargs):
         serializer = OtherPaymentSerializer(data=request.data)
         if serializer.is_valid():
-            other_payment.objects.create(
-                client_id=serializer.validated_data["client_id"],
-                invoice_reference=serializer.validated_data["invoice_reference"],
-                invoice_date=serializer.validated_data["invoice_date"],
-                due_date=serializer.validated_data["due_date"],
-                invoice_amount=serializer.validated_data["invoice_amount"],
-                payment_status=serializer.validated_data["payment_status"],
-                invoice=serializer.validated_data["invoice"],
-            )
-            return Response(
-                {"message": "Resquest created"}, status=status.HTTP_201_CREATED
-            )
+            try:
+                other_payment.objects.create(
+                    client_id=serializer.validated_data["client_id"],
+                    invoice_reference=serializer.validated_data["invoice_reference"],
+                    invoice_date=serializer.validated_data["invoice_date"],
+                    due_date=serializer.validated_data["due_date"],
+                    invoice_amount=serializer.validated_data["invoice_amount"],
+                    payment_status=serializer.validated_data["payment_status"],
+                    invoice=serializer.validated_data["invoice"],
+                )
+                return Response(
+                    {"message": "Resquest created"}, status=status.HTTP_201_CREATED
+                )
+            except ValidationError as e:
+                return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+            except:
+                return Response(
+                    {"error": "Invalid form fields"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -799,7 +831,39 @@ class Hr_Home(APIView):
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
-                        "user_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "user": openapi.Schema(type=openapi.TYPE_STRING),
+                        "company_image": openapi.Schema(type=openapi.TYPE_FILE),
+                        "user_image": openapi.Schema(type=openapi.TYPE_FILE),
+                        "employee_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
+                        "client_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
+                        "leaves_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
+                        "invoices_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
+                        "policies_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
+                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        }),
                         "employees": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "clients": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "hiring_requests": openapi.Schema(type=openapi.TYPE_INTEGER),
@@ -824,14 +888,58 @@ class Hr_Home(APIView):
     )
     def get(self, request, *args, **kwargs):
         user = request.user.username
-        record = {
-            "user": user,
-            "employees": employee.objects.all().count(),
-            "clients": client.objects.all().count(),
-            "hiring_requests": hiring_request.objects.all().count(),
-            "interview_schedules": interview_schedule.objects.all().count(),
-        }
-        return Response(record, status=status.HTTP_200_OK)
+        role=request.user.role
+        if role=="super_admin":
+            company=company_data.objects.all()
+            if company:
+                comp_image=company[0].image.path
+            else:
+                comp_image=''
+            record = {
+                "user": user,
+                "company_image":comp_image,
+                "employees": employee.objects.all().count(),
+                "clients": client.objects.all().count(),
+                "hiring_requests": hiring_request.objects.all().count(),
+                "interview_schedules": interview_schedule.objects.all().count(),
+            }
+            return Response(record, status=status.HTTP_200_OK)
+        else:
+            company=company_data.objects.all()
+            try:
+                user_account=account_n_persmission.objects.get(email=request.user)
+                user_image=user_account.image.path,
+                employee_perms=user_account.employee_perms,
+                client_perms=user_account.client_perms,
+                leaves_perms=user_account.leaves_perms,
+                invoices_perms=user_account.invoices_perms,
+                policies_perms=user_account.policies_perms,
+            except:
+                user_image=''
+                employee_perms={}
+                client_perms={}
+                leaves_perms={}
+                invoices_perms={}
+                policies_perms={}
+            if company:
+                comp_image=company[0].image.path
+            else:
+                comp_image=''
+            record = {
+                "user": user,
+                "company_image":comp_image,
+                "user_image":user_image,
+                "employee_perms":employee_perms,
+                "client_perms":client_perms,
+                "leaves_perms":leaves_perms,
+                "invoices_perms":invoices_perms,
+                "policies_perms":policies_perms,
+                "employees": employee.objects.all().count(),
+                "clients": client.objects.all().count(),
+                "hiring_requests": hiring_request.objects.all().count(),
+                "interview_schedules": interview_schedule.objects.all().count(),
+            }
+            return Response(record, status=status.HTTP_200_OK)
 
 
 @authentication_classes([JWTAuthentication])
@@ -1396,7 +1504,10 @@ class Update_Emp_Profile_Pic(APIView):
 
         for key in updates:
             setattr(emp_record, key, updates[key])
-        emp_record.save()
+        try:
+            emp_record.save()
+        except ValidationError as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_200_OK)
 
 
@@ -2210,7 +2321,10 @@ class Hr_Client(APIView):
 
         for key in updates:
             setattr(client_record, key, updates[key])
-        client_record.save()
+        try:
+            client_record.save()
+        except ValidationError as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_200_OK)
 
 
@@ -2319,7 +2433,15 @@ class Company_Settings(APIView):
                 comp_data = company_data.objects.all()[0]
                 for key in updates:
                     setattr(comp_data, key, updates[key])
-                comp_data.save()
+                try:
+                    comp_data.save()                
+                except ValidationError as e:
+                    return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+                except:
+                    return Response(
+                        {"error": "Invalid form fields"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
                 return Response(status=status.HTTP_200_OK)
             except:
                 return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -2334,6 +2456,8 @@ class Company_Settings(APIView):
                         image=serializer.validated_data["image"],
                     )
                     return Response(status=status.HTTP_201_CREATED)
+                except ValidationError as e:
+                    return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
                 except:
                     return Response(
                         {"error": "Invalid form fields"},
@@ -2384,7 +2508,7 @@ class Accounts(APIView):
             204: openapi.Response(description="No content"),
             401: openapi.Response(description="Unauthorized"),
         },
-        operation_id=".",
+        operation_id="1",
         operation_summary="Endpoint to retrieve accounts data",
     )
     def get(self, request, *args, **kwargs):
@@ -2457,7 +2581,7 @@ class Accounts(APIView):
             ),
         ],
         operation_summary="Endpoint to create accounts record.",
-        operation_id=".",
+        operation_id="2",
     )
     def post(self, request, *args, **kwargs):
         try:
@@ -2508,7 +2632,7 @@ class Accounts(APIView):
                                 "write": False,
                                 "delete": False,
                                 "download": False,
-                            },
+                            }
                         )
 
                         end_user.objects.create_user(
@@ -2519,6 +2643,10 @@ class Accounts(APIView):
                         )
 
                         return Response(status=status.HTTP_201_CREATED)
+                    except ValidationError as e:
+                        return Response(
+                            {"error": e}, status=status.HTTP_400_BAD_REQUEST
+                        )
                     except:
                         return Response(
                             {"error": "Invalid form fields"},
@@ -2539,7 +2667,7 @@ class Accounts(APIView):
             )
 
     @swagger_auto_schema(
-        tags=["Settings : Accounts"],
+        tags=["Settings: Accounts"],
         manual_parameters=[
             openapi.Parameter(
                 "id",
@@ -2561,7 +2689,7 @@ class Accounts(APIView):
             401: openapi.Response(description="Unauthorize"),
         },
         operation_summary="Endpoint to delete an account.",
-        operation_id=".",
+        operation_id="3",
     )
     def delete(self, request, *args, **kwargs):
         id = request.query_params.get("id")
@@ -2721,7 +2849,7 @@ class Roles_n_Permissions(APIView):
             204: openapi.Response(description="Bad request"),
             401: openapi.Response(description="Unauthorized"),
         },
-        operation_id=".",
+        operation_id="1",
         operation_summary="Endpoint to retrieve account data",
     )
     def get(self, request, *args, **kwargs):
@@ -2824,7 +2952,7 @@ class Roles_n_Permissions(APIView):
             ),
         ],
         operation_summary="Endpoint to update permissions record.",
-        operation_id=".",
+        operation_id="2",
     )
     def patch(self, request, *args, **kwargs):
         id = request.query_params.get("id")
@@ -2929,15 +3057,25 @@ class Policies(APIView):
     def post(self, request, *args, **kwargs):
         serializer = PolicySerializer(data=request.data)
         if serializer.is_valid():
-            policy.objects.create(
-                policy_name=serializer.validated_data["policy_name"],
-                policy_doc=serializer.validated_data["policy_doc"],
-                employee=False,
-                client=False,
-            )
-            return Response(
-                {"message": "Resquest created"}, status=status.HTTP_201_CREATED
-            )
+            try:
+                policy.objects.create(
+                    policy_name=serializer.validated_data["policy_name"],
+                    policy_doc=serializer.validated_data["policy_doc"],
+                    employee=False,
+                    client=False,
+                )
+                return Response(
+                    {"message": "Resquest created"}, status=status.HTTP_201_CREATED
+                )
+            except ValidationError as e:
+                return Response(
+                    {"error": e}, status=status.HTTP_400_BAD_REQUEST
+                )
+            except:
+                return Response(
+                    {"error": "Invalid form fields"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )            
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
