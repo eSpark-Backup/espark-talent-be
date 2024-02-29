@@ -100,3 +100,18 @@ class PolicySerializer(serializers.ModelSerializer):
     class Meta:
         model = policy
         fields = ["policy_name","policy_doc"]
+
+class ClientContractSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = client_contract
+        fields = "__all__"
+
+class EmployeeContractSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = employee_contract
+        fields = "__all__"
+
+class OffshoreContractSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = offshore_contracts
+        fields = "__all__"

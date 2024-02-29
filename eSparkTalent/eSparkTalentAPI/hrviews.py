@@ -1,3 +1,4 @@
+import json
 from django.http import Http404
 from .models import *
 from rest_framework.views import APIView
@@ -2693,7 +2694,7 @@ class Accounts(APIView):
     def delete(self, request, *args, **kwargs):
         id = request.query_params.get("id")
         try:
-            account=account_n_persmission.objects.get(id=id)
+            account = account_n_persmission.objects.get(id=id)
             end_user.objects.get(email=account.email).delete()
             account.delete()
             return Response(status=status.HTTP_200_OK)
@@ -2765,7 +2766,6 @@ class Change_Password(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Roles_n_Permissions(APIView):
-
     @swagger_auto_schema(
         tags=["Settings: Roles & permissions"],
         manual_parameters=[
@@ -2889,7 +2889,8 @@ class Roles_n_Permissions(APIView):
                         "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
                         "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
                     },
-                ),"client_perms": openapi.Schema(
+                ),
+                "client_perms": openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
                         "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
@@ -2897,7 +2898,8 @@ class Roles_n_Permissions(APIView):
                         "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
                         "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
                     },
-                ),"leaves_perms": openapi.Schema(
+                ),
+                "leaves_perms": openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
                         "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
@@ -2905,7 +2907,8 @@ class Roles_n_Permissions(APIView):
                         "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
                         "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
                     },
-                ),"invoices_perms": openapi.Schema(
+                ),
+                "invoices_perms": openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
                         "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
@@ -2913,7 +2916,8 @@ class Roles_n_Permissions(APIView):
                         "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
                         "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
                     },
-                ),"policies_perms": openapi.Schema(
+                ),
+                "policies_perms": openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
                         "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
@@ -2961,8 +2965,8 @@ class Roles_n_Permissions(APIView):
             return Response(status=status.HTTP_200_OK)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
-        
+
+
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Policies(APIView):
@@ -3152,7 +3156,7 @@ class Policies_Edit(APIView):
     def patch(self, request, *args, **kwargs):
         policy_ids_array = json.loads(request.body)
 
-        for policy_id_json in policy_ids_array['data']:
+        for policy_id_json in policy_ids_array["data"]:
             try:
                 policy_instance = policy.objects.get(id=policy_id_json["id"])
             except policy.DoesNotExist:
@@ -3164,3 +3168,442 @@ class Policies_Edit(APIView):
                 setattr(policy_instance, key, policy_id_json[key])
             policy_instance.save()
         return Response(status=status.HTTP_200_OK)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Company_Contract(APIView):
+    parser_classes = (MultiPartParser,)
+
+    @swagger_auto_schema(
+        tags=["Comapny Contract"],
+        manual_parameters=[
+            openapi.Parameter(
+                "status",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                enum=["clients", "employees"],
+                default="clients",
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="client_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="contract_name",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="date",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="contract_doc",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="employee_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            201: "Request created",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        operation_id="1",
+    )
+    def post(self, request, *args, **kwargs):
+        posted_data = request.data
+        get_status = request.query_params.get("status")
+        if get_status:
+            if get_status == "clients":
+                try:
+                    serializer = ClientContractSerializers(data=posted_data)
+                    if serializer.is_valid():
+                        client_contract.objects.create(
+                            client_id=serializer.validated_data["client_id"],
+                            contract_name=serializer.validated_data["contract_name"],
+                            date=serializer.validated_data["date"],
+                            contract_doc=serializer.validated_data["contract_doc"],
+                        )
+                        return Response(
+                            {"message": "Client contract created successfully"},
+                            status=status.HTTP_201_CREATED,
+                        )
+                    else:
+                        return Response(
+                            serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                        )
+                except serializers.ValidationError as e:
+                    return Response(
+                        {"message": "Invalid client contract data", "errors": e.detail},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            elif get_status == "employees":
+                try:
+                    serializer = EmployeeContractSerializers(data=posted_data)
+                    if serializer.is_valid():
+                        employee_contract.objects.create(
+                            employee_id=serializer.validated_data["employee_id"],
+                            contract_name=serializer.validated_data["contract_name"],
+                            date=serializer.validated_data["date"],
+                            contract_doc=serializer.validated_data["contract_doc"],
+                        )
+                        return Response(
+                            {"message": "Employee contract created successfully"},
+                            status=status.HTTP_201_CREATED,
+                        )
+                    else:
+                        return Response(
+                            serializer.errors, status=status.HTTP_400_BAD_REQUEST
+                        )
+                except serializers.ValidationError as e:
+                    return Response(
+                        {"message": "Invalid client contract data", "errors": e.detail},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+        return Response(
+            {"message": "Invalid status parameter"}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    @swagger_auto_schema(
+        tags=["Comapny Contract"],
+        manual_parameters=[
+            openapi.Parameter(
+                "status",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                enum=["clients", "employees"],
+                default="client",
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "contract_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "client_id/employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                            "date": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
+                            ),
+                            "contract_doc": openapi.Schema(type=openapi.TYPE_STRING),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        operation_id="2",
+    )
+    def get(self, request, *args, **kwargs):
+        get_status = request.query_params.get("status")
+        if get_status:
+            if get_status == "clients":
+                contracts = client_contract.objects.all()
+                client_cont = []
+                for contract in contracts:
+                    record = {
+                        "id": contract.id,
+                        "contract_name": contract.contract_name,
+                        "client_id": contract.client_id,
+                        "date": contract.date,
+                        "contract_doc": contract.contract_doc.path,
+                    }
+                if not client_cont:
+                    return Response({"message": "No client contracts available"}, status=status.HTTP_204_NO_CONTENT)
+                return Response(str(client_cont), status=status.HTTP_200_OK)
+
+            elif get_status == "employees":
+                contracts = employee_contract.objects.all()
+                employee_cont = []
+                for contract in contracts:
+                    record = {
+                        "id": contract.id,
+                        "contract_name": contract.contract_name,
+                        "employee_id": contract.employee_id,
+                        "date": contract.date,
+                        "contract_doc": contract.contract_doc.path,
+                    }
+                employee_cont.append(record)
+                if not employee_cont:
+                    return Response({"message": "No employee contracts available"}, status=status.HTTP_204_NO_CONTENT)
+                return Response(str(employee_cont), status=status.HTTP_200_OK)
+        return Response(
+            {"message": "Invalid status parameter"}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    @swagger_auto_schema(
+        tags=["Comapny Contract"],
+        manual_parameters=[
+            openapi.Parameter(
+                "status",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                enum=["clients", "employees"],
+                default="client",
+            ),
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            204: openapi.Response(description="No content"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="Unauthorize"),
+        },
+        operation_summary="Endpoint to delete a company contract request.",
+        operation_id="3",
+    )
+    def delete(self, request, *args, **kwargs):
+        delete_id = request.query_params.get("id")
+        get_status = request.query_params.get("status")
+        try:
+            if get_status == "clients":
+                client_contract.objects.filter(id=delete_id).delete()
+            elif get_status == "employees":
+                employee_contract.objects.filter(id=delete_id).delete()
+            else:
+                return Response(
+                    {"message": "Invalid status parameter"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            return Response(
+                {"message": "Contract deleted successfully"}, status=status.HTTP_200_OK
+            )
+
+        except client_contract.DoesNotExist:
+            return Response(
+                {"message": "Client contract not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except employee_contract.DoesNotExist:
+            return Response(
+                {"message": "Employee contract not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            return Response(
+                {"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Offshore_Contract(APIView):
+    parser_classes = (MultiPartParser,)
+
+    @swagger_auto_schema(
+        tags=["Offshore Contract"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="client_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="employee_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="contract_name",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="date",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="contract_doc",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required=True,
+            ),
+        ],
+        responses={
+            201: "Request created",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        operation_id="1",
+    )
+    def post(self, request, *args, **kwargs):
+        posted_data = request.data
+        try:
+            serializer = OffshoreContractSerializers(data=posted_data)
+            if serializer.is_valid():
+                offshore_contracts.objects.create(
+                    employee_id=serializer.validated_data["employee_id"],
+                    client_id=serializer.validated_data["client_id"],
+                    contract_name=serializer.validated_data["contract_name"],
+                    date=serializer.validated_data["date"],
+                    contract_doc=serializer.validated_data["contract_doc"],
+                )
+                return Response(
+                    {"message": "offshore contract created successfully"},
+                    status=status.HTTP_201_CREATED,
+                )
+            else:
+                return Response(
+                    {"message": "Invalid status parameter"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except serializers.ValidationError as e:
+                    return Response(
+                        {"message": "Invalid offshore contract data", "errors": e.detail},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+    @swagger_auto_schema(
+        tags=["Offshore Contract"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "contract_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "client_id": openapi.Schema(type=openapi.TYPE_STRING),
+                            "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                            "date": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
+                            ),
+                            "contract_doc": openapi.Schema(type=openapi.TYPE_STRING),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        operation_id="2",
+    )
+    def get(self, request, *args, **kwargs):
+        contracts = offshore_contracts.objects.all()
+        offshore_cont = []
+        for contract in contracts:
+            record = {
+                "id": contract.id,
+                "contract_name": contract.contract_name,
+                "client_id": contract.client_id,
+                "employee_id": contract.employee_id,
+                "date": contract.date,
+                "contract_doc": contract.contract_doc.path,
+            }
+        offshore_cont.append(record)
+        if not offshore_cont:
+            return Response({"message": "No offshore contracts available"}, status=status.HTTP_204_NO_CONTENT)
+        return Response(str(offshore_cont), status=status.HTTP_200_OK)
+    
+    @swagger_auto_schema(
+        tags=["Offshore Contract"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            204: openapi.Response(description="No content"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="Unauthorize"),
+        },
+        operation_summary="Endpoint to delete a offshore contract request.",
+        operation_id="3",
+    )
+    def delete(self, request, *args, **kwargs):
+        delete_id = request.query_params.get("id")
+        try:
+            offshore_contracts.objects.filter(id=delete_id).delete()
+            return Response(
+                {"message": "Offshore Contract deleted successfully"},
+                status=status.HTTP_200_OK,
+            )
+
+        except offshore_contracts.DoesNotExist:
+            return Response(
+                {"message": "offshore contract not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            return Response(
+                {"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
