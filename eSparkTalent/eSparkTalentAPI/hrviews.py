@@ -2157,6 +2157,60 @@ class Hr_Clients(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
+    
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Client_Status_update(APIView):
+    @swagger_auto_schema(
+        tags=["Clients"],
+        responses={
+            201: "Successful update Client Status",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "is_active": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+            },
+            required=[
+               "is_active",    
+            ],
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to update",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        operation_summary="Endpoint to update client status record.",
+        operation_id="3",
+    )
+    def patch(self, request, *args, **kwargs):
+        request_id = request.query_params.get("id")
+        to_update_status = request.data["is_active"]
+        try:
+            update_client_status = end_user.objects.get(id=request_id)
+            if update_client_status:
+                update_client_status.is_active = to_update_status
+                update_client_status.save()
+
+                return Response(status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+    
 
 
 @authentication_classes([JWTAuthentication])
