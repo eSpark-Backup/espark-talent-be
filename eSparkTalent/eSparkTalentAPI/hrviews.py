@@ -991,7 +991,7 @@ class Hr_Employees(APIView):
                 for emp in outsource:
                     try:
                         e_user = employee.objects.get(email=emp.employee_id)
-                        c_user = client.objects.get(email=emp.client_id)
+                        c_user = client.objects.get(email=emp.client_id) 
                         if e_user:
                             record = {
                                 "id": e_user.id,
@@ -1015,7 +1015,7 @@ class Hr_Employees(APIView):
                 for emp in employees:
                     try:
                         e_user = outsource_employees.objects.get(employee_id=emp.email)
-                        if not e_user:
+                        if e_user:
                             record = {
                                 "id": emp.id,
                                 "employee_id": emp.employee_id,
@@ -1060,7 +1060,45 @@ class Hr_Employees(APIView):
 
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
-
+    @swagger_auto_schema(
+        tags=["Employees "],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="Unauthorize"),
+        },
+        operation_summary="Endpoint to delete an employee.",
+        operation_id="3",
+    )      
+    def delete(self, request, *args, **kwargs):
+        try:
+            employee_id = request.query_params.get("id")
+            emp = employee.objects.get(id=employee_id)
+            outsource_emp = outsource_employees.objects.filter(employee_id=emp.email)
+            outsource_emp.delete()
+            client_data = client.objects.filter(email=emp.email)
+            client_data.delete()
+            emp.delete()
+            return Response({"message": "Employee and associated data removed successfully"}, status=status.HTTP_200_OK)
+        except employee.DoesNotExist:
+            return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -3176,7 +3214,7 @@ class Company_Contract(APIView):
     parser_classes = (MultiPartParser,)
 
     @swagger_auto_schema(
-        tags=["Comapny Contract"],
+        tags=["Company Contract"],
         manual_parameters=[
             openapi.Parameter(
                 "status",
