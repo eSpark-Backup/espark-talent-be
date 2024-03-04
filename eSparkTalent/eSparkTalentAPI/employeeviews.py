@@ -444,7 +444,7 @@ class Employee_Home(APIView):
                             "overtime": "-",
                             "status": {
                                 "Present": True,
-                                "Missing": "False",
+                                "Missing": False,
                                 "Absent": False,
                                 "Day Off": False,
                                 "Full Leave": False,
