@@ -3607,3 +3607,63 @@ class Offshore_Contract(APIView):
             return Response(
                 {"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+    
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Invoices(APIView):
+    parser_classes = (MultiPartParser,)
+    @swagger_auto_schema(
+        tags=["Invoices"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "company_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "client_id": openapi.Schema(type=openapi.TYPE_STRING),
+                            "email": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+                            "is_active": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve invoices",
+        operation_id="1",
+    )
+    def get(self, request, *args, **kwargs):
+        client_users = client.objects.all()
+        client_data=[]
+        try:
+            for data in client_users:
+                user=end_user.objects.get(email=data.email)
+                record ={
+                    "id" : data.id,
+                    "company_name" : data.company_name,
+                    "client_id" : data.client_id,
+                    "email": data.email,
+                    "is_active":user.is_active,
+                }
+            client_data.append(record)
+            if not client_data:
+                return Response({"message": "No invoices available"}, status=status.HTTP_204_NO_CONTENT)
+            return Response(str(client_data), status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
