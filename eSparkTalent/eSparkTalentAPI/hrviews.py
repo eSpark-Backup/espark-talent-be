@@ -1060,6 +1060,10 @@ class Hr_Employees(APIView):
 
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
+            
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Hr_Employees_Delete(APIView):
     @swagger_auto_schema(
         tags=["Employees "],
         manual_parameters=[
@@ -1091,23 +1095,21 @@ class Hr_Employees(APIView):
             emp = employee.objects.get(id=employee_id)
             outsource_emp = outsource_employees.objects.filter(employee_id=emp.email)
             outsource_emp.delete()
-            client_data = client.objects.filter(email=emp.email)
-            client_data.delete()
-            asset_data = asset.objects.filter(email=emp.email)
+            asset_data = asset.objects.filter(employee_id=emp.email)
             asset_data.delete()
-            Emp_contract_data = employee_contract.objects.filter(email=emp.email)
+            Emp_contract_data = employee_contract.objects.filter(employee_id=emp.email)
             Emp_contract_data.delete()
-            Emp_invoice_data = employee_invoice.objects.filter(email=emp.email)
+            Emp_invoice_data = employee_invoice.objects.filter(employee_id=emp.email)
             Emp_invoice_data.delete()
-            leave_balance_data = leave_balance.objects.filter(email=emp.email)
+            leave_balance_data = leave_balance.objects.filter(employee_id=emp.email)
             leave_balance_data.delete()
-            leave_request_data = leave_request.objects.filter(email=emp.email)
+            leave_request_data = leave_request.objects.filter(employee_id=emp.email)
             leave_request_data.delete()
-            offshore_data = offshore_contracts.objects.filter(email=emp.email)
+            offshore_data = offshore_contracts.objects.filter(employee_id=emp.email)
             offshore_data.delete()
-            punch_request_data = punch_request.objects.filter(email=emp.email)
+            punch_request_data = punch_request.objects.filter(employee_id=emp.email)
             punch_request_data.delete()
-            time_sheet_data = time_sheet.objects.filter(email=emp.email)
+            time_sheet_data = time_sheet.objects.filter(employee_id=emp.email)
             time_sheet_data.delete()
 
             emp.delete()
