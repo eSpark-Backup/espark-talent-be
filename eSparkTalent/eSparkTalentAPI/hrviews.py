@@ -2210,7 +2210,68 @@ class Client_Status_update(APIView):
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-    
+        
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Client_delete(APIView):
+    @swagger_auto_schema(
+        tags=["Clients"],
+        responses={
+            201: "Successful Client delete from the data base",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to update",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        operation_summary="Endpoint to  client delete from the data base.",
+        operation_id="3",
+    )
+    def delete(self, request, *args, **kwargs):
+        try:
+            client_id = request.query_params.get("id")
+            clt = client.objects.get(id=client_id)
+            outsource_data = outsource_employees.objects.filter(client_id=clt.email)
+            outsource_data.delete()
+            Emp_contract_data = client_contract.objects.filter(client_id=clt.email)
+            Emp_contract_data.delete()
+            Emp_invoice_data = employee_invoice.objects.filter(client_id=clt.email)
+            Emp_invoice_data.delete()
+            hiring_request_data = hiring_request.objects.filter(client_id=clt.email)
+            hiring_request_data.delete()
+            interview_schedule_data = interview_schedule.objects.filter(client_id=clt.email)
+            interview_schedule_data.delete()
+            interview_schedule_data = interview_schedule.objects.filter(client_id=clt.email)
+            interview_schedule_data.delete()
+            offshore_contracts_data = offshore_contracts.objects.filter(client_id=clt.email)
+            offshore_contracts_data.delete()
+            onboarding_data = onboarding.objects.filter(client_id=clt.email)
+            onboarding_data.delete()
+            other_payment_data = other_payment.objects.filter(client_id=clt.email)
+            other_payment_data.delete()
+            punch_request_data = punch_request.objects.filter(client_id=clt.email)
+            punch_request_data.delete()
+            time_sheet_data = time_sheet.objects.filter(client_id=clt.email)
+            time_sheet_data.delete()
+            clt.delete()
+            return Response({"message": "client and associated data removed successfully"}, status=status.HTTP_200_OK)
+        except employee.DoesNotExist:
+            return Response({"error": "client not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @authentication_classes([JWTAuthentication])
