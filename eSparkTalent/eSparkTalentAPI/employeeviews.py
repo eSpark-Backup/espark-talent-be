@@ -1643,9 +1643,14 @@ class Time_Sheet(APIView):
                 }
                 emp = employee.objects.get(email=e_email)
                 clnt = client.objects.get(email=workspace)
-                outsrc_emp = outsource_employees.objects.get(
-                    employee_id=e_email, client_id=workspace
-                )
+                try:
+                    outsrc_emp = outsource_employees.objects.get(
+                        employee_id=e_email, client_id=workspace
+                    )
+                except outsource_employees.DoesNotExist:
+                    outsrc_emp = outsource_employees.objects.get(
+                        employee_id=e_email, client_id="talent@esparkconsultants.com"
+                    )
 
                 employee_details = {
                     "employee_id": emp.employee_id,
@@ -1762,9 +1767,14 @@ class Time_Sheet(APIView):
 
                 emp = employee.objects.get(email=e_email)
                 clnt = client.objects.get(email=workspace)
-                outsrc_emp = outsource_employees.objects.get(
-                    employee_id=e_email, client_id=workspace
-                )
+                try:
+                    outsrc_emp = outsource_employees.objects.get(
+                        employee_id=e_email, client_id=workspace
+                    )
+                except outsource_employees.DoesNotExist:
+                    outsrc_emp = outsource_employees.objects.get(
+                        employee_id=e_email, client_id="talent@esparkconsultants.com"
+                    )
 
                 employee_details = {
                     "employee_id": emp.employee_id,
