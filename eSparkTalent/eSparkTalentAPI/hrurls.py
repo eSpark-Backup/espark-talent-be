@@ -11,7 +11,6 @@ urlpatterns=[
     path('hr_otherinv/', Other_Payment.as_view()),
     path('hr_home/', Hr_Home.as_view()),
     path('hr_emps/', Hr_Employees.as_view()),
-    path('hr_emp_delete/', Hr_Employees_Delete.as_view()),
     path('hr_emp_prof/', Hr_Employee.as_view()),
     path('hr_update_empinfo/', Update_Emp_Person_Info.as_view()),
     path('hr_update_empcontact/', Update_Emp_Emerg_Info.as_view()),
