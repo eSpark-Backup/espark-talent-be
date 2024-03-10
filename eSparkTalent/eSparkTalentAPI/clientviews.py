@@ -127,7 +127,11 @@ class Client_Home(APIView):
         except client.DoesNotExist:
             image_path = None
         
-        company_record = company_data.objects.get(id=1)
+        try:
+            company_record = company_data.objects.get(id=1)
+            company_image = company_record.image.path
+        except company_data.DoesNotExist:
+            company_image = ""
 
         data = {
             "username": user.username,
@@ -136,7 +140,7 @@ class Client_Home(APIView):
             "onboarding_count": onboarding_count,
             "active_employee": active_employee,
             "client_image": image_path,
-            "company_image": company_record.image.path
+            "company_image": company_image
         }
 
         return Response(data, status=status.HTTP_200_OK)
