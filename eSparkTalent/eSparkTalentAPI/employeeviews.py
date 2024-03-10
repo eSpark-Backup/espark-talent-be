@@ -620,7 +620,7 @@ class Company_Contract(APIView):
                     },
                 ),
             ),
-            400: openapi.Response(description="Bad Request"),
+            204: openapi.Response(description="Empty Record"),
             401: openapi.Response(description="Unauthorized"),
         },
         manual_parameters=[
@@ -651,7 +651,7 @@ class Company_Contract(APIView):
 
             return Response(records, status=status.HTTP_200_OK)
         else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @authentication_classes([JWTAuthentication])
@@ -678,7 +678,7 @@ class Offshore_Contract(APIView):
                     },
                 ),
             ),
-            400: openapi.Response(description="Bad Request"),
+            204: openapi.Response(description="Empty Record"),
             401: openapi.Response(description="Unauthorized"),
         },
         manual_parameters=[
@@ -720,7 +720,7 @@ class Offshore_Contract(APIView):
                 records.append(record)
             return Response(records, status=status.HTTP_200_OK)
         else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @authentication_classes([JWTAuthentication])

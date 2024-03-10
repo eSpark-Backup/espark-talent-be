@@ -2361,23 +2361,26 @@ class Hr_Clients(APIView):
         operation_id="1",
     )
     def get(self, request, *args, **kwargs):
-        clients = client.objects.all()
-        if clients:
-            records = []
-            for cl in clients:
-                user = end_user.objects.get(email=cl.email)
-                record = {
-                    "id": cl.id,
-                    "client_id": cl.client_id,
-                    "name": cl.first_name + " " + cl.last_name,
-                    "image_path": cl.image.path,
-                    "company_name": cl.company_name,
-                    "active": user.is_active,
-                }
-                records.append(record)
-            return Response(records, status=status.HTTP_200_OK)
-        else:
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            clients = client.objects.all()
+            if clients:
+                records = []
+                for cl in clients:
+                    user = end_user.objects.get(email=cl.email)
+                    record = {
+                        "id": cl.id,
+                        "client_id": cl.client_id,
+                        "name": cl.first_name + " " + cl.last_name,
+                        "image_path": cl.image.path,
+                        "company_name": cl.company_name,
+                        "active": user.is_active,
+                    }
+                    records.append(record)
+                return Response(records, status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        except client.DoesNotExist:
+            return Response({"message": "Clients not found"},status=status.HTTP_404_NOT_FOUND)
 
 
 @authentication_classes([JWTAuthentication])
