@@ -675,7 +675,118 @@ class Employee_Invoice(APIView):
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+    @swagger_auto_schema(
+        tags=["Client : Employee Invoice"],
+        manual_parameters=[
+            openapi.Parameter(
+                "client_id",
+                openapi.IN_QUERY,
+                description="client email",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
+                "tab",
+                openapi.IN_QUERY,
+                description="tab",
+                type=openapi.TYPE_STRING,
+                enum = ["pending", "processing", "paid"],
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                        "invoice_date": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
+                        "due_date": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
+                        "invoice_amount": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "payment_status": openapi.Schema(type=openapi.TYPE_STRING),
+                        "invoice": openapi.Schema(
+                            type=openapi.TYPE_FILE
+                        ),
+                    },
+                ),
+            ),
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        operation_summary="Employee Invoice",
+        operation_id="2",
+    )
 
+    def get(self, request, *args, **kwargs):
+        client_id = request.query_params.get("client_id")
+        tab = request.query_params.get("tab")
+        try:
+            records = []
+            emp_inv = employee_invoice.objects.filter(client_id=client_id, payment_status=tab)
+            if emp_inv:
+                for inv in emp_inv:
+                    emp = employee.objects.get(email=inv.employee_id)
+                    record = {
+                        "id": inv.id,
+                        "employee_id": emp.employee_id,
+                        "invoice_date": inv.invoice_date,
+                        "due_date": inv.due_date,
+                        "invoice_amount": inv.invoice_amount,
+                        "payment_status": inv.payment_status,
+                        "invoice": inv.invoice.path
+                    }
+                    records.append(record)
+                return Response(records,status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+    @swagger_auto_schema(
+        tags=["Client : Employee Invoice"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="Unauthorize"),
+        },
+        operation_summary="Endpoint to delete a Employee Invoice.",
+        operation_id="3",
+    )
+        
+    def delete(self, request, *args, **kwargs):
+        delete_id = request.query_params.get("id")
+        try:
+            employee_invoice.objects.get(id=delete_id).delete()
+            return Response(status=status.HTTP_200_OK)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
