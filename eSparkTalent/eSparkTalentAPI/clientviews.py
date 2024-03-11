@@ -1111,20 +1111,24 @@ class ClockInOut_Request(APIView):
                                 )
                                 in timesheet_record.record
                             ):
-                                if (
-                                    timesheet_record.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ]["check_in"]
-                                    == "-"
-                                    or timesheet_record.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ]["check_in"]
-                                    != "-"
-                                ) and timesheet_record.record[
+                                timesheet_record.record[
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
+                                    )
+                                ][
+                                    "check_in"
+                                ] = to_update_clockinout_request.punch_time
+                                timesheet_record.record[
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
+                                    )
+                                ]["status"]["Present"] = True
+                                timesheet_record.record[
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
+                                    )
+                                ]["status"]["Absent"] = False
+                                if  timesheet_record.record[
                                     to_update_clockinout_request.date.strftime(
                                         "%d-%m-%Y"
                                     )
@@ -1146,24 +1150,7 @@ class ClockInOut_Request(APIView):
                                             to_update_clockinout_request.date.strftime(
                                                 "%d-%m-%Y"
                                             )
-                                        ][
-                                            "check_in"
-                                        ] = to_update_clockinout_request.punch_time
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["status"]["Present"] = True
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
                                         ]["status"]["Missing"] = True
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["status"]["Absent"] = False
                                         timesheet_record.save()
                                         to_update_clockinout_request.status = (
                                             to_update_status
@@ -1195,20 +1182,6 @@ class ClockInOut_Request(APIView):
                                                 to_update_clockinout_request.date.strftime(
                                                     "%d-%m-%Y"
                                                 )
-                                            ][
-                                                "check_in"
-                                            ] = (
-                                                to_update_clockinout_request.punch_time
-                                            )
-                                            timesheet_record.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ]["status"]["Present"] = True
-                                            timesheet_record.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
                                             ]["status"]["Missing"] = False
                                             timesheet_record.save()
                                             to_update_clockinout_request.status = (
@@ -1223,20 +1196,6 @@ class ClockInOut_Request(APIView):
                                                 to_update_clockinout_request.date.strftime(
                                                     "%d-%m-%Y"
                                                 )
-                                            ][
-                                                "check_in"
-                                            ] = (
-                                                to_update_clockinout_request.punch_time
-                                            )
-                                            timesheet_record.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ]["status"]["Present"] = True
-                                            timesheet_record.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
                                             ]["status"]["Missing"] = True
                                             timesheet_record.save()
                                             to_update_clockinout_request.status = (
@@ -1247,26 +1206,7 @@ class ClockInOut_Request(APIView):
                                                 status=status.HTTP_200_OK
                                             )
 
-                                elif (
-                                    timesheet_record.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ]["check_in"]
-                                    == "-"
-                                    or timesheet_record.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ]["check_in"]
-                                    != "-"
-                                ) and timesheet_record.record[
-                                    to_update_clockinout_request.date.strftime(
-                                        "%d-%m-%Y"
-                                    )
-                                ][
-                                    "check_out"
-                                ] != "-":
+                                else:
                                     check_out_time = timesheet_record.record[
                                         to_update_clockinout_request.date.strftime(
                                             "%d-%m-%Y"
@@ -1279,13 +1219,6 @@ class ClockInOut_Request(APIView):
                                         "%I:%M %p",
                                     )
                                     if hours_worked.total_seconds() // 3600 < 9:
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ][
-                                            "check_in"
-                                        ] = to_update_clockinout_request.punch_time
                                         timesheet_record.record[
                                             to_update_clockinout_request.date.strftime(
                                                 "%d-%m-%Y"
@@ -1321,13 +1254,6 @@ class ClockInOut_Request(APIView):
                                         )
                                         overtime_min = (overtime.seconds // 60) % 60
                                         overtime_hours = overtime.seconds // 3600
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ][
-                                            "check_in"
-                                        ] = to_update_clockinout_request.punch_time
                                         timesheet_record.record[
                                             to_update_clockinout_request.date.strftime(
                                                 "%d-%m-%Y"
@@ -1477,7 +1403,13 @@ class ClockInOut_Request(APIView):
                                     )
                                     to_update_clockinout_request.save()
                                     return Response(status=status.HTTP_200_OK)
-                            else:
+                            elif datetime.datetime.strptime(
+                                to_update_clockinout_request.date.strftime("%d-%m-%Y"),
+                                "%d-%m-%Y",
+                            ) < datetime.datetime.strptime(
+                                datetime.datetime.now().date().strftime("%d-%m-%Y"),
+                                "%d-%m-%Y",
+                            ):
                                 timesheet_record = time_sheet.objects.create(
                                     employee_id=to_update_clockinout_request.employee_id,
                                     client_id=user,
@@ -1524,46 +1456,33 @@ class ClockInOut_Request(APIView):
                                 )
                                 in timesheet_record.record
                             ):
+                                timesheet_record.record[
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
+                                    )
+                                ][
+                                    "check_out"
+                                ] = to_update_clockinout_request.punch_time
+                                timesheet_record.record[
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
+                                    )
+                                ]["status"]["Present"] = True
+                                timesheet_record.record[
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
+                                    )
+                                ]["status"]["Absent"] = False
                                 if timesheet_record.record[
                                     to_update_clockinout_request.date.strftime(
                                         "%d-%m-%Y"
                                     )
-                                ]["check_in"] == "-" and (
-                                    timesheet_record.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ]["check_out"]
-                                    == "-"
-                                    or timesheet_record.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ]["check_out"]
-                                    != "-"
-                                ):
-                                    timesheet_record.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ][
-                                        "check_out"
-                                    ] = to_update_clockinout_request.punch_time
-                                    timesheet_record.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ]["status"]["Present"] = True
+                                ]["check_in"] == "-" :
                                     timesheet_record.record[
                                         to_update_clockinout_request.date.strftime(
                                             "%d-%m-%Y"
                                         )
                                     ]["status"]["Missing"] = True
-                                    timesheet_record.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ]["status"]["Absent"] = False
                                     timesheet_record.save()
                                     to_update_clockinout_request.status = (
                                         to_update_status
@@ -1571,24 +1490,7 @@ class ClockInOut_Request(APIView):
                                     to_update_clockinout_request.save()
                                     return Response(status=status.HTTP_200_OK)
 
-                                elif timesheet_record.record[
-                                    to_update_clockinout_request.date.strftime(
-                                        "%d-%m-%Y"
-                                    )
-                                ]["check_in"] != "-" and (
-                                    timesheet_record.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ]["check_out"]
-                                    == "-"
-                                    or timesheet_record.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ]["check_out"]
-                                    != "-"
-                                ):
+                                else:
                                     check_in_time = timesheet_record.record[
                                         to_update_clockinout_request.date.strftime(
                                             "%d-%m-%Y"
@@ -1601,13 +1503,6 @@ class ClockInOut_Request(APIView):
                                         check_in_time, "%I:%M %p"
                                     )
                                     if hours_worked.total_seconds() // 3600 < 9:
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ][
-                                            "check_out"
-                                        ] = to_update_clockinout_request.punch_time
                                         timesheet_record.record[
                                             to_update_clockinout_request.date.strftime(
                                                 "%d-%m-%Y"
@@ -1643,13 +1538,6 @@ class ClockInOut_Request(APIView):
                                         )
                                         overtime_min = (overtime.seconds // 60) % 60
                                         overtime_hours = overtime.seconds // 3600
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ][
-                                            "check_out"
-                                        ] = to_update_clockinout_request.punch_time
                                         timesheet_record.record[
                                             to_update_clockinout_request.date.strftime(
                                                 "%d-%m-%Y"
