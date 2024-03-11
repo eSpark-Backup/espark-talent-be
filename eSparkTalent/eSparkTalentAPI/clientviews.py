@@ -1096,309 +1096,308 @@ class ClockInOut_Request(APIView):
                 try:
                     record_punch_type = to_update_clockinout_request.punch_type
                     if record_punch_type == "check_in":
-                        timesheet_record = time_sheet.objects.filter(
-                            employee_id=to_update_clockinout_request.employee_id,
-                            client_id=user,
-                            month=calendar.month_name[
-                                to_update_clockinout_request.date.month
-                            ],
-                            year=to_update_clockinout_request.date.year,
-                        )
-                        if timesheet_record:
-                            for rec in timesheet_record:
+                        try:
+                            timesheet_record = time_sheet.objects.get(
+                                employee_id=to_update_clockinout_request.employee_id,
+                                client_id=user,
+                                month=calendar.month_name[
+                                    to_update_clockinout_request.date.month
+                                ],
+                                year=to_update_clockinout_request.date.year,
+                            )
+                            if (
+                                to_update_clockinout_request.date.strftime(
+                                    "%d-%m-%Y"
+                                )
+                                in timesheet_record.record
+                            ):
                                 if (
-                                    to_update_clockinout_request.date.strftime(
-                                        "%d-%m-%Y"
-                                    )
-                                    in rec.record
-                                ):
-                                    if (
-                                        rec.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["check_in"]
-                                        == "-"
-                                        or rec.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["check_in"]
-                                        != "-"
-                                    ) and rec.record[
+                                    timesheet_record.record[
                                         to_update_clockinout_request.date.strftime(
                                             "%d-%m-%Y"
                                         )
-                                    ][
-                                        "check_out"
-                                    ] == "-":
-                                        if datetime.datetime.strptime(
+                                    ]["check_in"]
+                                    == "-"
+                                    or timesheet_record.record[
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        )
+                                    ]["check_in"]
+                                    != "-"
+                                ) and timesheet_record.record[
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
+                                    )
+                                ][
+                                    "check_out"
+                                ] == "-":
+                                    if datetime.datetime.strptime(
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        ),
+                                        "%d-%m-%Y",
+                                    ) < datetime.datetime.strptime(
+                                        datetime.datetime.now()
+                                        .date()
+                                        .strftime("%d-%m-%Y"),
+                                        "%d-%m-%Y",
+                                    ):
+                                        timesheet_record.record[
                                             to_update_clockinout_request.date.strftime(
                                                 "%d-%m-%Y"
-                                            ),
-                                            "%d-%m-%Y",
-                                        ) < datetime.datetime.strptime(
-                                            datetime.datetime.now()
-                                            .date()
-                                            .strftime("%d-%m-%Y"),
-                                            "%d-%m-%Y",
+                                            )
+                                        ][
+                                            "check_in"
+                                        ] = to_update_clockinout_request.punch_time
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ]["status"]["Present"] = True
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ]["status"]["Missing"] = True
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ]["status"]["Absent"] = False
+                                        timesheet_record.save()
+                                        to_update_clockinout_request.status = (
+                                            to_update_status
+                                        )
+                                        to_update_clockinout_request.save()
+                                        return Response(status=status.HTTP_200_OK)
+
+                                    elif datetime.datetime.strptime(
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        ),
+                                        "%d-%m-%Y",
+                                    ) == datetime.datetime.strptime(
+                                        datetime.datetime.now()
+                                        .date()
+                                        .strftime("%d-%m-%Y"),
+                                        "%d-%m-%Y",
+                                    ):
+                                        check_out_time = employee.objects.get(
+                                            email=to_update_clockinout_request.employee_id
+                                        ).punch_timings["check_out"]
+                                        if (
+                                            datetime.datetime.strptime(
+                                                check_out_time, "%I:%M %p"
+                                            ).time()
+                                            > datetime.datetime.now().time()
                                         ):
-                                            rec.record[
+                                            timesheet_record.record[
                                                 to_update_clockinout_request.date.strftime(
                                                     "%d-%m-%Y"
                                                 )
                                             ][
                                                 "check_in"
-                                            ] = to_update_clockinout_request.punch_time
-                                            rec.record[
+                                            ] = (
+                                                to_update_clockinout_request.punch_time
+                                            )
+                                            timesheet_record.record[
                                                 to_update_clockinout_request.date.strftime(
                                                     "%d-%m-%Y"
                                                 )
                                             ]["status"]["Present"] = True
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ]["status"]["Missing"] = True
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ]["status"]["Absent"] = False
-                                            rec.save()
-                                            to_update_clockinout_request.status = (
-                                                to_update_status
-                                            )
-                                            to_update_clockinout_request.save()
-                                            return Response(status=status.HTTP_200_OK)
-
-                                        elif datetime.datetime.strptime(
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            ),
-                                            "%d-%m-%Y",
-                                        ) == datetime.datetime.strptime(
-                                            datetime.datetime.now()
-                                            .date()
-                                            .strftime("%d-%m-%Y"),
-                                            "%d-%m-%Y",
-                                        ):
-                                            check_out_time = employee.objects.get(
-                                                email=to_update_clockinout_request.employee_id
-                                            ).punch_timings["check_out"]
-                                            if (
-                                                datetime.datetime.strptime(
-                                                    check_out_time, "%I:%M %p"
-                                                ).time()
-                                                > datetime.datetime.now().time()
-                                            ):
-                                                rec.record[
-                                                    to_update_clockinout_request.date.strftime(
-                                                        "%d-%m-%Y"
-                                                    )
-                                                ][
-                                                    "check_in"
-                                                ] = (
-                                                    to_update_clockinout_request.punch_time
-                                                )
-                                                rec.record[
-                                                    to_update_clockinout_request.date.strftime(
-                                                        "%d-%m-%Y"
-                                                    )
-                                                ]["status"]["Present"] = True
-                                                rec.record[
-                                                    to_update_clockinout_request.date.strftime(
-                                                        "%d-%m-%Y"
-                                                    )
-                                                ]["status"]["Missing"] = False
-                                                rec.save()
-                                                to_update_clockinout_request.status = (
-                                                    to_update_status
-                                                )
-                                                to_update_clockinout_request.save()
-                                                return Response(
-                                                    status=status.HTTP_200_OK
-                                                )
-                                            else:
-                                                rec.record[
-                                                    to_update_clockinout_request.date.strftime(
-                                                        "%d-%m-%Y"
-                                                    )
-                                                ][
-                                                    "check_in"
-                                                ] = (
-                                                    to_update_clockinout_request.punch_time
-                                                )
-                                                rec.record[
-                                                    to_update_clockinout_request.date.strftime(
-                                                        "%d-%m-%Y"
-                                                    )
-                                                ]["status"]["Present"] = True
-                                                rec.record[
-                                                    to_update_clockinout_request.date.strftime(
-                                                        "%d-%m-%Y"
-                                                    )
-                                                ]["status"]["Missing"] = True
-                                                rec.save()
-                                                to_update_clockinout_request.status = (
-                                                    to_update_status
-                                                )
-                                                to_update_clockinout_request.save()
-                                                return Response(
-                                                    status=status.HTTP_200_OK
-                                                )
-
-                                    elif (
-                                        rec.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["check_in"]
-                                        == "-"
-                                        or rec.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["check_in"]
-                                        != "-"
-                                    ) and rec.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ][
-                                        "check_out"
-                                    ] != "-":
-                                        check_out_time = rec.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["check_out"]
-                                        hours_worked = datetime.datetime.strptime(
-                                            check_out_time, "%I:%M %p"
-                                        ) - datetime.datetime.strptime(
-                                            to_update_clockinout_request.punch_time,
-                                            "%I:%M %p",
-                                        )
-                                        if hours_worked.total_seconds() // 3600 < 9:
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ][
-                                                "check_in"
-                                            ] = to_update_clockinout_request.punch_time
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ]["overtime"] = "0h"
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ][
-                                                "hours_worked"
-                                            ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ]["status"]["Short Duration"] = True
-                                            rec.record[
+                                            timesheet_record.record[
                                                 to_update_clockinout_request.date.strftime(
                                                     "%d-%m-%Y"
                                                 )
                                             ]["status"]["Missing"] = False
-                                            rec.save()
-                                            to_update_clockinout_request.status = (
-                                                to_update_status
-                                            )
-                                            to_update_clockinout_request.save()
-                                            return Response(status=status.HTTP_200_OK)
-                                        elif hours_worked.total_seconds() // 3600 >= 9:
-                                            overtime = (
-                                                hours_worked
-                                                - datetime.timedelta(hours=9)
-                                            )
-                                            overtime_min = (overtime.seconds // 60) % 60
-                                            overtime_hours = overtime.seconds // 3600
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ][
-                                                "check_in"
-                                            ] = to_update_clockinout_request.punch_time
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ][
-                                                "hours_worked"
-                                            ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ]["status"]["Short Duration"] = False
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ]["status"]["Missing"] = False
-                                            if overtime_hours and overtime_min:
-                                                over_duration = (
-                                                    f"{overtime_hours}h {overtime_min}m"
-                                                )
-                                            elif overtime_hours and not overtime_min:
-                                                over_duration = f"{overtime_hours}h"
-                                            elif not overtime_hours and overtime_min:
-                                                over_duration = f"{overtime_min}m"
-                                            else:
-                                                over_duration = "0h"
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ]["overtime"] = over_duration
-                                            rec.save()
+                                            timesheet_record.save()
                                             to_update_clockinout_request.status = (
                                                 to_update_status
                                             )
                                             to_update_clockinout_request.save()
                                             return Response(
-                                                status=status.HTTP_200_OK,
+                                                status=status.HTTP_200_OK
+                                            )
+                                        else:
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ][
+                                                "check_in"
+                                            ] = (
+                                                to_update_clockinout_request.punch_time
+                                            )
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ]["status"]["Present"] = True
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ]["status"]["Missing"] = True
+                                            timesheet_record.save()
+                                            to_update_clockinout_request.status = (
+                                                to_update_status
+                                            )
+                                            to_update_clockinout_request.save()
+                                            return Response(
+                                                status=status.HTTP_200_OK
                                             )
 
-                                else:
-                                    rec.record[
+                                elif (
+                                    timesheet_record.record[
                                         to_update_clockinout_request.date.strftime(
                                             "%d-%m-%Y"
                                         )
-                                    ] = {
-                                        "check_in": to_update_clockinout_request.punch_time,
-                                        "check_out": "-",
-                                        "hours_worked": "-",
-                                        "overtime": "-",
-                                        "status": {
-                                            "Present": True,
-                                            "Missing": False,
-                                            "Absent": False,
-                                            "Day Off": False,
-                                            "Full Leave": False,
-                                            "Short Duration": False,
-                                        },
-                                    }
-                                    rec.save()
-                                    to_update_clockinout_request.status = (
-                                        to_update_status
+                                    ]["check_in"]
+                                    == "-"
+                                    or timesheet_record.record[
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        )
+                                    ]["check_in"]
+                                    != "-"
+                                ) and timesheet_record.record[
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
                                     )
-                                    to_update_clockinout_request.save()
-                                    return Response(
-                                        status=status.HTTP_200_OK,
+                                ][
+                                    "check_out"
+                                ] != "-":
+                                    check_out_time = timesheet_record.record[
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        )
+                                    ]["check_out"]
+                                    hours_worked = datetime.datetime.strptime(
+                                        check_out_time, "%I:%M %p"
+                                    ) - datetime.datetime.strptime(
+                                        to_update_clockinout_request.punch_time,
+                                        "%I:%M %p",
                                     )
+                                    if hours_worked.total_seconds() // 3600 < 9:
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ][
+                                            "check_in"
+                                        ] = to_update_clockinout_request.punch_time
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ]["overtime"] = "0h"
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ][
+                                            "hours_worked"
+                                        ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ]["status"]["Short Duration"] = True
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ]["status"]["Missing"] = False
+                                        timesheet_record.save()
+                                        to_update_clockinout_request.status = (
+                                            to_update_status
+                                        )
+                                        to_update_clockinout_request.save()
+                                        return Response(status=status.HTTP_200_OK)
+                                    elif hours_worked.total_seconds() // 3600 >= 9:
+                                        overtime = (
+                                            hours_worked
+                                            - datetime.timedelta(hours=9)
+                                        )
+                                        overtime_min = (overtime.seconds // 60) % 60
+                                        overtime_hours = overtime.seconds // 3600
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ][
+                                            "check_in"
+                                        ] = to_update_clockinout_request.punch_time
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ][
+                                            "hours_worked"
+                                        ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ]["status"]["Short Duration"] = False
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ]["status"]["Missing"] = False
+                                        if overtime_hours and overtime_min:
+                                            over_duration = (
+                                                f"{overtime_hours}h {overtime_min}m"
+                                            )
+                                        elif overtime_hours and not overtime_min:
+                                            over_duration = f"{overtime_hours}h"
+                                        elif not overtime_hours and overtime_min:
+                                            over_duration = f"{overtime_min}m"
+                                        else:
+                                            over_duration = "0h"
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ]["overtime"] = over_duration
+                                        timesheet_record.save()
+                                        to_update_clockinout_request.status = (
+                                            to_update_status
+                                        )
+                                        to_update_clockinout_request.save()
+                                        return Response(
+                                            status=status.HTTP_200_OK,
+                                        )
 
-                        else:
+                            else:
+                                timesheet_record.record[
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
+                                    )
+                                ] = {
+                                    "check_in": to_update_clockinout_request.punch_time,
+                                    "check_out": "-",
+                                    "hours_worked": "-",
+                                    "overtime": "-",
+                                    "status": {
+                                        "Present": True,
+                                        "Missing": False,
+                                        "Absent": False,
+                                        "Day Off": False,
+                                        "Full Leave": False,
+                                        "Short Duration": False,
+                                    },
+                                }
+                                timesheet_record.save()
+                                to_update_clockinout_request.status = (
+                                    to_update_status
+                                )
+                                to_update_clockinout_request.save()
+                                return Response(
+                                    status=status.HTTP_200_OK,
+                                )
+
+                        except:
                             if datetime.datetime.strptime(
                                 to_update_clockinout_request.date.strftime("%d-%m-%Y"),
                                 "%d-%m-%Y",
@@ -1510,213 +1509,212 @@ class ClockInOut_Request(APIView):
                             return Response(status=status.HTTP_200_OK)
 
                     elif record_punch_type == "check_out":
-                        timesheet_record = time_sheet.objects.filter(
-                            employee_id=to_update_clockinout_request.employee_id,
-                            client_id=user,
-                            month=calendar.month_name[
-                                to_update_clockinout_request.date.month
-                            ],
-                            year=to_update_clockinout_request.date.year,
-                        )
-                        if timesheet_record:
-                            for rec in timesheet_record:
-                                if (
+                        try:
+                            timesheet_record = time_sheet.objects.get(
+                                employee_id=to_update_clockinout_request.employee_id,
+                                client_id=user,
+                                month=calendar.month_name[
+                                    to_update_clockinout_request.date.month
+                                ],
+                                year=to_update_clockinout_request.date.year,
+                            )
+                            if (
+                                to_update_clockinout_request.date.strftime(
+                                    "%d-%m-%Y"
+                                )
+                                in timesheet_record.record
+                            ):
+                                if timesheet_record.record[
                                     to_update_clockinout_request.date.strftime(
                                         "%d-%m-%Y"
                                     )
-                                    in rec.record
-                                ):
-                                    if rec.record[
+                                ]["check_in"] == "-" and (
+                                    timesheet_record.record[
                                         to_update_clockinout_request.date.strftime(
                                             "%d-%m-%Y"
                                         )
-                                    ]["check_in"] == "-" and (
-                                        rec.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["check_out"]
-                                        == "-"
-                                        or rec.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["check_out"]
-                                        != "-"
-                                    ):
-                                        rec.record[
+                                    ]["check_out"]
+                                    == "-"
+                                    or timesheet_record.record[
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        )
+                                    ]["check_out"]
+                                    != "-"
+                                ):
+                                    timesheet_record.record[
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        )
+                                    ][
+                                        "check_out"
+                                    ] = to_update_clockinout_request.punch_time
+                                    timesheet_record.record[
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        )
+                                    ]["status"]["Present"] = True
+                                    timesheet_record.record[
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        )
+                                    ]["status"]["Missing"] = True
+                                    timesheet_record.record[
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        )
+                                    ]["status"]["Absent"] = False
+                                    timesheet_record.save()
+                                    to_update_clockinout_request.status = (
+                                        to_update_status
+                                    )
+                                    to_update_clockinout_request.save()
+                                    return Response(status=status.HTTP_200_OK)
+
+                                elif timesheet_record.record[
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
+                                    )
+                                ]["check_in"] != "-" and (
+                                    timesheet_record.record[
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        )
+                                    ]["check_out"]
+                                    == "-"
+                                    or timesheet_record.record[
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        )
+                                    ]["check_out"]
+                                    != "-"
+                                ):
+                                    check_in_time = timesheet_record.record[
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        )
+                                    ]["check_in"]
+                                    hours_worked = datetime.datetime.strptime(
+                                        to_update_clockinout_request.punch_time,
+                                        "%I:%M %p",
+                                    ) - datetime.datetime.strptime(
+                                        check_in_time, "%I:%M %p"
+                                    )
+                                    if hours_worked.total_seconds() // 3600 < 9:
+                                        timesheet_record.record[
                                             to_update_clockinout_request.date.strftime(
                                                 "%d-%m-%Y"
                                             )
                                         ][
                                             "check_out"
                                         ] = to_update_clockinout_request.punch_time
-                                        rec.record[
+                                        timesheet_record.record[
                                             to_update_clockinout_request.date.strftime(
                                                 "%d-%m-%Y"
                                             )
-                                        ]["status"]["Present"] = True
-                                        rec.record[
+                                        ]["overtime"] = "0h"
+                                        timesheet_record.record[
                                             to_update_clockinout_request.date.strftime(
                                                 "%d-%m-%Y"
                                             )
-                                        ]["status"]["Missing"] = True
-                                        rec.record[
+                                        ][
+                                            "hours_worked"
+                                        ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
+                                        timesheet_record.record[
                                             to_update_clockinout_request.date.strftime(
                                                 "%d-%m-%Y"
                                             )
-                                        ]["status"]["Absent"] = False
-                                        rec.save()
+                                        ]["status"]["Short Duration"] = True
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ]["status"]["Missing"] = False
+                                        timesheet_record.save()
+                                        to_update_clockinout_request.status = (
+                                            to_update_status
+                                        )
+                                        to_update_clockinout_request.save()
+                                        return Response(status=status.HTTP_200_OK)
+                                    elif hours_worked.total_seconds() // 3600 >= 9:
+                                        overtime = (
+                                            hours_worked
+                                            - datetime.timedelta(hours=9)
+                                        )
+                                        overtime_min = (overtime.seconds // 60) % 60
+                                        overtime_hours = overtime.seconds // 3600
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ][
+                                            "check_out"
+                                        ] = to_update_clockinout_request.punch_time
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ][
+                                            "hours_worked"
+                                        ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ]["status"]["Short Duration"] = False
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ]["status"]["Missing"] = False
+                                        if overtime_hours and overtime_min:
+                                            over_duration = (
+                                                f"{overtime_hours}h {overtime_min}m"
+                                            )
+                                        elif overtime_hours and not overtime_min:
+                                            over_duration = f"{overtime_hours}h"
+                                        elif not overtime_hours and overtime_min:
+                                            over_duration = f"{overtime_min}m"
+                                        else:
+                                            over_duration = "0h"
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ]["overtime"] = over_duration
+                                        timesheet_record.save()
                                         to_update_clockinout_request.status = (
                                             to_update_status
                                         )
                                         to_update_clockinout_request.save()
                                         return Response(status=status.HTTP_200_OK)
 
-                                    elif rec.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ]["check_in"] != "-" and (
-                                        rec.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["check_out"]
-                                        == "-"
-                                        or rec.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["check_out"]
-                                        != "-"
-                                    ):
-                                        check_in_time = rec.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["check_in"]
-                                        hours_worked = datetime.datetime.strptime(
-                                            to_update_clockinout_request.punch_time,
-                                            "%I:%M %p",
-                                        ) - datetime.datetime.strptime(
-                                            check_in_time, "%I:%M %p"
-                                        )
-                                        if hours_worked.total_seconds() // 3600 < 9:
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ][
-                                                "check_out"
-                                            ] = to_update_clockinout_request.punch_time
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ]["overtime"] = "0h"
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ][
-                                                "hours_worked"
-                                            ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ]["status"]["Short Duration"] = True
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ]["status"]["Missing"] = False
-                                            rec.save()
-                                            to_update_clockinout_request.status = (
-                                                to_update_status
-                                            )
-                                            to_update_clockinout_request.save()
-                                            return Response(status=status.HTTP_200_OK)
-                                        elif hours_worked.total_seconds() // 3600 >= 9:
-                                            overtime = (
-                                                hours_worked
-                                                - datetime.timedelta(hours=9)
-                                            )
-                                            overtime_min = (overtime.seconds // 60) % 60
-                                            overtime_hours = overtime.seconds // 3600
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ][
-                                                "check_out"
-                                            ] = to_update_clockinout_request.punch_time
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ][
-                                                "hours_worked"
-                                            ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ]["status"]["Short Duration"] = False
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ]["status"]["Missing"] = False
-                                            if overtime_hours and overtime_min:
-                                                over_duration = (
-                                                    f"{overtime_hours}h {overtime_min}m"
-                                                )
-                                            elif overtime_hours and not overtime_min:
-                                                over_duration = f"{overtime_hours}h"
-                                            elif not overtime_hours and overtime_min:
-                                                over_duration = f"{overtime_min}m"
-                                            else:
-                                                over_duration = "0h"
-                                            rec.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ]["overtime"] = over_duration
-                                            rec.save()
-                                            to_update_clockinout_request.status = (
-                                                to_update_status
-                                            )
-                                            to_update_clockinout_request.save()
-                                            return Response(status=status.HTTP_200_OK)
-
-                                else:
-                                    rec.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ] = {
-                                        "check_in": "-",
-                                        "check_out": to_update_clockinout_request.punch_time,
-                                        "hours_worked": "-",
-                                        "overtime": "-",
-                                        "status": {
-                                            "Present": True,
-                                            "Missing": True,
-                                            "Absent": False,
-                                            "Day Off": False,
-                                            "Full Leave": False,
-                                            "Short Duration": False,
-                                        },
-                                    }
-                                    rec.save()
-                                    to_update_clockinout_request.status = (
-                                        to_update_status
+                            else:
+                                timesheet_record.record[
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
                                     )
-                                    to_update_clockinout_request.save()
-                                    return Response(status=status.HTTP_200_OK)
-                        else:
+                                ] = {
+                                    "check_in": "-",
+                                    "check_out": to_update_clockinout_request.punch_time,
+                                    "hours_worked": "-",
+                                    "overtime": "-",
+                                    "status": {
+                                        "Present": True,
+                                        "Missing": True,
+                                        "Absent": False,
+                                        "Day Off": False,
+                                        "Full Leave": False,
+                                        "Short Duration": False,
+                                    },
+                                }
+                                timesheet_record.save()
+                                to_update_clockinout_request.status = (
+                                    to_update_status
+                                )
+                                to_update_clockinout_request.save()
+                                return Response(status=status.HTTP_200_OK)
+                        except:
                             timesheet_record = time_sheet.objects.create(
                                 employee_id=to_update_clockinout_request.employee_id,
                                 client_id=user,
