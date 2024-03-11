@@ -18,6 +18,7 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 from django.db import transaction
 import json
+from django.db.models import Q
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -1092,11 +1093,15 @@ class Hr_Employees(APIView):
         employee_id = request.query_params.get("id")
         try:
             emp = employee.objects.get(id=employee_id)
-            related_models = [outsource_employees, asset, employee_contract, employee_invoice, leave_balance, leave_request]
+            related_models = [outsource_employees, asset, employee_contract, employee_invoice, leave_balance, leave_request,punch_request,Offshore_Contract,end_user ]
             with transaction.atomic(using='default'):  
                 for model_class in related_models:
                     model_data = model_class.objects.filter(employee_id=emp.email)
-                    model_data.delete()
+                    if not model_data.exists():
+                        model_data = model_class.objects.filter(email=emp.email)
+                        model_data.delete()
+                    else:
+                        model_data.delete()
                 emp.delete()
 
             return Response({"message": "Employee and associated data removed successfully"}, status=status.HTTP_200_OK)
