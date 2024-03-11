@@ -2157,10 +2157,7 @@ class Hr_Clients(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
-    
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-class Client_Status_update(APIView):
+        
     @swagger_auto_schema(
         tags=["Clients"],
         responses={
@@ -2200,20 +2197,17 @@ class Client_Status_update(APIView):
         request_id = request.query_params.get("id")
         to_update_status = request.data["is_active"]
         try:
-            update_client_status = end_user.objects.get(id=request_id)
+            client_data = client.objects.get(id=request_id)
+            update_client_status = end_user.objects.get(email=client_data.email)
             if update_client_status:
                 update_client_status.is_active = to_update_status
                 update_client_status.save()
-
                 return Response(status=status.HTTP_200_OK)
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-class Client_delete(APIView):
     @swagger_auto_schema(
         tags=["Clients"],
         responses={
@@ -2238,34 +2232,16 @@ class Client_delete(APIView):
             ),
         ],
         operation_summary="Endpoint to  client delete from the data base.",
-        operation_id="3",
+        operation_id="4",
     )
     def delete(self, request, *args, **kwargs):
+        client_id = request.query_params.get("id")
         try:
-            client_id = request.query_params.get("id")
             clt = client.objects.get(id=client_id)
-            outsource_data = outsource_employees.objects.filter(client_id=clt.email)
-            outsource_data.delete()
-            Emp_contract_data = client_contract.objects.filter(client_id=clt.email)
-            Emp_contract_data.delete()
-            Emp_invoice_data = employee_invoice.objects.filter(client_id=clt.email)
-            Emp_invoice_data.delete()
-            hiring_request_data = hiring_request.objects.filter(client_id=clt.email)
-            hiring_request_data.delete()
-            interview_schedule_data = interview_schedule.objects.filter(client_id=clt.email)
-            interview_schedule_data.delete()
-            interview_schedule_data = interview_schedule.objects.filter(client_id=clt.email)
-            interview_schedule_data.delete()
-            offshore_contracts_data = offshore_contracts.objects.filter(client_id=clt.email)
-            offshore_contracts_data.delete()
-            onboarding_data = onboarding.objects.filter(client_id=clt.email)
-            onboarding_data.delete()
-            other_payment_data = other_payment.objects.filter(client_id=clt.email)
-            other_payment_data.delete()
-            punch_request_data = punch_request.objects.filter(client_id=clt.email)
-            punch_request_data.delete()
-            time_sheet_data = time_sheet.objects.filter(client_id=clt.email)
-            time_sheet_data.delete()
+            related_models= [outsource_employees,client_contract,employee_invoice,hiring_request,interview_schedule,offshore_contracts,onboarding,other_payment,punch_request,time_sheet]
+            for model in related_models:
+                data = model.objects.filter(client_id=clt.email)
+                data.delete()
             clt.delete()
             return Response({"message": "client and associated data removed successfully"}, status=status.HTTP_200_OK)
         except employee.DoesNotExist:
