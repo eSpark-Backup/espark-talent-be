@@ -1642,21 +1642,22 @@ class Time_Sheet(APIView):
                     "leaves": leaves,
                 }
                 emp = employee.objects.get(email=e_email)
-                clnt = client.objects.get(email=workspace)
                 try:
-                    outsrc_emp = outsource_employees.objects.get(
+                    clnt = client.objects.get(email=workspace)
+                    company_name=clnt.company_name
+                    location=clnt.address
+                except client.DoesNotExist:
+                    company_name="eSpark Talent"
+                    location="Karachi"
+                outsrc_emp = outsource_employees.objects.get(
                         employee_id=e_email, client_id=workspace
-                    )
-                except outsource_employees.DoesNotExist:
-                    outsrc_emp = outsource_employees.objects.get(
-                        employee_id=e_email, client_id="talent@esparkconsultants.com"
                     )
 
                 employee_details = {
                     "employee_id": emp.employee_id,
                     "employee_name": emp.first_name + " " + emp.last_name,
-                    "company": clnt.company_name,
-                    "location": clnt.address,
+                    "company": company_name,
+                    "location": location,
                     "job_title": outsrc_emp.job_title,
                     "joining_date": outsrc_emp.joining_date,
                 }
@@ -1766,21 +1767,22 @@ class Time_Sheet(APIView):
                 }
 
                 emp = employee.objects.get(email=e_email)
-                clnt = client.objects.get(email=workspace)
                 try:
-                    outsrc_emp = outsource_employees.objects.get(
+                    clnt = client.objects.get(email=workspace)
+                    company_name=clnt.company_name
+                    location=clnt.address
+                except client.DoesNotExist:
+                    company_name="eSpark Talent"
+                    location="Karachi"
+                outsrc_emp = outsource_employees.objects.get(
                         employee_id=e_email, client_id=workspace
-                    )
-                except outsource_employees.DoesNotExist:
-                    outsrc_emp = outsource_employees.objects.get(
-                        employee_id=e_email, client_id="talent@esparkconsultants.com"
                     )
 
                 employee_details = {
                     "employee_id": emp.employee_id,
                     "employee_name": emp.first_name + " " + emp.last_name,
-                    "company": clnt.company_name,
-                    "location": clnt.address,
+                    "company": company_name,
+                    "location": location,
                     "job_title": outsrc_emp.job_title,
                     "joining_date": outsrc_emp.joining_date,
                 }
