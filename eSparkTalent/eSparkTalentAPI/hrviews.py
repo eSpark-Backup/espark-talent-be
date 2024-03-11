@@ -2238,13 +2238,17 @@ class Hr_Clients(APIView):
         client_id = request.query_params.get("id")
         try:
             clt = client.objects.get(id=client_id)
-            related_models= [outsource_employees,client_contract,employee_invoice,hiring_request,interview_schedule,offshore_contracts,onboarding,other_payment,punch_request,time_sheet]
+            related_models= [outsource_employees,client_contract,employee_invoice,hiring_request,interview_schedule,offshore_contracts,onboarding,other_payment,punch_request,time_sheet,leave_request,end_user]
             for model in related_models:
                 data = model.objects.filter(client_id=clt.email)
-                data.delete()
+                if not data.exists():
+                    data = model.objects.filter(email=clt.email)
+                    data.delete()
+                else:
+                    data.delete()
             clt.delete()
             return Response({"message": "client and associated data removed successfully"}, status=status.HTTP_200_OK)
-        except employee.DoesNotExist:
+        except client.DoesNotExist:
             return Response({"error": "client not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
