@@ -1642,13 +1642,17 @@ class Time_Sheet(APIView):
                     "leaves": leaves,
                 }
                 emp = employee.objects.get(email=e_email)
-                try:
-                    clnt = client.objects.get(email=workspace)
-                    company_name=clnt.company_name
-                    location=clnt.address
-                except client.DoesNotExist:
+                if workspace=="talent@esparkconsultant.com":
                     company_name="eSpark Talent"
                     location="Karachi"
+                else:
+                    try:
+                        clnt = client.objects.get(email=workspace)
+                        company_name=clnt.company_name
+                        location=clnt.address
+                    except client.DoesNotExist:
+                        company_name="-"
+                        location="-"
                 outsrc_emp = outsource_employees.objects.get(
                         employee_id=e_email, client_id=workspace
                     )
@@ -1767,13 +1771,18 @@ class Time_Sheet(APIView):
                 }
 
                 emp = employee.objects.get(email=e_email)
-                try:
-                    clnt = client.objects.get(email=workspace)
-                    company_name=clnt.company_name
-                    location=clnt.address
-                except client.DoesNotExist:
+                if workspace=="talent@esparkconsultant.com":
                     company_name="eSpark Talent"
                     location="Karachi"
+                else:
+                    try:
+                        clnt = client.objects.get(email=workspace)
+                        company_name=clnt.company_name
+                        location=clnt.address
+                    except client.DoesNotExist:
+                        company_name="-"
+                        location="-"
+                
                 outsrc_emp = outsource_employees.objects.get(
                         employee_id=e_email, client_id=workspace
                     )
