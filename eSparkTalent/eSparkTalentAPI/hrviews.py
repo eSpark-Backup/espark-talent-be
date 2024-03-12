@@ -1555,69 +1555,11 @@ class Hr_Employee(APIView):
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-class Update_Emp_Person_Info(APIView):
-    @swagger_auto_schema(
-        tags=["Employees"],
-        operation_id="5",
-        operation_summary="Update Employee Personal Information",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
-                "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
-                "dob": openapi.Schema(type=openapi.TYPE_STRING),
-                "email": openapi.Schema(
-                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
-                ),
-                "job_title": openapi.Schema(type=openapi.TYPE_STRING),
-                "marital_status": openapi.Schema(type=openapi.TYPE_STRING),
-                "gender": openapi.Schema(type=openapi.TYPE_STRING),
-                "role": openapi.Schema(type=openapi.TYPE_STRING),
-                "joining_date": openapi.Schema(
-                    type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME
-                ),
-            },
-        ),
-        manual_parameters=[
-            openapi.Parameter(
-                "id",
-                openapi.IN_QUERY,
-                description="Employee record ID",
-                type=openapi.TYPE_STRING,
-            ),
-            openapi.Parameter(
-                "Authorization",
-                openapi.IN_HEADER,
-                description="Bearer Token",
-                type=openapi.TYPE_STRING,
-            ),
-        ],
-        responses={
-            200: openapi.Response(description="Successful update"),
-            400: openapi.Response(description="Bad Request"),
-        },
-    )
-    def patch(self, request, *args, **kwargs):
-        record_id = request.query_params.get("id")
-        updates = request.data
-        try:
-            emp_record = employee.objects.get(id=record_id)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        for key in updates:
-            setattr(emp_record, key, updates[key])
-        emp_record.save()
-        return Response(status=status.HTTP_200_OK)
-
-
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-class Update_Emp_Emerg_Info(APIView):
+class Update_Emp_Info(APIView):
     @swagger_auto_schema(
         tags=["Employees"],
         operation_id="3",
-        operation_summary="Update Employee Emergency Information",
+        operation_summary="Update Employee Information",
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -1645,6 +1587,19 @@ class Update_Emp_Emerg_Info(APIView):
                             },
                         ),
                     },
+                ),
+                "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
+                "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                "dob": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE, example="2024-02-24"),
+                "email": openapi.Schema(
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
+                ),
+                "job_title": openapi.Schema(type=openapi.TYPE_STRING),
+                "marital_status": openapi.Schema(type=openapi.TYPE_STRING),
+                "gender": openapi.Schema(type=openapi.TYPE_STRING),
+                "role": openapi.Schema(type=openapi.TYPE_STRING),
+                "joining_date": openapi.Schema(
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME
                 ),
             },
         ),
