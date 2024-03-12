@@ -2368,7 +2368,7 @@ class Hr_Clients(APIView):
                 required=True,
             ),
         ],
-        operation_summary="Endpoint to update client status record.",
+        operation_summary="Endpoint to update client status.",
         operation_id="3",
     )
     def patch(self, request, *args, **kwargs):
@@ -2411,13 +2411,13 @@ class Hr_Clients(APIView):
             400: openapi.Response(description="Bad Request"),
         },
         operation_id="3 ",
-        operation_summary="client remove",
+        operation_summary="Endpoint to remove client.",
     )
     def delete(self, request, *args, **kwargs):
         try:
             client_id = request.query_params.get("id")
             clt = client.objects.get(id=client_id)
-            related_models= [outsource_employees,client_contract,employee_invoice,hiring_request,interview_schedule,offshore_contracts,onboarding,other_payment,punch_request,time_sheet,leave_request,end_user]
+            related_models= [outsource_employees,employee_invoice,hiring_request,interview_schedule,offshore_contracts,onboarding,other_payment,punch_request,time_sheet,leave_request,end_user]
             for model in related_models:
                 data = model.objects.filter(client_id=clt.email)
                 if not data.exists():
