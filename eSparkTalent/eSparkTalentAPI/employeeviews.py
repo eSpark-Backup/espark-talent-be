@@ -642,7 +642,7 @@ class Company_Contract(APIView):
                     },
                 ),
             ),
-            400: openapi.Response(description="Bad Request"),
+            204: openapi.Response(description="Empty Record"),
             401: openapi.Response(description="Unauthorized"),
         },
         manual_parameters=[
@@ -673,7 +673,7 @@ class Company_Contract(APIView):
 
             return Response(records, status=status.HTTP_200_OK)
         else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @authentication_classes([JWTAuthentication])
@@ -701,7 +701,7 @@ class Offshore_Contract(APIView):
                     },
                 ),
             ),
-            400: openapi.Response(description="Bad Request"),
+            204: openapi.Response(description="Empty Record"),
             401: openapi.Response(description="Unauthorized"),
         },
         manual_parameters=[
@@ -743,7 +743,7 @@ class Offshore_Contract(APIView):
                 records.append(record)
             return Response(records, status=status.HTTP_200_OK)
         else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @authentication_classes([JWTAuthentication])
@@ -1670,16 +1670,26 @@ class Time_Sheet(APIView):
                     "leaves": leaves,
                 }
                 emp = employee.objects.get(email=e_email)
-                clnt = client.objects.get(email=workspace)
+                if workspace=="talent@esparkconsultant.com":
+                    company_name="eSpark Talent"
+                    location="Karachi"
+                else:
+                    try:
+                        clnt = client.objects.get(email=workspace)
+                        company_name=clnt.company_name
+                        location=clnt.address
+                    except client.DoesNotExist:
+                        company_name="-"
+                        location="-"
                 outsrc_emp = outsource_employees.objects.get(
-                    employee_id=e_email, client_id=workspace
-                )
+                        employee_id=e_email, client_id=workspace
+                    )
 
                 employee_details = {
                     "employee_id": emp.employee_id,
                     "employee_name": emp.first_name + " " + emp.last_name,
-                    "company": clnt.company_name,
-                    "location": clnt.address,
+                    "company": company_name,
+                    "location": location,
                     "job_title": outsrc_emp.job_title,
                     "joining_date": outsrc_emp.joining_date,
                 }
@@ -1791,16 +1801,27 @@ class Time_Sheet(APIView):
                 }
 
                 emp = employee.objects.get(email=e_email)
-                clnt = client.objects.get(email=workspace)
+                if workspace=="talent@esparkconsultant.com":
+                    company_name="eSpark Talent"
+                    location="Karachi"
+                else:
+                    try:
+                        clnt = client.objects.get(email=workspace)
+                        company_name=clnt.company_name
+                        location=clnt.address
+                    except client.DoesNotExist:
+                        company_name="-"
+                        location="-"
+                
                 outsrc_emp = outsource_employees.objects.get(
-                    employee_id=e_email, client_id=workspace
-                )
+                        employee_id=e_email, client_id=workspace
+                    )
 
                 employee_details = {
                     "employee_id": emp.employee_id,
                     "employee_name": emp.first_name + " " + emp.last_name,
-                    "company": clnt.company_name,
-                    "location": clnt.address,
+                    "company": company_name,
+                    "location": location,
                     "job_title": outsrc_emp.job_title,
                     "joining_date": outsrc_emp.joining_date,
                 }
