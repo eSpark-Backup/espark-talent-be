@@ -306,5 +306,19 @@ def AttendanceSummary(e_email, workspace):
 
 
     except:
-        attendence_summary = {}
+        attendence_summary = {
+            "shifts":0,
+            "expected_minutes":0,
+            "worked_minutes":0,
+            "short_minutes":0,
+            "leaves":0,
+            "absents":0,
+            "presents":0,
+            "missings":0,
+            "days_off":0,
+            "overtimes":0,
+            "short_durations":0,
+            "late_arrivals":0,
+            "break_minutes":0,
+        }
     return attendence_summary
