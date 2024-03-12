@@ -1590,7 +1590,7 @@ class Update_Emp_Info(APIView):
                 ),
                 "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
                 "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
-                "dob": openapi.Schema(type=openapi.TYPE_STRING),
+                "dob": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE, example="2024-02-24"),
                 "email": openapi.Schema(
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
                 ),
