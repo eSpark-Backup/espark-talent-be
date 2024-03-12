@@ -21,6 +21,7 @@ from .emp_dash_funcs import *
 @permission_classes([IsAuthenticated])
 class Employee_Home(APIView):
     parser_classes = (MultiPartParser,)
+
     @swagger_auto_schema(
         tags=["Dashboard"],
         manual_parameters=[
@@ -172,9 +173,15 @@ class Employee_Home(APIView):
                                 "missings": openapi.Schema(type=openapi.TYPE_INTEGER),
                                 "days_off": openapi.Schema(type=openapi.TYPE_INTEGER),
                                 "overtimes": openapi.Schema(type=openapi.TYPE_INTEGER),
-                                "short_durations": openapi.Schema(type=openapi.TYPE_INTEGER),
-                                "late_arrivals": openapi.Schema(type=openapi.TYPE_INTEGER),
-                                "break_minutes": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "short_durations": openapi.Schema(
+                                    type=openapi.TYPE_INTEGER
+                                ),
+                                "late_arrivals": openapi.Schema(
+                                    type=openapi.TYPE_INTEGER
+                                ),
+                                "break_minutes": openapi.Schema(
+                                    type=openapi.TYPE_INTEGER
+                                ),
                             },
                         ),
                         "statistics": openapi.Schema(
@@ -284,11 +291,13 @@ class Employee_Home(APIView):
         ]
         clients = client.objects.filter(email__in=out_sourced_to)
         workspaces = []
-        workspaces.append({
-            "email":"talent@esparkconsultants.com",
-            "client_name":"eSpark Talent",
-            "company_name":"eSpark"
-        })
+        workspaces.append(
+            {
+                "email": "talent@esparkconsultants.com",
+                "client_name": "eSpark Talent",
+                "company_name": "eSpark",
+            }
+        )
         if clients:
             for rec in clients:
                 record = {
@@ -297,7 +306,7 @@ class Employee_Home(APIView):
                     "company_name": rec.company_name,
                 }
                 workspaces.append(record)
-            
+
         try:
             leave_records = leave_balance.objects.get(employee_id=e_email)
             leave_summary = {
@@ -314,15 +323,15 @@ class Employee_Home(APIView):
         if workspace:
             today_activity = TodayActivity(e_email=e_email, workspace=workspace)
             statistics = Statistics(e_email=e_email, workspace=workspace)
-            attendance_summary = AttendanceSummary(e_email=e_email, workspace=workspace) 
+            attendance_summary = AttendanceSummary(e_email=e_email, workspace=workspace)
             try:
                 punch_timings = employee.objects.get(email=e_email).punch_timings
             except:
-                punch_timings={}
+                punch_timings = {}
             try:
-                company_image=company_data.objects.all()[0].image.path
+                company_image = company_data.objects.all()[0].image.path
             except:
-                company_image=""
+                company_image = ""
 
             payload = {
                 "employee_details": employee_details,
@@ -337,17 +346,23 @@ class Employee_Home(APIView):
             return Response(payload, status=status.HTTP_200_OK)
 
         else:
-            today_activity = TodayActivity(e_email=e_email, workspace="talent@esparkconsultants.com")
-            statistics = Statistics(e_email=e_email, workspace="talent@esparkconsultants.com")
-            attendance_summary = AttendanceSummary(e_email=e_email, workspace="talent@esparkconsultants.com")
+            today_activity = TodayActivity(
+                e_email=e_email, workspace="talent@esparkconsultants.com"
+            )
+            statistics = Statistics(
+                e_email=e_email, workspace="talent@esparkconsultants.com"
+            )
+            attendance_summary = AttendanceSummary(
+                e_email=e_email, workspace="talent@esparkconsultants.com"
+            )
             try:
                 punch_timings = employee.objects.get(email=e_email).punch_timings
             except:
-                punch_timings={}
+                punch_timings = {}
             try:
-                company_image=company_data.objects.all()[0].image.path
+                company_image = company_data.objects.all()[0].image.path
             except:
-                company_image=""
+                company_image = ""
             payload = {
                 "employee_details": employee_details,
                 "company_image": company_image,
@@ -359,7 +374,7 @@ class Employee_Home(APIView):
                 "today_activity": today_activity,
             }
             return Response(payload, status=status.HTTP_200_OK)
-        
+
     @swagger_auto_schema(
         tags=["Dashboard: Mark check in, Mark checkout, Mark break out, Mark resumed"],
         manual_parameters=[
@@ -515,6 +530,9 @@ class Employee_Home(APIView):
                         rec.record[now.date().strftime("%d-%m-%Y")]["status"][
                             "Short Duration"
                         ] = True
+                        rec.record[now.date().strftime("%d-%m-%Y")]["status"][
+                            "Missing"
+                        ] = False
                         rec.save()
                         return Response(status=status.HTTP_200_OK)
 
@@ -530,6 +548,9 @@ class Employee_Home(APIView):
                         ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
                         rec.record[now.date().strftime("%d-%m-%Y")]["status"][
                             "Short Duration"
+                        ] = False
+                        rec.record[now.date().strftime("%d-%m-%Y")]["status"][
+                            "Missing"
                         ] = False
                         if overtime_hours and overtime_min:
                             over_duration = f"{overtime_hours}h {overtime_min}m"
@@ -601,6 +622,7 @@ class Employee_Home(APIView):
 @permission_classes([IsAuthenticated])
 class Company_Contract(APIView):
     parser_classes = (MultiPartParser,)
+
     @swagger_auto_schema(
         tags=["Company contracts"],
         responses={
@@ -658,6 +680,7 @@ class Company_Contract(APIView):
 @permission_classes([IsAuthenticated])
 class Offshore_Contract(APIView):
     parser_classes = (MultiPartParser,)
+
     @swagger_auto_schema(
         tags=["Client contracts"],
         responses={
@@ -727,6 +750,7 @@ class Offshore_Contract(APIView):
 @permission_classes([IsAuthenticated])
 class Leave_Request(APIView):
     parser_classes = (MultiPartParser,)
+
     @swagger_auto_schema(
         tags=["Leave"],
         manual_parameters=[
@@ -743,7 +767,7 @@ class Leave_Request(APIView):
                 openapi.IN_QUERY,
                 description="Status filter (pending, completed, rejected) otherwise all",
                 type=openapi.TYPE_STRING,
-                enum=["","pending", "completed", "rejected"],
+                enum=["", "pending", "completed", "rejected"],
             ),
             openapi.Parameter(
                 "from",
@@ -1300,7 +1324,7 @@ class Leave_Request(APIView):
     )
     def post(self, request, *args, **kwargs):
         e_email = request.user
-        serializer=LeaveRequestSerializer(data=request.data)
+        serializer = LeaveRequestSerializer(data=request.data)
         if serializer.is_valid():
             try:
                 leave_request.objects.create(
@@ -1318,9 +1342,11 @@ class Leave_Request(APIView):
             except ValidationError as e:
                 return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
             except:
-                return Response({"error":"Invalid form fields"},status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": "Invalid form fields"}, status=status.HTTP_400_BAD_REQUEST
+                )
         else:
-            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         tags=["Leave : Actions : Delete"],
@@ -1360,6 +1386,7 @@ class Leave_Request(APIView):
 @permission_classes([IsAuthenticated])
 class Time_Sheet(APIView):
     parser_classes = (MultiPartParser,)
+
     @swagger_auto_schema(
         tags=["Time sheet"],
         manual_parameters=[
@@ -1544,7 +1571,7 @@ class Time_Sheet(APIView):
                     time_sheet.months, start=1
                 )
             }
-            
+
             time_sheet_records = time_sheet.objects.filter(
                 Q(employee_id=e_email, client_id=workspace),
                 Q(
@@ -1556,16 +1583,14 @@ class Time_Sheet(APIView):
                     year__lte=to_year,
                 ),
             )
-            
+
             filtered_record = {}
             for record in time_sheet_records:
                 for key, value in record.record.items():
                     date = datetime.strptime(key, "%d-%m-%Y")
-                    if (
-                        from_date_object <= date <= to_date_object
-                    ) :
+                    if from_date_object <= date <= to_date_object:
                         filtered_record[key] = value
-            
+
             if len(filtered_record) > 0:
                 hours_worked = 0
                 minutes_worked = 0
@@ -1575,7 +1600,7 @@ class Time_Sheet(APIView):
                 leaves = 0
                 day_off = 0
                 absent = 0
-                actual_shifts=0
+                actual_shifts = 0
                 for date, rec in filtered_record.items():
                     if rec["check_in"] != "-" and rec["check_out"] != "-":
                         check_in_time = rec["check_in"]
@@ -1603,8 +1628,11 @@ class Time_Sheet(APIView):
                         day_off += rec["status"]["Day Off"]
                     if rec["status"]["Absent"] == True:
                         absent += rec["status"]["Absent"]
-                    if rec["status"]["Day Off"] == False and rec["status"]["Full Leave"]==False:
-                        actual_shifts+=1
+                    if (
+                        rec["status"]["Day Off"] == False
+                        and rec["status"]["Full Leave"] == False
+                    ):
+                        actual_shifts += 1
                 if minutes_worked and hours_worked:
                     worked_hours = f"{hours_worked}h {minutes_worked}m"
                 elif hours_worked and not minutes_worked:
@@ -1708,9 +1736,11 @@ class Time_Sheet(APIView):
                         check_in_time = rec["check_in"]
                         check_out_time = rec["check_out"]
                         check_in_datetime = datetime.strptime(check_in_time, "%I:%M %p")
-                        check_out_datetime = datetime.strptime(check_out_time, "%I:%M %p")
+                        check_out_datetime = datetime.strptime(
+                            check_out_time, "%I:%M %p"
+                        )
                         time_difference = check_out_datetime - check_in_datetime
-                        
+
                         hours_worked += time_difference.seconds // 3600
                         minutes_worked += (time_difference.seconds // 60) % 60
 
@@ -1805,11 +1835,12 @@ class Time_Sheet(APIView):
             except:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-         
+
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Punch_Request(APIView):
     parser_classes = (MultiPartParser,)
+
     @swagger_auto_schema(
         tags=["Punch requests"],
         manual_parameters=[
@@ -1826,7 +1857,7 @@ class Punch_Request(APIView):
                 openapi.IN_QUERY,
                 description="Status filter (pending, completed, rejected) otherwise all",
                 type=openapi.TYPE_STRING,
-                enum=["","pending", "completed", "rejected"],
+                enum=["", "pending", "completed", "rejected"],
             ),
             openapi.Parameter(
                 "from",
@@ -2153,7 +2184,7 @@ class Punch_Request(APIView):
     )
     def post(self, request, *args, **kwargs):
         e_email = request.user
-        serializer=PunchRequestSerializer(data=request.data)
+        serializer = PunchRequestSerializer(data=request.data)
         if serializer.is_valid():
             try:
                 punch_request.objects.create(
@@ -2167,9 +2198,11 @@ class Punch_Request(APIView):
                 )
                 return Response(status=status.HTTP_201_CREATED)
             except:
-                return Response({"error":"Invalid form fields"},status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": "Invalid form fields"}, status=status.HTTP_400_BAD_REQUEST
+                )
         else:
-            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         tags=["Punch requests : Actions : Delete"],
@@ -2209,6 +2242,7 @@ class Punch_Request(APIView):
 @permission_classes([IsAuthenticated])
 class Policies(APIView):
     parser_classes = (MultiPartParser,)
+
     @swagger_auto_schema(
         tags=["Policies"],
         responses={
