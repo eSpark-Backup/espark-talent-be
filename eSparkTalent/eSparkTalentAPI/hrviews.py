@@ -1092,7 +1092,7 @@ class Hr_Employees(APIView):
         employee_id = request.query_params.get("id")
         try:
             emp = employee.objects.get(id=employee_id)
-            related_models = [outsource_employees, asset, employee_contract,time_sheet,employee_invoice, leave_balance, leave_request,punch_request,Offshore_Contract,end_user ]
+            related_models = [outsource_employees, asset, employee_contract,time_sheet,employee_invoice, leave_balance, leave_request,punch_request,offshore_contracts,end_user ]
             with transaction.atomic(using='default'):  
                 for model_class in related_models:
                     model_data = model_class.objects.filter(employee_id=emp.email)
