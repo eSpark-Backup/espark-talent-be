@@ -16,6 +16,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
+from django.db import transaction
 import json
 
 @authentication_classes([JWTAuthentication])
@@ -1212,7 +1213,7 @@ class Hr_Employees(APIView):
                 for emp in outsource:
                     try:
                         e_user = employee.objects.get(email=emp.employee_id)
-                        c_user = client.objects.get(email=emp.client_id)
+                        c_user = client.objects.get(email=emp.client_id) 
                         if e_user:
                             record = {
                                 "id": e_user.id,
@@ -1281,7 +1282,55 @@ class Hr_Employees(APIView):
 
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
+            
+    @swagger_auto_schema(
+        tags=["Employees "],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="Unauthorize"),
+        },
+        operation_summary="Endpoint to delete an employee.",
+        operation_id="3",
+    )     
+     
+    def delete(self, request, *args, **kwargs):
+        employee_id = request.query_params.get("id")
+        try:
+            emp = employee.objects.get(id=employee_id)
+            related_models = [outsource_employees, asset, employee_contract,time_sheet,employee_invoice, leave_balance, leave_request,punch_request,offshore_contracts,end_user ]
+            with transaction.atomic(using='default'):  
+                for model_class in related_models:
+                    model_data = model_class.objects.filter(employee_id=emp.email)
+                    if not model_data.exists():
+                        model_data = model_class.objects.filter(email=emp.email)
+                        model_data.delete()
+                    else:
+                        model_data.delete()
+                emp.delete()
 
+            return Response({"message": "Employee and associated data removed successfully"}, status=status.HTTP_200_OK)
+        except employee.DoesNotExist:
+            return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            print(f"Error: {str(e)}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -3355,7 +3404,7 @@ class Company_Contract(APIView):
     parser_classes = (MultiPartParser,)
 
     @swagger_auto_schema(
-        tags=["Comapny Contract"],
+        tags=["Company Contract"],
         manual_parameters=[
             openapi.Parameter(
                 "status",
@@ -3462,7 +3511,7 @@ class Company_Contract(APIView):
         )
 
     @swagger_auto_schema(
-        tags=["Comapny Contract"],
+        tags=["Company Contract"],
         manual_parameters=[
             openapi.Parameter(
                 "status",
