@@ -3955,11 +3955,6 @@ class ClientEmployees(APIView):
                 type=openapi.TYPE_INTEGER,
             ),
             openapi.Parameter(
-                "status",
-                openapi.IN_QUERY,
-                type=openapi.TYPE_STRING,
-            ),
-            openapi.Parameter(
                 "Authorization",
                 openapi.IN_HEADER,
                 description="Bearer Token",
@@ -3972,6 +3967,7 @@ class ClientEmployees(APIView):
                 "status": openapi.Schema(type=openapi.TYPE_STRING)
             },
             required=["status"],
+            enum=["active","terminated"]
         ),
         responses={
             200: "Successful Request",
@@ -4013,7 +4009,6 @@ class ClientAddEmployee(APIView):
                         "image": openapi.Schema(type=openapi.TYPE_STRING),
                         "gender": openapi.Schema(type=openapi.TYPE_STRING),
                         "job_title": openapi.Schema(type=openapi.TYPE_STRING),
-                        "employment_term": openapi.Schema(type=openapi.TYPE_STRING),
                     },
                 ),
             ),
@@ -4056,7 +4051,6 @@ class ClientAddEmployee(APIView):
                         "id":emp.id,
                         "gender":emp.gender,
                         "job_title":outsrcd_emp.job_title,
-                        "employment_term":outsrcd_emp.employment_term,
                     }
                     records.append(record)
                 except:
@@ -4070,6 +4064,7 @@ class ClientAddEmployee(APIView):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
+                "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                 "country": openapi.Schema(type=openapi.TYPE_STRING),
                 "job_title": openapi.Schema(type=openapi.TYPE_STRING),
                 "role_type": openapi.Schema(type=openapi.TYPE_STRING),
@@ -4081,6 +4076,7 @@ class ClientAddEmployee(APIView):
                 "benefits": openapi.Schema(type=openapi.TYPE_OBJECT),
             },
             required=[
+                "id",
                 "country",
                 "job_title",
                 "role_type",
@@ -4103,11 +4099,6 @@ class ClientAddEmployee(APIView):
                 format=openapi.FORMAT_EMAIL,
             ),
             openapi.Parameter(
-                "id",
-                openapi.IN_QUERY,
-                type=openapi.TYPE_INTEGER,
-            ),
-            openapi.Parameter(
                 "Authorization",
                 openapi.IN_HEADER,
                 description="Bearer Token",
@@ -4119,7 +4110,7 @@ class ClientAddEmployee(APIView):
     )
     def post(self, request, *args, **kwargs):
         c_email=request.query_params.get("c_email")
-        id=request.query_params.get("id")
+        id=request.data.get("id")
         job_title=request.data.get("job_title")
         country=request.data.get("country")
         role_type=request.data.get("role")
