@@ -1161,6 +1161,42 @@ class Leave_Request(APIView):
             ).count()
             try:
                 l_balance = leave_balance.objects.get(employee_id=e_email)
+                l_balance.casual_leaves["pending"] = leave_request.objects.filter(
+                    employee_id=e_email,
+                    client_id=workspace,
+                    status="pending",
+                    leave_type="casual",
+                ).count()
+                l_balance.sick_leaves["pending"] = leave_request.objects.filter(
+                    employee_id=e_email,
+                    client_id=workspace,
+                    status="pending",
+                    leave_type="sick",
+                ).count()
+                l_balance.annual_leaves["pending"] = leave_request.objects.filter(
+                    employee_id=e_email,
+                    client_id=workspace,
+                    status="pending",
+                    leave_type="annual",
+                ).count()
+                l_balance.unpaid_leaves["pending"] = leave_request.objects.filter(
+                    employee_id=e_email,
+                    client_id=workspace,
+                    status="pending",
+                    leave_type="unpaid",
+                ).count()
+                l_balance.paid_leaves["pending"] = leave_request.objects.filter(
+                    employee_id=e_email,
+                    client_id=workspace,
+                    status="pending",
+                    leave_type="paid",
+                ).count()
+                l_balance.hajj_leaves["pending"] = leave_request.objects.filter(
+                    employee_id=e_email,
+                    client_id=workspace,
+                    status="pending",
+                    leave_type="hajj",
+                ).count()
                 balance_record = {
                     "id": l_balance.id,
                     "casual_leaves": l_balance.casual_leaves,
@@ -1282,6 +1318,7 @@ class Leave_Request(APIView):
                 name="leave_type",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
+                enum=["casual", "sick", "annual", "paid", "unpaid", "hajj"],
                 required=True,
             ),
             openapi.Parameter(
@@ -1315,8 +1352,7 @@ class Leave_Request(APIView):
             openapi.Parameter(
                 name="attachment",
                 in_=openapi.IN_FORM,
-                type=openapi.TYPE_FILE,
-                required=True,
+                type=openapi.TYPE_FILE
             ),
         ],
         operation_summary="Create leave request.",
@@ -1670,20 +1706,20 @@ class Time_Sheet(APIView):
                     "leaves": leaves,
                 }
                 emp = employee.objects.get(email=e_email)
-                if workspace=="talent@esparkconsultant.com":
-                    company_name="eSpark Talent"
-                    location="Karachi"
+                if workspace == "talent@esparkconsultant.com":
+                    company_name = "eSpark Talent"
+                    location = "Karachi"
                 else:
                     try:
                         clnt = client.objects.get(email=workspace)
-                        company_name=clnt.company_name
-                        location=clnt.address
+                        company_name = clnt.company_name
+                        location = clnt.address
                     except client.DoesNotExist:
-                        company_name="-"
-                        location="-"
+                        company_name = "-"
+                        location = "-"
                 outsrc_emp = outsource_employees.objects.get(
-                        employee_id=e_email, client_id=workspace
-                    )
+                    employee_id=e_email, client_id=workspace
+                )
 
                 employee_details = {
                     "employee_id": emp.employee_id,
@@ -1801,21 +1837,21 @@ class Time_Sheet(APIView):
                 }
 
                 emp = employee.objects.get(email=e_email)
-                if workspace=="talent@esparkconsultant.com":
-                    company_name="eSpark Talent"
-                    location="Karachi"
+                if workspace == "talent@esparkconsultant.com":
+                    company_name = "eSpark Talent"
+                    location = "Karachi"
                 else:
                     try:
                         clnt = client.objects.get(email=workspace)
-                        company_name=clnt.company_name
-                        location=clnt.address
+                        company_name = clnt.company_name
+                        location = clnt.address
                     except client.DoesNotExist:
-                        company_name="-"
-                        location="-"
-                
+                        company_name = "-"
+                        location = "-"
+
                 outsrc_emp = outsource_employees.objects.get(
-                        employee_id=e_email, client_id=workspace
-                    )
+                    employee_id=e_email, client_id=workspace
+                )
 
                 employee_details = {
                     "employee_id": emp.employee_id,

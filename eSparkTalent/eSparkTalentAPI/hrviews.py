@@ -4107,10 +4107,9 @@ class ClientEmployees(APIView):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "status": openapi.Schema(type=openapi.TYPE_STRING)
+                "status": openapi.Schema(type=openapi.TYPE_STRING, enum=["active","terminated"])
             },
-            required=["status"],
-            enum=["active","terminated"]
+            required=["status"]
         ),
         responses={
             200: "Successful Request",
