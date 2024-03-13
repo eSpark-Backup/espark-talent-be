@@ -2417,7 +2417,7 @@ class Hr_Clients(APIView):
         try:
             client_id = request.query_params.get("id")
             clt = client.objects.get(id=client_id)
-            related_models= [outsource_employees,employee_invoice,hiring_request,interview_schedule,offshore_contracts,onboarding,other_payment,punch_request,time_sheet,leave_request,end_user]
+            related_models= [outsource_employees,employee_invoice,hiring_request,interview_schedule,client_contract,offshore_contracts,onboarding,other_payment,punch_request,time_sheet,leave_request,end_user]
             for model in related_models:
                 data = model.objects.filter(client_id=clt.email)
                 if not data.exists():
