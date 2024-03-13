@@ -4008,7 +4008,7 @@ class ClientAddEmployee(APIView):
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
-                        "id": openapi.Schema(type=openapi.TYPE_STRING),
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "name": openapi.Schema(type=openapi.TYPE_STRING),
                         "image": openapi.Schema(type=openapi.TYPE_STRING),
                         "gender": openapi.Schema(type=openapi.TYPE_STRING),
@@ -4053,7 +4053,7 @@ class ClientAddEmployee(APIView):
                     record={
                         "image":emp.image.path,
                         "name":emp.first_name+" "+emp.last_name,
-                        "id":emp.employee_id,
+                        "id":emp.id,
                         "gender":emp.gender,
                         "job_title":outsrcd_emp.job_title,
                         "employment_term":outsrcd_emp.employment_term,
@@ -4103,9 +4103,9 @@ class ClientAddEmployee(APIView):
                 format=openapi.FORMAT_EMAIL,
             ),
             openapi.Parameter(
-                "e_id",
+                "id",
                 openapi.IN_QUERY,
-                type=openapi.TYPE_STRING,
+                type=openapi.TYPE_INTEGER,
             ),
             openapi.Parameter(
                 "Authorization",
@@ -4119,7 +4119,7 @@ class ClientAddEmployee(APIView):
     )
     def post(self, request, *args, **kwargs):
         c_email=request.query_params.get("c_email")
-        e_id=request.query_params.get("e_id")
+        id=request.query_params.get("id")
         job_title=request.data.get("job_title")
         country=request.data.get("country")
         role_type=request.data.get("role")
@@ -4127,9 +4127,9 @@ class ClientAddEmployee(APIView):
         joining_date=request.data.get("joining_date")
         salary=request.data.get("salary")
         benefits=request.data.get("benefits")
-        if e_id and c_email:
+        if id and c_email:
             try:
-                emp=employee.objects.get(employee_id=e_id)
+                emp=employee.objects.get(id=id)
             except employee.DoesNotExist:
                 return Response({"error":"Employee with this id does not exist"},status=status.HTTP_400_BAD_REQUEST)
             try:
