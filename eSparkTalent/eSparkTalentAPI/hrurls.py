@@ -31,5 +31,5 @@ urlpatterns=[
     path('hr_invoices/', Invoices.as_view()),
     path('hr_clientemps/', ClientEmployees.as_view()),
     path('hr_clientaddemp/', ClientAddEmployee.as_view()),
-
+    path('hr_empattendence/', Attendence_Report.as_view()),
 ]

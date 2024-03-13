@@ -1801,7 +1801,7 @@ class Time_Sheet(APIView):
                 }
 
                 emp = employee.objects.get(email=e_email)
-                if workspace=="talent@esparkconsultant.com":
+                if workspace=="talent@esparkconsultants.com":
                     company_name="eSpark Talent"
                     location="Karachi"
                 else:
