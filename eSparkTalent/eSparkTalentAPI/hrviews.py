@@ -1600,6 +1600,299 @@ class Hr_Employee(APIView):
 
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Time_and_leave(APIView):
+    @swagger_auto_schema(
+        tags=["Employees : Time & Leaves"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                            "time": openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    "check_in": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "check_out": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                },
+                            ),
+                            "leaves": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "status": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "leave_type": openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "casual_leaves": openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            "total": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                            "allot": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                            "availed": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                            
+                                        },
+                                    ),
+                                    "sick_leaves": openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            "total": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                            "allot": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                            "availed": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                            
+                                        },
+                                    ),
+                                    "annual_leaves": openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            "total": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                            "allot": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                            "availed": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                            
+                                        },
+                                    ),
+                                    "unpaid_leaves": openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            "total": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                            "allot": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                            "availed": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                        },
+                                    ),
+                                    "paid_leaves": openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            "total": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                            "allot": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                            "availed": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                        },
+                                    ),
+                                    "hajj_leaves": openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            "total": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                            "balance": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                            "available": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                            "availed": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                            "pending": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                        },
+                                    ),
+                                  }
+                                )
+                            },
+                        ),            
+                    },
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+            400: openapi.Response(description="Bad Request"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Employee record ID",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "tab",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                enum=["time","leaves"],
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_id=".",
+        operation_summary="Get Employee time and leaves Details",
+    )
+    def get(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        tab = request.query_params.get("tab")
+        employee_data = employee.objects.get(id=record_id)
+        if tab == "time":
+            try:
+                # punch_timings.pop('check_in', None)
+                # punch_timings.pop('check_out', None)
+                record = {
+                        "id": employee_data.id,
+                        "check_in" : employee_data.punch_timings["check_in"],
+                        "check_out" : employee_data.punch_timings["check_out"],
+                }
+                return Response(record, status=status.HTTP_200_OK)
+            except:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+        elif tab == "leaves":
+            try:
+                l_request = leave_request.objects.get(employee_id=employee_data.email)
+                l_balance = leave_balance.objects.get(employee_id=employee_data.email)
+                record = {
+                    "id": l_balance.id,
+                    "leave_type" : l_request.leave_type,
+                    "casual_leaves": l_balance.casual_leaves,
+                    "sick_leaves": l_balance.sick_leaves,
+                    "annual_leaves": l_balance.annual_leaves,
+                    "unpaid_leaves": l_balance.unpaid_leaves,
+                    "paid_leaves": l_balance.paid_leaves,
+                    "hajj_leaves": l_balance.hajj_leaves,
+            }
+                return Response(record, status=status.HTTP_200_OK)
+            except:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+
+# @authentication_classes([JWTAuthentication])
+# @permission_classes([IsAuthenticated])
+# class Time_and_leave_update(APIView):
+#     @swagger_auto_schema(
+#         tags=["Employees : Time & Leaves"],
+#         request_body=openapi.Schema(
+#             type=openapi.TYPE_OBJECT,
+#             required=["id", "check_in", "check_out"],
+#             properties={
+#                 "check_in": openapi.Schema(type=openapi.TYPE_STRING),
+#                 "check_out": openapi.Schema(type=openapi.TYPE_STRING),
+#             },
+#         ),
+#         responses={
+#             status.HTTP_200_OK: "Timings updated successfully",
+#             status.HTTP_400_BAD_REQUEST: "Bad request",
+#             status.HTTP_404_NOT_FOUND: "Employee record not found",
+#         },
+#         manual_parameters=[
+#             openapi.Parameter(
+#                 "id",
+#                 openapi.IN_QUERY,
+#                 description="Employee record ID",
+#                 type=openapi.TYPE_STRING,
+#             ),
+#             openapi.Parameter(
+#                 "tab",
+#                 openapi.IN_QUERY,
+#                 type=openapi.TYPE_STRING,
+#                 enum=["time","leaves"],
+#             ),
+#             openapi.Parameter(
+#                 "Authorization",
+#                 openapi.IN_HEADER,
+#                 description="Bearer Token",
+#                 type=openapi.TYPE_STRING,
+#             ),
+#         ],
+#         operation_id=".",
+#         operation_summary="Get Employee time and leaves Details",
+#     )
+#     def patch(self, request, *args, **kwargs):
+#         record_id = request.query_params.get("id")
+#         tab = request.query_params.get("tab")
+#         check_in = request.data.get("check_in")
+#         check_out = request.data.get("check_out")
+#         if tab == "time":
+#             try:
+#                 employee_data = employee.objects.get(id=record_id)
+#                 employee_data.punch_timings["check_in"] = check_in
+#                 employee_data.punch_timings["check_out"] = check_out
+#                 employee_data.save()
+#                 return Response({"message": "Timings updated successfully"}, status=status.HTTP_200_OK)
+#             except employee.DoesNotExist:
+#                 return Response({"error": "Employee record not found"}, status=status.HTTP_404_NOT_FOUND)
+#             except Exception as e:
+#                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            
+#     @swagger_auto_schema(
+#         request_body=openapi.Schema(
+#             type=openapi.TYPE_OBJECT,
+#             properties={
+#                 'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+#                 'casual_leaves': openapi.Schema(type=openapi.TYPE_INTEGER),
+#                 'sick_leaves': openapi.Schema(type=openapi.TYPE_INTEGER),
+#                 'annual_leaves': openapi.Schema(type=openapi.TYPE_INTEGER),
+#                 'unpaid_leaves': openapi.Schema(type=openapi.TYPE_INTEGER),
+#                 'paid_leaves': openapi.Schema(type=openapi.TYPE_INTEGER),
+#                 'hajj_leaves': openapi.Schema(type=openapi.TYPE_INTEGER),
+#             }
+#         ),
+#         responses={
+#             status.HTTP_200_OK: "Leave balance updated successfully",
+#             status.HTTP_400_BAD_REQUEST: "Bad request",
+#             status.HTTP_404_NOT_FOUND: "Employee record not found",
+#         }
+#     )
+#     def patch(self, request, *args, **kwargs):
+#             record_id = request.query_params.get("id")
+#             try:
+#                 employee_data = employee.objects.get(id=record_id)
+#                 l_balance = leave_balance.objects.get(employee_id=employee_data.email)
+#                 l_balance.casual_leaves = request.data.get("casual_leaves")
+#                 l_balance.sick_leaves = request.data.get("sick_leaves")
+#                 l_balance.annual_leaves = request.data.get("annual_leaves")
+#                 l_balance.unpaid_leaves = request.data.get("unpaid_leaves")
+#                 l_balance.paid_leaves = request.data.get("paid_leaves")
+#                 l_balance.hajj_leaves = request.data.get("hajj_leaves")
+
+#                 l_balance.save()
+#                 return Response(l_balance, status=status.HTTP_200_OK)
+#             except employee.DoesNotExist:
+#                 return Response({"error": "Employee record not found"}, status=status.HTTP_404_NOT_FOUND)
+#             except leave_request.DoesNotExist:
+#                 return Response({"error": "Leave request not found"}, status=status.HTTP_404_NOT_FOUND)
+#             except leave_balance.DoesNotExist:
+#                 return Response({"error": "Leave balance not found"}, status=status.HTTP_404_NOT_FOUND)
+#             except Exception as e:
+#                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 @authentication_classes([JWTAuthentication])
@@ -4017,7 +4310,7 @@ class ClientEmployees(APIView):
             },
             required=["status"],
             enum=["active","terminated"]
-        ),
+        ), 
         responses={
             200: "Successful Request",
             400: "Bad Request",

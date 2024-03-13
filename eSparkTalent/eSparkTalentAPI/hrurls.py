@@ -12,6 +12,7 @@ urlpatterns=[
     path('hr_home/', Hr_Home.as_view()),
     path('hr_emps/', Hr_Employees.as_view()),
     path('hr_emp_prof/', Hr_Employee.as_view()),
+    path('hr_emp_time_leave/', Time_and_leave.as_view()),
     path('hr_update_empinfo/', Update_Emp_Info.as_view()),
     path('hr_update_empimg/', Update_Emp_Profile_Pic.as_view()),
     path('hr_update_empcred/', Edit_Cridentials.as_view()),
