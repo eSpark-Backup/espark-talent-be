@@ -3895,3 +3895,297 @@ class Invoices(APIView):
             return Response(
                 {"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class ClientEmployees(APIView):
+    @swagger_auto_schema(
+        tags=["Clients: Employees"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "emp_pk": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "email": openapi.Schema(type=openapi.TYPE_STRING,format=openapi.FORMAT_EMAIL,),
+                        "name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "image": openapi.Schema(type=openapi.TYPE_STRING),
+                        "job_title": openapi.Schema(type=openapi.TYPE_STRING),
+                        "status": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
+            ),
+            204: openapi.Response("No Content"),
+            400: openapi.Response("Bad Request"),
+            401: openapi.Response("Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "c_email",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+            ),
+            openapi.Parameter(
+                "tab",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                enum=["all", "active", "terminated"],
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve outsourced employees under specified client",
+        operation_id="1",
+    )
+    def get(self, request, *args, **kwargs):
+        c_email=request.query_params.get("c_email")
+        tab=request.query_params.get("tab")
+        if c_email and tab=="active" or tab=="terminated":
+            c_emps=outsource_employees.objects.filter(client_id=c_email, status=tab)
+            if c_emps:
+                records=[]
+                for c_emp in c_emps:
+                    try:
+                        emp=employee.objects.get(email=c_emp.employee_id)
+                        record={
+                            "id":c_emp.id,
+                            "emp_pk":emp.id,
+                            "email":emp.email,
+                            "image":emp.image.path,
+                            "name":emp.first_name + " " + emp.last_name,
+                            "job_title":c_emp.job_title,
+                            "status":c_emp.status
+                        }
+                        records.append(record)
+                    except:
+                        continue
+                return Response(records, status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        elif c_email and tab=="all":
+            c_emps=outsource_employees.objects.filter(client_id=c_email)
+            if c_emps:
+                records=[]
+                for c_emp in c_emps:
+                    try:
+                        emp=employee.objects.get(email=c_emp.employee_id)
+                        record={
+                            "id":c_emp.id,
+                            "emp_pk":emp.id,
+                            "email":emp.email,
+                            "image":emp.image.path,
+                            "name":emp.first_name + " " + emp.last_name,
+                            "job_title":c_emp.job_title,
+                            "status":c_emp.status
+                        }
+                        records.append(record)
+                    except:
+                        continue
+                return Response(records, status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        tags=["Clients: Employees"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_INTEGER,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "status": openapi.Schema(type=openapi.TYPE_STRING)
+            },
+            required=["status"],
+            enum=["active","terminated"]
+        ),
+        responses={
+            200: "Successful Request",
+            400: "Bad Request",
+            401: "Unauthorized",
+            404: "Not Found",
+        },
+        operation_summary="Endpoint to edit outsource employee status",
+        operation_id="2",
+    )
+    def patch(self, request, *args, **kwargs):
+        id=request.query_params.get("id")
+        new_status=request.data.get("status")
+        if new_status and id:
+            try:
+                c_emp=outsource_employees.objects.get(id=id)
+                c_emp.status=new_status
+                c_emp.save()
+                return Response(status=status.HTTP_200_OK)
+            except:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class ClientAddEmployee(APIView):
+    @swagger_auto_schema(
+        tags=["Clients: Employees: Add Employee"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "image": openapi.Schema(type=openapi.TYPE_STRING),
+                        "gender": openapi.Schema(type=openapi.TYPE_STRING),
+                        "job_title": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
+            ),
+            204: openapi.Response("No Content"),
+            401: openapi.Response("Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "c_email",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+            ),
+            openapi.Parameter(
+                "tab",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                enum=["all", "active", "terminated"],
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve employees available to be outsourced",
+        operation_id="1",
+    )
+    def get(self, request, *args, **kwargs):
+        outsourced_employees_employees=outsource_employees.objects.filter(client_id="talent@esparkconsultants.com")
+        if outsourced_employees_employees:
+            records=[]
+            for outsrcd_emp in outsourced_employees_employees:
+                try:
+                    emp=employee.objects.get(email=outsrcd_emp.employee_id)
+                    record={
+                        "image":emp.image.path,
+                        "name":emp.first_name+" "+emp.last_name,
+                        "id":emp.id,
+                        "gender":emp.gender,
+                        "job_title":outsrcd_emp.job_title,
+                    }
+                    records.append(record)
+                except:
+                    continue
+            return Response(records, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        tags=["Clients: Employees: Add Employee"],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                "country": openapi.Schema(type=openapi.TYPE_STRING),
+                "job_title": openapi.Schema(type=openapi.TYPE_STRING),
+                "role_type": openapi.Schema(type=openapi.TYPE_STRING),
+                "employment_term": openapi.Schema(type=openapi.TYPE_STRING),
+                "joining_date": openapi.Schema(
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME
+                ),
+                "salary": openapi.Schema(type=openapi.TYPE_INTEGER),
+                "benefits": openapi.Schema(type=openapi.TYPE_OBJECT),
+            },
+            required=[
+                "id",
+                "country",
+                "job_title",
+                "role_type",
+                "employment_term",
+                "joining_date",
+                "salary",
+                "benefits",
+            ],
+        ),
+        responses={
+            201: openapi.Response("Successful created"),
+            400: openapi.Response("Bad request"),
+            401: openapi.Response("UnAuthorize"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "c_email",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to add outsource employee for specified client",
+        operation_id="2",
+    )
+    def post(self, request, *args, **kwargs):
+        c_email=request.query_params.get("c_email")
+        id=request.data.get("id")
+        job_title=request.data.get("job_title")
+        country=request.data.get("country")
+        role_type=request.data.get("role")
+        employment_term=request.data.get("employment_term")
+        joining_date=request.data.get("joining_date")
+        salary=request.data.get("salary")
+        benefits=request.data.get("benefits")
+        if id and c_email:
+            try:
+                emp=employee.objects.get(id=id)
+            except employee.DoesNotExist:
+                return Response({"error":"Employee with this id does not exist"},status=status.HTTP_400_BAD_REQUEST)
+            try:
+                outsource_employees.objects.create(
+                    client_id=c_email,
+                    employee_id=emp.email,
+                    job_title=job_title,
+                    country=country,
+                    role_type=role_type,
+                    employment_term=employment_term,
+                    joining_date=joining_date,
+                    salary=salary,
+                    benefits=benefits,
+                )
+                return Response(status=status.HTTP_201_CREATED)
+            except Exception as e:
+                return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)

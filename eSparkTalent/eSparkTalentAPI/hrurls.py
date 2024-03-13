@@ -29,5 +29,7 @@ urlpatterns=[
     path('hr_compcontract/', Company_Contract.as_view()),
     path('hr_offscontract/', Offshore_Contract.as_view()),
     path('hr_invoices/', Invoices.as_view()),
+    path('hr_clientemps/', ClientEmployees.as_view()),
+    path('hr_clientaddemp/', ClientAddEmployee.as_view()),
 
 ]
