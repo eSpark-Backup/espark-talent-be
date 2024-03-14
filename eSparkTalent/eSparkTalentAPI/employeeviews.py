@@ -267,7 +267,7 @@ class Employee_Home(APIView):
             400: openapi.Response(description="Bad Request"),
         },
         operation_summary="Endpoint to employee home/dashboard.",
-        operation_id=".",
+        operation_id="0",
     )
     def get(self, request, *args, **kwargs):
         e_email = request.user
@@ -423,7 +423,7 @@ class Employee_Home(APIView):
             401: "Unauthorized",
         },
         operation_summary="Endpoint to mark punches.",
-        operation_id=".",
+        operation_id="1",
     )
     def patch(self, request, *args, **kwargs):
         e_email = request.user
@@ -1015,7 +1015,7 @@ class Leave_Request(APIView):
             400: openapi.Response(description="Bad Request"),
         },
         operation_summary="Endpoint to retrieve leave request and leave balance data.",
-        operation_id=".",
+        operation_id="0",
     )
     def get(self, request, *args, **kwargs):
         e_email = request.user
@@ -1288,7 +1288,13 @@ class Leave_Request(APIView):
     @swagger_auto_schema(
         tags=["Request : Leave"],
         responses={
-            201: "Request created",
+            201: openapi.Response(
+                description="Request Created",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={"id": openapi.Schema(type=openapi.TYPE_OBJECT)},
+                ),
+            ),
             400: "Bad Request",
             401: "Unauthorized",
         },
@@ -1346,14 +1352,14 @@ class Leave_Request(APIView):
             ),
         ],
         operation_summary="Endpoint to create leave request.",
-        operation_id=".",
+        operation_id="1",
     )
     def post(self, request, *args, **kwargs):
         e_email = request.user
         serializer = LeaveRequestSerializer(data=request.data)
         if serializer.is_valid():
             try:
-                leave_request.objects.create(
+                result = leave_request.objects.create(
                     employee_id=e_email,
                     client_id=serializer.validated_data["client_id"],
                     leave_type=serializer.validated_data["leave_type"],
@@ -1361,10 +1367,10 @@ class Leave_Request(APIView):
                     end_date=serializer.validated_data["end_date"],
                     count=serializer.validated_data["count"],
                     reason=serializer.validated_data["reason"],
-                    attachment=serializer.validated_data["attachment"],
+                    attachment=request.data.get("attachment"),
                     status="pending",
                 )
-                return Response(status=status.HTTP_201_CREATED)
+                return Response({"id": result.id}, status=status.HTTP_201_CREATED)
             except ValidationError as e:
                 return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
             except:
@@ -1397,7 +1403,7 @@ class Leave_Request(APIView):
             401: openapi.Response(description="Unauthorize"),
         },
         operation_summary="Endpoint to delete a leave request.",
-        operation_id=".",
+        operation_id="2",
     )
     def delete(self, request, *args, **kwargs):
         id = request.query_params.get("id")
@@ -1956,7 +1962,7 @@ class Punch_Request(APIView):
             400: openapi.Response(description="Bad Request"),
         },
         operation_summary="Endpoint to retrieve punch request data.",
-        operation_id=".",
+        operation_id="0",
     )
     def get(self, request, *args, **kwargs):
         e_email = request.user
@@ -2157,7 +2163,13 @@ class Punch_Request(APIView):
     @swagger_auto_schema(
         tags=["Attendance : Punch requests"],
         responses={
-            201: "Request created",
+            201: openapi.Response(
+                description="Request Created",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={"id": openapi.Schema(type=openapi.TYPE_OBJECT)},
+                ),
+            ),
             400: "Bad Request",
             401: "Unauthorized",
         },
@@ -2195,14 +2207,14 @@ class Punch_Request(APIView):
             ),
         ],
         operation_summary="Endpoint to create punch request.",
-        operation_id=".",
+        operation_id="1",
     )
     def post(self, request, *args, **kwargs):
         e_email = request.user
         serializer = PunchRequestSerializer(data=request.data)
         if serializer.is_valid():
             try:
-                punch_request.objects.create(
+                result = punch_request.objects.create(
                     employee_id=e_email,
                     client_id=serializer.validated_data["client_id"],
                     punch_type=serializer.validated_data["punch_type"],
@@ -2211,7 +2223,7 @@ class Punch_Request(APIView):
                     description=serializer.validated_data["description"],
                     status="pending",
                 )
-                return Response(status=status.HTTP_201_CREATED)
+                return Response({"id": result.id}, status=status.HTTP_201_CREATED)
             except:
                 return Response(
                     {"error": "Invalid form fields"}, status=status.HTTP_400_BAD_REQUEST
@@ -2242,7 +2254,7 @@ class Punch_Request(APIView):
             401: openapi.Response(description="Unauthorize"),
         },
         operation_summary="Endpoint to delete a punch request.",
-        operation_id=".",
+        operation_id="2",
     )
     def delete(self, request, *args, **kwargs):
         id = request.query_params.get("id")

@@ -20,6 +20,7 @@ from django.db import transaction
 import json
 from dateutil import parser
 from django.db.models import Q
+from eSparkTalent.settings import talent_email
 
 
 @authentication_classes([JWTAuthentication])
@@ -296,7 +297,7 @@ class Add_Employee(APIView):
                         },
                     )
                     outsource_employees.objects.create(
-                        client_id="talent@esparkconsultants.com",
+                        client_id=talent_email,
                         employee_id=serializer.validated_data["email"],
                         job_title=serializer.validated_data["job_title"],
                         country="Pakistan",
@@ -3103,7 +3104,7 @@ class Company_Settings(APIView):
             204: openapi.Response(description="No content"),
             401: openapi.Response(description="Unauthorized"),
         },
-        operation_id=".",
+        operation_id="0",
         operation_summary="Endpoint to retrieve company data",
     )
     def get(self, request, *args, **kwargs):
@@ -3161,7 +3162,7 @@ class Company_Settings(APIView):
             ),
         ],
         operation_summary="Endpoint to update company data.",
-        operation_id=".",
+        operation_id="1",
     )
     def patch(self, request, *args, **kwargs):
         updates = request.data
@@ -4621,11 +4622,11 @@ class ClientAddEmployee(APIView):
         tab = request.query_params.get("tab")
         if tab == "active" or tab == "terminated":
             outsourced_employees_employees = outsource_employees.objects.filter(
-                client_id="talent@esparkconsultants.com", status=tab
+                client_id=talent_email, status=tab
             )
         elif tab == "all":
             outsourced_employees_employees = outsource_employees.objects.filter(
-                client_id="talent@esparkconsultants.com"
+                client_id=talent_email
             )
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -4945,7 +4946,7 @@ class Attendance_Report(APIView):
             if len(filtered_records) > 0:
                 records = []
                 for key, value in filtered_records.items():
-                    if key == "talent@esparkconsultants.com":
+                    if key == talent_email:
                         company_name = "eSpark Talent"
                         location = "Karachi"
                     else:
@@ -5005,7 +5006,7 @@ class Attendance_Report(APIView):
                     }
 
                     emp = employee.objects.get(email=e_email)
-                    if ts_record.client_id == "talent@esparkconsultants.com":
+                    if ts_record.client_id == talent_email:
                         company_name = "eSpark Talent"
                         location = "Karachi"
                     else:
