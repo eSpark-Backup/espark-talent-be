@@ -18,6 +18,8 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 from django.db import transaction
 import json
+from dateutil import parser
+from django.db.models import Q
 
 
 @authentication_classes([JWTAuthentication])
@@ -4692,5 +4694,314 @@ class ClientAddEmployee(APIView):
                 return Response(status=status.HTTP_201_CREATED)
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Attendance_Report(APIView):
+    @swagger_auto_schema(
+        tags=["Employee: Attendence reports"],
+        manual_parameters=[
+            openapi.Parameter(
+                "e_email",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
+                "from",
+                openapi.IN_QUERY,
+                description="Date filter",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                example="December 21, 2023 or 12-21-2023",
+            ),
+            openapi.Parameter(
+                "to",
+                openapi.IN_QUERY,
+                description="Date filter",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                example="December 21, 2023 or 12-21-2023",
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "client_name": openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "time_sheet": openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            "id": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                            "month": openapi.Schema(
+                                                type=openapi.TYPE_STRING
+                                            ),
+                                            "record": openapi.Schema(
+                                                type=openapi.TYPE_OBJECT,
+                                                properties={
+                                                    "13-02-2024": openapi.Schema(
+                                                        type=openapi.TYPE_OBJECT,
+                                                        properties={
+                                                            "check_in": openapi.Schema(
+                                                                type=openapi.TYPE_STRING,
+                                                                example="10:00 AM",
+                                                            ),
+                                                            "check_out": openapi.Schema(
+                                                                type=openapi.TYPE_STRING,
+                                                                example="10:00 PM",
+                                                            ),
+                                                            "breaK": openapi.Schema(
+                                                                type=openapi.TYPE_STRING,
+                                                                example="1:00 PM",
+                                                            ),
+                                                            "resume": openapi.Schema(
+                                                                type=openapi.TYPE_STRING,
+                                                                example="2:00 PM",
+                                                            ),
+                                                            "hours_worked": openapi.Schema(
+                                                                type=openapi.TYPE_STRING
+                                                            ),
+                                                            "overtime": openapi.Schema(
+                                                                type=openapi.TYPE_STRING
+                                                            ),
+                                                            "status": openapi.Schema(
+                                                                type=openapi.TYPE_OBJECT,
+                                                                properties={
+                                                                    "Present": openapi.Schema(
+                                                                        type=openapi.TYPE_BOOLEAN
+                                                                    ),
+                                                                    "Missing": openapi.Schema(
+                                                                        type=openapi.TYPE_BOOLEAN
+                                                                    ),
+                                                                    "Absent": openapi.Schema(
+                                                                        type=openapi.TYPE_BOOLEAN
+                                                                    ),
+                                                                    "Short Duration": openapi.Schema(
+                                                                        type=openapi.TYPE_BOOLEAN
+                                                                    ),
+                                                                    "Day Off": openapi.Schema(
+                                                                        type=openapi.TYPE_BOOLEAN
+                                                                    ),
+                                                                    "Full Leave": openapi.Schema(
+                                                                        type=openapi.TYPE_BOOLEAN
+                                                                    ),
+                                                                },
+                                                            ),
+                                                        },
+                                                    ),
+                                                    # Same structure for all dates
+                                                },
+                                            ),
+                                            "year": openapi.Schema(
+                                                type=openapi.TYPE_INTEGER
+                                            ),
+                                            "expect_check_in": openapi.Schema(
+                                                type=openapi.TYPE_STRING,
+                                                example="10:00 AM",
+                                            ),
+                                            "expect_check_out": openapi.Schema(
+                                                type=openapi.TYPE_STRING,
+                                                example="10:00 PM",
+                                            ),
+                                        },
+                                    ),
+                                    "employee_details": openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            "employee_id": openapi.Schema(
+                                                type=openapi.TYPE_STRING
+                                            ),
+                                            "employee_name": openapi.Schema(
+                                                type=openapi.TYPE_STRING
+                                            ),
+                                            "company": openapi.Schema(
+                                                type=openapi.TYPE_STRING
+                                            ),
+                                            "location": openapi.Schema(
+                                                type=openapi.TYPE_STRING
+                                            ),
+                                            "job_title": openapi.Schema(
+                                                type=openapi.TYPE_STRING
+                                            ),
+                                            "joining_date": openapi.Schema(
+                                                type=openapi.TYPE_STRING,
+                                                format=openapi.FORMAT_DATE,
+                                            ),
+                                        },
+                                    ),
+                                },
+                            )
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response(description="No content"),
+            401: openapi.Response(description="UnAuthorize"),
+            400: openapi.Response(description="Bad Request"),
+        },
+        operation_summary="Endpoint to retrieve employee attendance report",
+        operation_id=".",
+    )
+    def get(self, request, *args, **kwargs):
+        e_email = request.query_params.get("e_email")
+        from_date = request.query_params.get("from")
+        to_date = request.query_params.get("to")
+
+        if e_email and from_date and to_date:
+            from_date_object = parser.parse(from_date)
+            to_date_object = parser.parse(to_date)
+            from_month = from_date_object.strftime("%B")
+            from_year = from_date_object.year
+            to_month = to_date_object.strftime("%B")
+            to_year = to_date_object.year
+            month_mapping = {
+                month_name: month_number
+                for month_number, (month_name, _) in enumerate(
+                    time_sheet.months, start=1
+                )
+            }
+
+            time_sheet_records = time_sheet.objects.filter(
+                Q(employee_id=e_email),
+                Q(
+                    month__gte=month_mapping[from_month],
+                    year__gte=from_year,
+                )
+                & Q(
+                    month__gte=month_mapping[to_month],
+                    year__lte=to_year,
+                ),
+            )
+
+            filtered_records = {}
+            for record in time_sheet_records:
+                if record.client_id in filtered_records.keys():
+                    for key, value in record.record.items():
+                        date = datetime.datetime.strptime(key, "%d-%m-%Y")
+                        if from_date_object <= date <= to_date_object:
+                            filtered_records[record.client_id][key] = value
+                else:
+                    rec = {}
+                    for key, value in record.record.items():
+                        date = datetime.datetime.strptime(key, "%d-%m-%Y")
+                        if from_date_object <= date <= to_date_object:
+                            rec[key] = value
+                    filtered_records[record.client_id] = rec
+            if len(filtered_records) > 0:
+                records = []
+                for key, value in filtered_records.items():
+                    if key == "talent@esparkconsultants.com":
+                        company_name = "eSpark Talent"
+                        location = "Karachi"
+                    else:
+                        try:
+                            clnt = client.objects.get(email=key)
+                            company_name = clnt.company_name
+                            location = clnt.address
+                        except client.DoesNotExist:
+                            company_name = "-"
+                            location = "-"
+
+                    outsrc_emp = outsource_employees.objects.get(
+                        employee_id=e_email, client_id=key
+                    )
+                    emp = employee.objects.get(email=e_email)
+
+                    employee_details = {
+                        "employee_id": emp.employee_id,
+                        "employee_name": emp.first_name + " " + emp.last_name,
+                        "company": company_name,
+                        "location": location,
+                        "job_title": outsrc_emp.job_title,
+                        "joining_date": outsrc_emp.joining_date,
+                    }
+                    new_value = {"record": value}
+                    new_value["expected_check_in"] = emp.punch_timings["check_in"]
+                    new_value["expected_check_out"] = emp.punch_timings["check_out"]
+                    record = {
+                        "time_sheet": new_value,
+                        "employee_details": employee_details,
+                    }
+                    records.append({company_name: record})
+
+                return Response(records, status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        elif e_email:
+            ts_records = time_sheet.objects.filter(
+                employee_id=e_email,
+                year=datetime.datetime.now().year,
+                month=datetime.datetime.now().strftime("%B"),
+            )
+            if ts_records:
+                records = []
+                for ts_record in ts_records:
+                    ts_rec = {
+                        "id": ts_record.id,
+                        "month": ts_record.month,
+                        "record": ts_record.record,
+                        "year": ts_record.year,
+                        "expect_check_in": employee.objects.get(
+                            email=e_email
+                        ).punch_timings["check_in"],
+                        "expect_check_out": employee.objects.get(
+                            email=e_email
+                        ).punch_timings["check_out"],
+                    }
+
+                    emp = employee.objects.get(email=e_email)
+                    if ts_record.client_id == "talent@esparkconsultants.com":
+                        company_name = "eSpark Talent"
+                        location = "Karachi"
+                    else:
+                        try:
+                            clnt = client.objects.get(email=ts_record.client_id)
+                            company_name = clnt.company_name
+                            location = clnt.address
+                        except client.DoesNotExist:
+                            company_name = "-"
+                            location = "-"
+
+                    outsrc_emp = outsource_employees.objects.get(
+                        employee_id=e_email, client_id=ts_record.client_id
+                    )
+
+                    employee_details = {
+                        "employee_id": emp.employee_id,
+                        "employee_name": emp.first_name + " " + emp.last_name,
+                        "company": company_name,
+                        "location": location,
+                        "job_title": outsrc_emp.job_title,
+                        "joining_date": outsrc_emp.joining_date,
+                    }
+
+                    record = {
+                        company_name: {
+                            "time_sheet": ts_rec,
+                            "employee_details": employee_details,
+                        }
+                    }
+                    records.append(record)
+                return Response(records, status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
