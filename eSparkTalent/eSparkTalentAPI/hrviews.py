@@ -2678,7 +2678,101 @@ class Hr_Clients(APIView):
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except client.DoesNotExist:
             return Response({"message": "Clients not found"},status=status.HTTP_404_NOT_FOUND)
-
+    @swagger_auto_schema(
+        tags=["Clients"],
+        responses={
+            201: "Successful update Client Status",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "is_active": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+            },
+            required=[
+               "is_active",    
+            ],
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to update",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        operation_summary="Endpoint to update client status.",
+        operation_id="3",
+    )
+    def patch(self, request, *args, **kwargs):
+        request_id = request.query_params.get("id")
+        to_update_status = request.data["is_active"]
+        try:
+            client_data = client.objects.get(id=request_id)
+            update_client_status = end_user.objects.get(email=client_data.email)
+            if update_client_status:
+                update_client_status.is_active = to_update_status
+                update_client_status.save()
+                return Response(status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+    @swagger_auto_schema(
+        tags=["Clients"],
+        
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="client record ID",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            
+        ],
+        responses={
+            200: openapi.Response(description="Successful update"),
+            400: openapi.Response(description="Bad Request"),
+        },
+        operation_id="3 ",
+        operation_summary="Endpoint to remove client.",
+    )
+    def delete(self, request, *args, **kwargs):
+        try:
+            client_id = request.query_params.get("id")
+            clt = client.objects.get(id=client_id)
+            related_models= [outsource_employees,employee_invoice,hiring_request,interview_schedule,client_contract,offshore_contracts,onboarding,other_payment,punch_request,time_sheet,leave_request,end_user]
+            for model in related_models:
+                data = model.objects.filter(client_id=clt.email)
+                if not data.exists():
+                    data = model.objects.filter(email=clt.email)
+                    data.delete()
+                else:
+                    data.delete()
+            clt.delete()
+            return Response({"message": "client and associated data removed successfully"}, status=status.HTTP_200_OK)
+        except client.DoesNotExist:
+            return Response({"error": "client not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -4306,7 +4400,7 @@ class ClientEmployees(APIView):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "status": openapi.Schema(type=openapi.TYPE_STRING)
+                "status": openapi.Schema(type=openapi.TYPE_STRING, enum=["active","terminated"])
             },
             required=["status"],
             enum=["active","terminated"]
