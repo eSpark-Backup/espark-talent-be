@@ -4195,7 +4195,7 @@ class ClientAddEmployee(APIView):
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-class Attendence_Report(APIView):
+class Attendance_Report(APIView):
     @swagger_auto_schema(
         tags=["Employee: Attendence reports"],
         manual_parameters=[
