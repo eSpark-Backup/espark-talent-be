@@ -15,13 +15,12 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.parsers import MultiPartParser
 from .emp_dash_funcs import *
+from eSparkTalent.settings import talent_email
 
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Employee_Home(APIView):
-    parser_classes = (MultiPartParser,)
-
     @swagger_auto_schema(
         tags=["Dashboard"],
         manual_parameters=[
@@ -293,7 +292,7 @@ class Employee_Home(APIView):
         workspaces = []
         workspaces.append(
             {
-                "email": "talent@esparkconsultants.com",
+                "email": talent_email,
                 "client_name": "eSpark Talent",
                 "company_name": "eSpark",
             }
@@ -346,14 +345,10 @@ class Employee_Home(APIView):
             return Response(payload, status=status.HTTP_200_OK)
 
         else:
-            today_activity = TodayActivity(
-                e_email=e_email, workspace="talent@esparkconsultants.com"
-            )
-            statistics = Statistics(
-                e_email=e_email, workspace="talent@esparkconsultants.com"
-            )
+            today_activity = TodayActivity(e_email=e_email, workspace=talent_email)
+            statistics = Statistics(e_email=e_email, workspace=talent_email)
             attendance_summary = AttendanceSummary(
-                e_email=e_email, workspace="talent@esparkconsultants.com"
+                e_email=e_email, workspace=talent_email
             )
             try:
                 punch_timings = employee.objects.get(email=e_email).punch_timings
@@ -376,7 +371,7 @@ class Employee_Home(APIView):
             return Response(payload, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
-        tags=["Dashboard: Mark check in, Mark checkout, Mark break out, Mark resumed"],
+        tags=["Dashboard"],
         manual_parameters=[
             openapi.Parameter(
                 "workspace",
@@ -419,6 +414,7 @@ class Employee_Home(APIView):
                 openapi.IN_HEADER,
                 description="Bearer Token",
                 type=openapi.TYPE_STRING,
+                required=True,
             ),
         ],
         responses={
@@ -426,7 +422,7 @@ class Employee_Home(APIView):
             400: "Bad Request",
             401: "Unauthorized",
         },
-        operation_summary="Mark punches",
+        operation_summary="Endpoint to mark punches.",
         operation_id=".",
     )
     def patch(self, request, *args, **kwargs):
@@ -621,10 +617,8 @@ class Employee_Home(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Company_Contract(APIView):
-    parser_classes = (MultiPartParser,)
-
     @swagger_auto_schema(
-        tags=["Company contracts"],
+        tags=["Administration : Contracts Signed : Company contracts"],
         responses={
             200: openapi.Response(
                 description="Successful request",
@@ -679,10 +673,8 @@ class Company_Contract(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Offshore_Contract(APIView):
-    parser_classes = (MultiPartParser,)
-
     @swagger_auto_schema(
-        tags=["Client contracts"],
+        tags=["Administration : Contracts Signed : Client contracts"],
         responses={
             200: openapi.Response(
                 description="Successful request",
@@ -752,7 +744,7 @@ class Leave_Request(APIView):
     parser_classes = (MultiPartParser,)
 
     @swagger_auto_schema(
-        tags=["Leave"],
+        tags=["Request : Leave"],
         manual_parameters=[
             openapi.Parameter(
                 "workspace",
@@ -1294,7 +1286,7 @@ class Leave_Request(APIView):
                 return Response(records, status=status.HTTP_206_PARTIAL_CONTENT)
 
     @swagger_auto_schema(
-        tags=["Leave : Create"],
+        tags=["Request : Leave"],
         responses={
             201: "Request created",
             400: "Bad Request",
@@ -1350,12 +1342,10 @@ class Leave_Request(APIView):
                 required=True,
             ),
             openapi.Parameter(
-                name="attachment",
-                in_=openapi.IN_FORM,
-                type=openapi.TYPE_FILE
+                name="attachment", in_=openapi.IN_FORM, type=openapi.TYPE_FILE
             ),
         ],
-        operation_summary="Create leave request.",
+        operation_summary="Endpoint to create leave request.",
         operation_id=".",
     )
     def post(self, request, *args, **kwargs):
@@ -1385,7 +1375,7 @@ class Leave_Request(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
-        tags=["Leave : Actions : Delete"],
+        tags=["Request : Leave"],
         manual_parameters=[
             openapi.Parameter(
                 "id",
@@ -1414,6 +1404,8 @@ class Leave_Request(APIView):
         try:
             leave_request.objects.get(id=id).delete()
             return Response(status=status.HTTP_200_OK)
+        except leave_request.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -1421,10 +1413,8 @@ class Leave_Request(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Time_Sheet(APIView):
-    parser_classes = (MultiPartParser,)
-
     @swagger_auto_schema(
-        tags=["Time sheet"],
+        tags=["Attendance : Time sheet"],
         manual_parameters=[
             openapi.Parameter(
                 "workspace",
@@ -1706,7 +1696,7 @@ class Time_Sheet(APIView):
                     "leaves": leaves,
                 }
                 emp = employee.objects.get(email=e_email)
-                if workspace == "talent@esparkconsultant.com":
+                if workspace == talent_email:
                     company_name = "eSpark Talent"
                     location = "Karachi"
                 else:
@@ -1837,7 +1827,7 @@ class Time_Sheet(APIView):
                 }
 
                 emp = employee.objects.get(email=e_email)
-                if workspace == "talent@esparkconsultants.com":
+                if workspace == talent_email:
                     company_name = "eSpark Talent"
                     location = "Karachi"
                 else:
@@ -1875,10 +1865,8 @@ class Time_Sheet(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Punch_Request(APIView):
-    parser_classes = (MultiPartParser,)
-
     @swagger_auto_schema(
-        tags=["Punch requests"],
+        tags=["Attendance : Punch requests"],
         manual_parameters=[
             openapi.Parameter(
                 "workspace",
@@ -2167,12 +2155,37 @@ class Punch_Request(APIView):
                 return Response(records, status=status.HTTP_206_PARTIAL_CONTENT)
 
     @swagger_auto_schema(
-        tags=["Punch requests : Create"],
+        tags=["Attendance : Punch requests"],
         responses={
             201: "Request created",
             400: "Bad Request",
             401: "Unauthorized",
         },
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "client_id": openapi.Schema(
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
+                ),
+                "punch_type": openapi.Schema(type=openapi.TYPE_STRING),
+                "punch_time": openapi.Schema(
+                    type=openapi.TYPE_STRING, example="10:00 AM"
+                ),
+                "date": openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    format=openapi.FORMAT_DATE,
+                    example="2024-02-29(Y:M:D)",
+                ),
+                "description": openapi.Schema(type=openapi.TYPE_STRING),
+            },
+            required=[
+                "client_id",
+                "punch_type",
+                "punch_time",
+                "date",
+                "description",
+            ],
+        ),
         manual_parameters=[
             openapi.Parameter(
                 "Authorization",
@@ -2180,42 +2193,8 @@ class Punch_Request(APIView):
                 description="Bearer Token",
                 type=openapi.TYPE_STRING,
             ),
-            openapi.Parameter(
-                name="client_id",
-                in_=openapi.IN_FORM,
-                type=openapi.TYPE_STRING,
-                format=openapi.FORMAT_EMAIL,
-                required=True,
-            ),
-            openapi.Parameter(
-                name="punch_type",
-                in_=openapi.IN_FORM,
-                type=openapi.TYPE_STRING,
-                required=True,
-            ),
-            openapi.Parameter(
-                name="punch_time",
-                in_=openapi.IN_FORM,
-                type=openapi.TYPE_STRING,
-                example="10:00 AM",
-                required=True,
-            ),
-            openapi.Parameter(
-                name="date",
-                in_=openapi.IN_FORM,
-                type=openapi.TYPE_STRING,
-                format=openapi.FORMAT_DATE,
-                example="2024-02-29(Y:M:D)",
-                required=True,
-            ),
-            openapi.Parameter(
-                name="description",
-                in_=openapi.IN_FORM,
-                type=openapi.TYPE_STRING,
-                required=True,
-            ),
         ],
-        operation_summary="Create punch request.",
+        operation_summary="Endpoint to create punch request.",
         operation_id=".",
     )
     def post(self, request, *args, **kwargs):
@@ -2241,7 +2220,7 @@ class Punch_Request(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
-        tags=["Punch requests : Actions : Delete"],
+        tags=["Attendance : Punch requests"],
         manual_parameters=[
             openapi.Parameter(
                 "id",
@@ -2270,6 +2249,8 @@ class Punch_Request(APIView):
         try:
             punch_request.objects.get(id=id).delete()
             return Response(status=status.HTTP_200_OK)
+        except punch_request.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -2277,10 +2258,8 @@ class Punch_Request(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Policies(APIView):
-    parser_classes = (MultiPartParser,)
-
     @swagger_auto_schema(
-        tags=["Policies"],
+        tags=["Administration : Policies"],
         responses={
             200: openapi.Response(
                 description="Successful request",
@@ -2307,7 +2286,7 @@ class Policies(APIView):
                 type=openapi.TYPE_STRING,
             ),
         ],
-        operation_summary="Endpoint to retrieve employee policies",
+        operation_summary="Endpoint to retrieve employee policies.",
         operation_id=".",
     )
     def get(self, request, *args, **kwargs):

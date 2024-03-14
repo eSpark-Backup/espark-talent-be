@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import calendar
 from .models import *
 
+
 def TodayActivity(e_email, workspace):
     current_month = datetime.now().strftime("%B")
     current_year = datetime.now().year
@@ -84,8 +85,12 @@ def Statistics(e_email, workspace):
         weekday = calendar.weekday(current_year, date_today.month, day)
         weekdays_up_to_today += 1 if weekday < 5 else 0
 
-    start_of_week = (date_today - timedelta(days=date_today.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_week = (start_of_week + timedelta(days=4)).replace(hour=0, minute=0, second=0, microsecond=0)
+    start_of_week = (date_today - timedelta(days=date_today.weekday())).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    end_of_week = (start_of_week + timedelta(days=4)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
 
     statistics = {
         "today": "0/9 hrs",
@@ -108,13 +113,32 @@ def Statistics(e_email, workspace):
         if (
             today in time_sheet_record.record
             and time_sheet_record.record[today]["check_in"] != "-"
+            and time_sheet_record.record[today]["check_out"] == "-"
         ):
             check_in_time = datetime.strptime(
                 time_sheet_record.record[today]["check_in"], "%I:%M %p"
             ).time()
-            
+
             time_difference = datetime.combine(
                 datetime.today(), current_time
+            ) - datetime.combine(datetime.today(), check_in_time)
+
+            t_hours_worked = round(time_difference.total_seconds() / 3600, 2)
+            statistics["today"] = f"{t_hours_worked}/9 hrs"
+        elif (
+            today in time_sheet_record.record
+            and time_sheet_record.record[today]["check_in"] != "-"
+            and time_sheet_record.record[today]["check_out"] != "-"
+        ):
+            check_in_time = datetime.strptime(
+                time_sheet_record.record[today]["check_in"], "%I:%M %p"
+            ).time()
+            check_out_time = datetime.strptime(
+                time_sheet_record.record[today]["check_out"], "%I:%M %p"
+            ).time()
+
+            time_difference = datetime.combine(
+                datetime.today(), check_out_time
             ) - datetime.combine(datetime.today(), check_in_time)
 
             t_hours_worked = round(time_difference.total_seconds() / 3600, 2)
@@ -162,10 +186,10 @@ def Statistics(e_email, workspace):
         m_hours_worked = round(minutes_worked / 60, 2)
         statistics["this_month"] = f"{m_hours_worked}/{total_weekdays*9} hrs"
         remains = round(((total_weekdays * 9) - m_hours_worked), 2)
-        statistics["remaining"]=f"{remains}/{total_weekdays * 9} hrs"
-        if m_hours_worked>overtime_threshold:
-            overtime=m_hours_worked-overtime_threshold
-            statistics['overtime']=f"{overtime} hrs"
+        statistics["remaining"] = f"{remains}/{total_weekdays * 9} hrs"
+        if m_hours_worked > overtime_threshold:
+            overtime = m_hours_worked - overtime_threshold
+            statistics["overtime"] = f"{overtime} hrs"
     except:
         statistics = {
             "today": "0/9 hrs",
@@ -196,9 +220,13 @@ def AttendanceSummary(e_email, workspace):
         weekday = calendar.weekday(current_year, date_today.month, day)
         weekdays_up_to_today += 1 if weekday < 5 else 0
 
-    start_of_week = (date_today - timedelta(days=date_today.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_week = (start_of_week + timedelta(days=4)).replace(hour=0, minute=0, second=0, microsecond=0)
-    
+    start_of_week = (date_today - timedelta(days=date_today.weekday())).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    end_of_week = (start_of_week + timedelta(days=4)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+
     try:
         time_sheet_record = time_sheet.objects.get(
             employee_id=e_email,
@@ -246,9 +274,13 @@ def AttendanceSummary(e_email, workspace):
                 time_difference = resume_datetime - break_datetime
                 break_minutes += round(time_difference.seconds / 60, 2)
 
-            if (time_sheet_record.record[value]["check_in"] != "-") and datetime.strptime(
+            if (
+                time_sheet_record.record[value]["check_in"] != "-"
+            ) and datetime.strptime(
                 time_sheet_record.record[value]["check_in"], "%I:%M %p"
-            ) > datetime.strptime(punch_timings["check_in"], "%I:%M %p"):
+            ) > datetime.strptime(
+                punch_timings["check_in"], "%I:%M %p"
+            ):
                 late_arrivals += 1
 
             if time_sheet_record.record[value]["status"]["Present"] == True:
@@ -294,31 +326,30 @@ def AttendanceSummary(e_email, workspace):
             "worked_minutes": worked_minutes,
             "short_minutes": short_minutes,
             "leaves": leave,
-            "absents":absents,
-            "presents":presents,
-            "missings":missings,
-            "days_off":days_off,
-            "overtimes":overtimes,
-            "short_durations":short_durations,
-            "late_arrivals":late_arrivals,
-            "break_minutes":break_minutes,
+            "absents": absents,
+            "presents": presents,
+            "missings": missings,
+            "days_off": days_off,
+            "overtimes": overtimes,
+            "short_durations": short_durations,
+            "late_arrivals": late_arrivals,
+            "break_minutes": break_minutes,
         }
-
 
     except:
         attendence_summary = {
-            "shifts":0,
-            "expected_minutes":0,
-            "worked_minutes":0,
-            "short_minutes":0,
-            "leaves":0,
-            "absents":0,
-            "presents":0,
-            "missings":0,
-            "days_off":0,
-            "overtimes":0,
-            "short_durations":0,
-            "late_arrivals":0,
-            "break_minutes":0,
+            "shifts": 0,
+            "expected_minutes": 0,
+            "worked_minutes": 0,
+            "short_minutes": 0,
+            "leaves": 0,
+            "absents": 0,
+            "presents": 0,
+            "missings": 0,
+            "days_off": 0,
+            "overtimes": 0,
+            "short_durations": 0,
+            "late_arrivals": 0,
+            "break_minutes": 0,
         }
     return attendence_summary

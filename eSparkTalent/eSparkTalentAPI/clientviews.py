@@ -127,7 +127,7 @@ class Client_Home(APIView):
             image_path = client_data.image.path
         except client.DoesNotExist:
             image_path = None
-        
+
         try:
             company_record = company_data.objects.get(id=1)
             company_image = company_record.image.path
@@ -141,8 +141,7 @@ class Client_Home(APIView):
             "onboarding_count": onboarding_count,
             "active_employee": active_employee,
             "client_image": image_path,
-            "company_image": company_image
-
+            "company_image": company_image,
         }
 
         return Response(data, status=status.HTTP_200_OK)
@@ -205,21 +204,28 @@ class Start_Hiring(APIView):
     def post(self, request, *args, **kwargs):
         serializer = hiring_requestSerializer(data=request.data)
         if serializer.is_valid():
-            client_1 = client.objects.get(email=request.user)
-            hiring_request.objects.create(
-                client_id=client_1.email,
-                job_title=serializer.validated_data["job_title"],
-                role_type=serializer.validated_data["role_type"],
-                gender=serializer.validated_data["gender"],
-                employment_term=serializer.validated_data["employment_term"],
-                salary_range=serializer.validated_data["salary_range"],
-                country=serializer.validated_data["country"],
-                hiring_start_date=serializer.validated_data["hiring_start_date"],
-                hiring_end_date=serializer.validated_data["hiring_end_date"],
-            )
-            return Response(
-                {"message": "Resquest created"}, status=status.HTTP_201_CREATED
-            )
+            try:
+                client_1 = client.objects.get(email=request.user)
+                hiring_request.objects.create(
+                    client_id=client_1.email,
+                    job_title=serializer.validated_data["job_title"],
+                    role_type=serializer.validated_data["role_type"],
+                    gender=serializer.validated_data["gender"],
+                    employment_term=serializer.validated_data["employment_term"],
+                    salary_range=serializer.validated_data["salary_range"],
+                    country=serializer.validated_data["country"],
+                    hiring_start_date=serializer.validated_data["hiring_start_date"],
+                    hiring_end_date=serializer.validated_data["hiring_end_date"],
+                )
+                return Response(
+                    {"message": "Resquest created"}, status=status.HTTP_201_CREATED
+                )
+            except client.DoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+            except:
+                return Response(
+                    {"error": "Invalid form fields"}, status=status.HTTP_400_BAD_REQUEST
+                )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -340,7 +346,7 @@ class Hiring_Resquest(APIView):
         user = request.user
         delete_id = request.query_params.get("id")
         try:
-            hiring_request.objects.filter(id=delete_id).delete()
+            hiring_request.objects.get(id=delete_id).delete()
             return Response(status=status.HTTP_200_OK)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -461,6 +467,8 @@ class Interview_Schedule(APIView):
                 return Response(status=status.HTTP_200_OK)
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
+        except interview_schedule.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -734,7 +742,7 @@ class Leave_Request(APIView):
                 )
                 employee_data = employee_serializer.data
                 outsource = outsource_employees.objects.get(
-                    employee_id=data.employee_id
+                    employee_id=data.employee_id, client_id=user
                 )
                 employee_name = f"{employee_data.get('first_name', '')} {employee_data.get('last_name', '')}"
                 record = {
@@ -1111,18 +1119,14 @@ class ClockInOut_Request(APIView):
                                 year=to_update_clockinout_request.date.year,
                             )
                             if (
-                                to_update_clockinout_request.date.strftime(
-                                    "%d-%m-%Y"
-                                )
+                                to_update_clockinout_request.date.strftime("%d-%m-%Y")
                                 in timesheet_record.record
                             ):
                                 timesheet_record.record[
                                     to_update_clockinout_request.date.strftime(
                                         "%d-%m-%Y"
                                     )
-                                ][
-                                    "check_in"
-                                ] = to_update_clockinout_request.punch_time
+                                ]["check_in"] = to_update_clockinout_request.punch_time
                                 timesheet_record.record[
                                     to_update_clockinout_request.date.strftime(
                                         "%d-%m-%Y"
@@ -1133,13 +1137,14 @@ class ClockInOut_Request(APIView):
                                         "%d-%m-%Y"
                                     )
                                 ]["status"]["Absent"] = False
-                                if  timesheet_record.record[
-                                    to_update_clockinout_request.date.strftime(
-                                        "%d-%m-%Y"
-                                    )
-                                ][
-                                    "check_out"
-                                ] == "-":
+                                if (
+                                    timesheet_record.record[
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        )
+                                    ]["check_out"]
+                                    == "-"
+                                ):
                                     if datetime.datetime.strptime(
                                         to_update_clockinout_request.date.strftime(
                                             "%d-%m-%Y"
@@ -1193,9 +1198,7 @@ class ClockInOut_Request(APIView):
                                                 to_update_status
                                             )
                                             to_update_clockinout_request.save()
-                                            return Response(
-                                                status=status.HTTP_200_OK
-                                            )
+                                            return Response(status=status.HTTP_200_OK)
                                         else:
                                             timesheet_record.record[
                                                 to_update_clockinout_request.date.strftime(
@@ -1207,9 +1210,7 @@ class ClockInOut_Request(APIView):
                                                 to_update_status
                                             )
                                             to_update_clockinout_request.save()
-                                            return Response(
-                                                status=status.HTTP_200_OK
-                                            )
+                                            return Response(status=status.HTTP_200_OK)
 
                                 else:
                                     check_out_time = timesheet_record.record[
@@ -1253,9 +1254,8 @@ class ClockInOut_Request(APIView):
                                         to_update_clockinout_request.save()
                                         return Response(status=status.HTTP_200_OK)
                                     elif hours_worked.total_seconds() // 3600 >= 9:
-                                        overtime = (
-                                            hours_worked
-                                            - datetime.timedelta(hours=9)
+                                        overtime = hours_worked - datetime.timedelta(
+                                            hours=9
                                         )
                                         overtime_min = (overtime.seconds // 60) % 60
                                         overtime_hours = overtime.seconds // 3600
@@ -1320,9 +1320,7 @@ class ClockInOut_Request(APIView):
                                     },
                                 }
                                 timesheet_record.save()
-                                to_update_clockinout_request.status = (
-                                    to_update_status
-                                )
+                                to_update_clockinout_request.status = to_update_status
                                 to_update_clockinout_request.save()
                                 return Response(
                                     status=status.HTTP_200_OK,
@@ -1456,18 +1454,14 @@ class ClockInOut_Request(APIView):
                                 year=to_update_clockinout_request.date.year,
                             )
                             if (
-                                to_update_clockinout_request.date.strftime(
-                                    "%d-%m-%Y"
-                                )
+                                to_update_clockinout_request.date.strftime("%d-%m-%Y")
                                 in timesheet_record.record
                             ):
                                 timesheet_record.record[
                                     to_update_clockinout_request.date.strftime(
                                         "%d-%m-%Y"
                                     )
-                                ][
-                                    "check_out"
-                                ] = to_update_clockinout_request.punch_time
+                                ]["check_out"] = to_update_clockinout_request.punch_time
                                 timesheet_record.record[
                                     to_update_clockinout_request.date.strftime(
                                         "%d-%m-%Y"
@@ -1478,11 +1472,14 @@ class ClockInOut_Request(APIView):
                                         "%d-%m-%Y"
                                     )
                                 ]["status"]["Absent"] = False
-                                if timesheet_record.record[
-                                    to_update_clockinout_request.date.strftime(
-                                        "%d-%m-%Y"
-                                    )
-                                ]["check_in"] == "-" :
+                                if (
+                                    timesheet_record.record[
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        )
+                                    ]["check_in"]
+                                    == "-"
+                                ):
                                     timesheet_record.record[
                                         to_update_clockinout_request.date.strftime(
                                             "%d-%m-%Y"
@@ -1537,9 +1534,8 @@ class ClockInOut_Request(APIView):
                                         to_update_clockinout_request.save()
                                         return Response(status=status.HTTP_200_OK)
                                     elif hours_worked.total_seconds() // 3600 >= 9:
-                                        overtime = (
-                                            hours_worked
-                                            - datetime.timedelta(hours=9)
+                                        overtime = hours_worked - datetime.timedelta(
+                                            hours=9
                                         )
                                         overtime_min = (overtime.seconds // 60) % 60
                                         overtime_hours = overtime.seconds // 3600
@@ -1602,9 +1598,7 @@ class ClockInOut_Request(APIView):
                                     },
                                 }
                                 timesheet_record.save()
-                                to_update_clockinout_request.status = (
-                                    to_update_status
-                                )
+                                to_update_clockinout_request.status = to_update_status
                                 to_update_clockinout_request.save()
                                 return Response(status=status.HTTP_200_OK)
                         except:
@@ -1650,7 +1644,7 @@ class ClockInOut_Request(APIView):
             try:
                 to_update_clockinout_request = punch_request.objects.get(id=request_id)
             except Exception as e:
-                return Response(status=status.HTTP_404_NOT_FOUND)
+                return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
             to_update_clockinout_request.status = to_update_status
             to_update_clockinout_request.save()
             return Response(status=status.HTTP_200_OK)
@@ -1899,10 +1893,15 @@ class UpdateCompanyNameView(APIView):
         user = request.user
         new_company_name = request.data.get("company_name")
         if new_company_name:
-            record = client.objects.get(email=user)
-            record.company_name = new_company_name
-            record.save()
-            return Response(status=status.HTTP_200_OK)
+            try:
+                record = client.objects.get(email=user)
+                record.company_name = new_company_name
+                record.save()
+                return Response(status=status.HTTP_200_OK)
+            except client.DoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+            except:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(
                 {"error": "Invalid data provided"}, status=status.HTTP_400_BAD_REQUEST
@@ -1959,6 +1958,8 @@ class UploadPictureView(APIView):
             )
 
 
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 class UpdatePasswordView(APIView):
     @swagger_auto_schema(
         tags=["Oragnization : Settings"],
@@ -2047,6 +2048,7 @@ class Time_Tracking(APIView):
                 openapi.IN_QUERY,
                 description="Filter by employee ID",
                 type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
             ),
         ],
         responses={
@@ -2496,8 +2498,6 @@ class Employee_Contract(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Policies(APIView):
-    parser_classes = (MultiPartParser,)
-
     @swagger_auto_schema(
         tags=["Policies"],
         responses={

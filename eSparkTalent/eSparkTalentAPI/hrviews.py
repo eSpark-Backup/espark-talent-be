@@ -600,9 +600,9 @@ class Employee_Invoice(APIView):
     def post(self, request, *args, **kwargs):
         posted_data = request.data
         id = posted_data.get("employee_id", None)
-        employee_data = employee.objects.get(employee_id=id)
-        posted_data["employee_id"] = employee_data.email
         try:
+            employee_data = employee.objects.get(employee_id=id)
+            posted_data["employee_id"] = employee_data.email
             serializer = EmployeeInvoiceSerializer(data=posted_data)
 
             if serializer.is_valid():
@@ -669,17 +669,18 @@ class Employee_Invoice(APIView):
     )
     def patch(self, request, *args, **kwargs):
         request_id = request.query_params.get("id")
-        to_update_status = request.data["payment_status"]
-        try:
-            to_update_emp_inv = employee_invoice.objects.get(id=request_id)
-            if to_update_emp_inv:
+        to_update_status = request.data.get("payment_status")
+        if to_update_status:
+            try:
+                to_update_emp_inv = employee_invoice.objects.get(id=request_id)
                 to_update_emp_inv.payment_status = to_update_status
                 to_update_emp_inv.save()
-
                 return Response(status=status.HTTP_200_OK)
-            else:
-                return Response(status=status.HTTP_204_NO_CONTENT)
-        except:
+            except employee_invoice.DoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
@@ -792,8 +793,10 @@ class Employee_Invoice(APIView):
         try:
             employee_invoice.objects.get(id=delete_id).delete()
             return Response(status=status.HTTP_200_OK)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        except employee_invoice.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -928,15 +931,13 @@ class Other_Payment(APIView):
         to_update_status = request.data["payment_status"]
         try:
             to_update_otherpay = other_payment.objects.get(id=request_id)
-            if to_update_otherpay:
-                to_update_otherpay.payment_status = to_update_status
-                to_update_otherpay.save()
-
-                return Response(status=status.HTTP_200_OK)
-            else:
-                return Response(status=status.HTTP_204_NO_CONTENT)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            to_update_otherpay.payment_status = to_update_status
+            to_update_otherpay.save()
+            return Response(status=status.HTTP_200_OK)
+        except other_payment.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         tags=["Client : Other Invoice/payment"],
@@ -1047,8 +1048,10 @@ class Other_Payment(APIView):
         try:
             other_payment.objects.get(id=delete_id).delete()
             return Response(status=status.HTTP_200_OK)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        except other_payment.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -1550,7 +1553,10 @@ class Hr_Employee(APIView):
     def get(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
         tab = request.query_params.get("tab")
-        employee_data = employee.objects.get(id=record_id)
+        try:
+            employee_data = employee.objects.get(id=record_id)
+        except Exception as e:
+            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
         if tab == "client":
             active_clients = []
             terminated_clients = []
@@ -1598,7 +1604,10 @@ class Hr_Employee(APIView):
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
         elif tab == "assets":
-            emp_record = employee.objects.get(id=record_id)
+            try:
+                emp_record = employee.objects.get(id=record_id)
+            except Exception as e:
+                return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
             assets = asset.objects.filter(employee_id=emp_record.email)
             if assets:
                 records = []
@@ -1846,7 +1855,9 @@ class Time_and_leave(APIView):
                         "total": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "balanced": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "availed": openapi.Schema(type=openapi.TYPE_INTEGER),
-                        "status": openapi.Schema(type=openapi.TYPE_STRING, enum=["enable", "disable"]),
+                        "status": openapi.Schema(
+                            type=openapi.TYPE_STRING, enum=["enable", "disable"]
+                        ),
                     },
                 ),
                 "sick_leaves": openapi.Schema(
@@ -1855,7 +1866,9 @@ class Time_and_leave(APIView):
                         "total": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "balanced": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "availed": openapi.Schema(type=openapi.TYPE_INTEGER),
-                        "status": openapi.Schema(type=openapi.TYPE_STRING, enum=["enable", "disable"]),
+                        "status": openapi.Schema(
+                            type=openapi.TYPE_STRING, enum=["enable", "disable"]
+                        ),
                     },
                 ),
                 "annual_leaves": openapi.Schema(
@@ -1864,7 +1877,9 @@ class Time_and_leave(APIView):
                         "total": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "balanced": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "availed": openapi.Schema(type=openapi.TYPE_INTEGER),
-                        "status": openapi.Schema(type=openapi.TYPE_STRING, enum=["enable", "disable"]),
+                        "status": openapi.Schema(
+                            type=openapi.TYPE_STRING, enum=["enable", "disable"]
+                        ),
                     },
                 ),
                 "paid_leaves": openapi.Schema(
@@ -1873,7 +1888,9 @@ class Time_and_leave(APIView):
                         "total": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "balanced": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "availed": openapi.Schema(type=openapi.TYPE_INTEGER),
-                        "status": openapi.Schema(type=openapi.TYPE_STRING, enum=["enable", "disable"]),
+                        "status": openapi.Schema(
+                            type=openapi.TYPE_STRING, enum=["enable", "disable"]
+                        ),
                     },
                 ),
                 "unpaid_leaves": openapi.Schema(
@@ -1882,7 +1899,9 @@ class Time_and_leave(APIView):
                         "total": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "balanced": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "availed": openapi.Schema(type=openapi.TYPE_INTEGER),
-                        "status": openapi.Schema(type=openapi.TYPE_STRING, enum=["enable", "disable"]),
+                        "status": openapi.Schema(
+                            type=openapi.TYPE_STRING, enum=["enable", "disable"]
+                        ),
                     },
                 ),
                 "hajj_leaves": openapi.Schema(
@@ -1891,7 +1910,9 @@ class Time_and_leave(APIView):
                         "total": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "balanced": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "availed": openapi.Schema(type=openapi.TYPE_INTEGER),
-                        "status": openapi.Schema(type=openapi.TYPE_STRING, enum=["enable", "disable"]),
+                        "status": openapi.Schema(
+                            type=openapi.TYPE_STRING, enum=["enable", "disable"]
+                        ),
                     },
                 ),
             },
@@ -2297,7 +2318,10 @@ class Start_Hiring(APIView):
     )
     def get(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
-        client_data = client.objects.get(id=record_id)
+        try:
+            client_data = client.objects.get(id=record_id)
+        except Exception as e:
+            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
         hiring_requests = hiring_request.objects.filter(client_id=client_data.email)
 
         if hiring_requests:
@@ -2348,10 +2372,10 @@ class Start_Hiring(APIView):
     def delete(self, request, *args, **kwargs):
         delete_id = request.query_params.get("id")
         try:
-            hiring_request.objects.filter(id=delete_id).delete()
+            hiring_request.objects.get(id=delete_id).delete()
             return Response(status=status.HTTP_200_OK)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -2512,10 +2536,10 @@ class Interview_Schedule(APIView):
         user = request.user
         delete_id = request.query_params.get("id")
         try:
-            interview_schedule.objects.filter(id=delete_id).delete()
+            interview_schedule.objects.get(id=delete_id).delete()
             return Response(status=status.HTTP_200_OK)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -2635,33 +2659,40 @@ class Onboarding(APIView):
                 description="Bearer Token",
                 type=openapi.TYPE_STRING,
             ),
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Client id record",
+                type=openapi.TYPE_STRING,
+            ),
         ],
         operation_summary="Endpoint to retrieve on-boarding data.",
         operation_id="7",
     )
     def get(self, request, *args, **kwargs):
-        record_id = request.quary_params.get("id")
-        client_data = client.objects.get(id=record_id)
-        onboardings = onboarding.objects.filter(client_id=client_data.email)
-        records = []
-        if onboardings:
-            for data in onboardings:
-                record = {
-                    "id": data.id,
-                    "employee_name": data.employee_name,
-                    "gender": data.gender,
-                    "country": data.country,
-                    "job_title": data.job_title,
-                    "role_type": data.role_type,
-                    "employment_term": data.employment_term,
-                    "joining_date": data.joining_date,
-                    "notice_period": data.notice_period,
-                    "salary": data.salary,
-                }
-                records.append(record)
-            return Response(records, status=status.HTTP_200_OK)
-        else:
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        record_id = request.query_params.get("id")
+        try:
+            client_data = client.objects.get(id=record_id)
+            onboardings = onboarding.objects.filter(client_id=client_data.email)
+            records = []
+            if onboardings:
+                for data in onboardings:
+                    record = {
+                        "id": data.id,
+                        "employee_name": data.employee_name,
+                        "gender": data.gender,
+                        "country": data.country,
+                        "job_title": data.job_title,
+                        "role_type": data.role_type,
+                        "employment_term": data.employment_term,
+                        "joining_date": data.joining_date,
+                        "notice_period": data.notice_period,
+                        "salary": data.salary,
+                    }
+                    records.append(record)
+                return Response(records, status=status.HTTP_200_OK)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
@@ -2692,10 +2723,10 @@ class Onboarding(APIView):
     def delete(self, request, *args, **kwargs):
         delete_id = request.query_params.get("id")
         try:
-            onboarding.objects.filter(id=delete_id).delete()
+            onboarding.objects.get(id=delete_id).delete()
             return Response(status=status.HTTP_200_OK)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -2907,7 +2938,7 @@ class Hr_Client(APIView):
             openapi.Parameter(
                 "id",
                 openapi.IN_QUERY,
-                description="Employee record ID",
+                description="Client record ID",
                 type=openapi.TYPE_STRING,
             ),
             openapi.Parameter(
@@ -2918,31 +2949,27 @@ class Hr_Client(APIView):
             ),
         ],
         operation_id="1",
-        operation_summary="Get Employee Details",
+        operation_summary="Get Client Details",
     )
     def get(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
-        client_data = client.objects.get(id=record_id)
-        if client_data:
-            try:
-                record = {
-                    "id": client_data.id,
-                    "client_id": client_data.client_id,
-                    "first_name": client_data.first_name,
-                    "last_name": client_data.last_name,
-                    "company_name": client_data.company_name,
-                    "phone_number": client_data.phone_number,
-                    "email": client_data.email,
-                    "country": client_data.country,
-                    "image_path": client_data.image.path,
-                    "address": client_data.address,
-                    "join_date": client_data.join_date,
-                }
-                return Response(record, status=status.HTTP_200_OK)
-            except:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        else:
+        try:
+            client_data = client.objects.get(id=record_id)
+            record = {
+                "id": client_data.id,
+                "client_id": client_data.client_id,
+                "first_name": client_data.first_name,
+                "last_name": client_data.last_name,
+                "company_name": client_data.company_name,
+                "phone_number": client_data.phone_number,
+                "email": client_data.email,
+                "country": client_data.country,
+                "image_path": client_data.image.path,
+                "address": client_data.address,
+                "join_date": client_data.join_date,
+            }
+            return Response(record, status=status.HTTP_200_OK)
+        except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
@@ -3027,8 +3054,8 @@ class Hr_Client(APIView):
         updates = request.data
         try:
             client_record = client.objects.get(id=record_id)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
 
         for key in updates:
             setattr(client_record, key, updates[key])
@@ -3409,8 +3436,8 @@ class Accounts(APIView):
             end_user.objects.get(email=account.email).delete()
             account.delete()
             return Response(status=status.HTTP_200_OK)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -3817,8 +3844,10 @@ class Policies(APIView):
     def delete(self, request, *args, **kwargs):
         delete_id = request.query_params.get("id")
         try:
-            policy.objects.filter(id=delete_id).delete()
+            policy.objects.get(id=delete_id).delete()
             return Response(status=status.HTTP_200_OK)
+        except policy.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -4332,8 +4361,6 @@ class Offshore_Contract(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Invoices(APIView):
-    parser_classes = (MultiPartParser,)
-
     @swagger_auto_schema(
         tags=["Invoices"],
         responses={
@@ -4519,7 +4546,7 @@ class ClientEmployees(APIView):
                     type=openapi.TYPE_STRING, enum=["active", "terminated"]
                 )
             },
-            required=["status"]
+            required=["status"],
         ),
         responses={
             200: "Successful Request",
@@ -4591,9 +4618,17 @@ class ClientAddEmployee(APIView):
         operation_id="1",
     )
     def get(self, request, *args, **kwargs):
-        outsourced_employees_employees = outsource_employees.objects.filter(
-            client_id="talent@esparkconsultants.com"
-        )
+        tab = request.query_params.get("tab")
+        if tab == "active" or tab == "terminated":
+            outsourced_employees_employees = outsource_employees.objects.filter(
+                client_id="talent@esparkconsultants.com", status=tab
+            )
+        elif tab == "all":
+            outsourced_employees_employees = outsource_employees.objects.filter(
+                client_id="talent@esparkconsultants.com"
+            )
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         if outsourced_employees_employees:
             records = []
             for outsrcd_emp in outsourced_employees_employees:
@@ -4605,6 +4640,7 @@ class ClientAddEmployee(APIView):
                         "id": emp.id,
                         "gender": emp.gender,
                         "job_title": outsrcd_emp.job_title,
+                        "status": outsrcd_emp.status,
                     }
                     records.append(record)
                 except:
