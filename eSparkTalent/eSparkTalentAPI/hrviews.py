@@ -21,6 +21,7 @@ import json
 from dateutil import parser
 from django.db.models import Q
 
+
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Add_Employee(APIView):
@@ -236,7 +237,9 @@ class Add_Employee(APIView):
                         image=serializer.validated_data["image"],
                         emergency_no=serializer.validated_data["emergency_no"],
                         resume=serializer.validated_data["resume"],
-                        emergency_contact=serializer.validated_data["emergency_contact"],
+                        emergency_contact=serializer.validated_data[
+                            "emergency_contact"
+                        ],
                         joining_date=serializer.validated_data["joining_date"],
                         job_title=serializer.validated_data["job_title"],
                         role=serializer.validated_data["role"],
@@ -678,7 +681,7 @@ class Employee_Invoice(APIView):
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+
     @swagger_auto_schema(
         tags=["Client : Employee Invoice"],
         manual_parameters=[
@@ -695,7 +698,7 @@ class Employee_Invoice(APIView):
                 openapi.IN_QUERY,
                 description="tab",
                 type=openapi.TYPE_STRING,
-                enum = ["pending", "processing", "paid"],
+                enum=["pending", "processing", "paid"],
                 required=True,
             ),
             openapi.Parameter(
@@ -713,13 +716,15 @@ class Employee_Invoice(APIView):
                     properties={
                         "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
-                        "invoice_date": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
-                        "due_date": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
+                        "invoice_date": openapi.Schema(
+                            type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
+                        ),
+                        "due_date": openapi.Schema(
+                            type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
+                        ),
                         "invoice_amount": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "payment_status": openapi.Schema(type=openapi.TYPE_STRING),
-                        "invoice": openapi.Schema(
-                            type=openapi.TYPE_FILE
-                        ),
+                        "invoice": openapi.Schema(type=openapi.TYPE_FILE),
                     },
                 ),
             ),
@@ -729,13 +734,14 @@ class Employee_Invoice(APIView):
         operation_summary="Employee Invoice",
         operation_id="2",
     )
-
     def get(self, request, *args, **kwargs):
         client_id = request.query_params.get("client_id")
         tab = request.query_params.get("tab")
         try:
             records = []
-            emp_inv = employee_invoice.objects.filter(client_id=client_id, payment_status=tab)
+            emp_inv = employee_invoice.objects.filter(
+                client_id=client_id, payment_status=tab
+            )
             if emp_inv:
                 for inv in emp_inv:
                     emp = employee.objects.get(email=inv.employee_id)
@@ -746,15 +752,15 @@ class Employee_Invoice(APIView):
                         "due_date": inv.due_date,
                         "invoice_amount": inv.invoice_amount,
                         "payment_status": inv.payment_status,
-                        "invoice": inv.invoice.path
+                        "invoice": inv.invoice.path,
                     }
                     records.append(record)
-                return Response(records,status=status.HTTP_200_OK)
+                return Response(records, status=status.HTTP_200_OK)
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+
     @swagger_auto_schema(
         tags=["Client : Employee Invoice"],
         manual_parameters=[
@@ -781,7 +787,6 @@ class Employee_Invoice(APIView):
         operation_summary="Endpoint to delete a Employee Invoice.",
         operation_id="3",
     )
-        
     def delete(self, request, *args, **kwargs):
         delete_id = request.query_params.get("id")
         try:
@@ -789,7 +794,7 @@ class Employee_Invoice(APIView):
             return Response(status=status.HTTP_200_OK)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -932,7 +937,7 @@ class Other_Payment(APIView):
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+
     @swagger_auto_schema(
         tags=["Client : Other Invoice/payment"],
         manual_parameters=[
@@ -949,7 +954,7 @@ class Other_Payment(APIView):
                 openapi.IN_QUERY,
                 description="tab",
                 type=openapi.TYPE_STRING,
-                enum = ["pending", "processing", "paid"],
+                enum=["pending", "processing", "paid"],
                 required=True,
             ),
             openapi.Parameter(
@@ -967,13 +972,15 @@ class Other_Payment(APIView):
                     properties={
                         "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "invoice_reference": openapi.Schema(type=openapi.TYPE_STRING),
-                        "invoice_date": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
-                        "due_date": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
+                        "invoice_date": openapi.Schema(
+                            type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
+                        ),
+                        "due_date": openapi.Schema(
+                            type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
+                        ),
                         "invoice_amount": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "payment_status": openapi.Schema(type=openapi.TYPE_STRING),
-                        "invoice": openapi.Schema(
-                            type=openapi.TYPE_FILE
-                        ),
+                        "invoice": openapi.Schema(type=openapi.TYPE_FILE),
                     },
                 ),
             ),
@@ -983,13 +990,14 @@ class Other_Payment(APIView):
         operation_summary="Other Invoice/payment",
         operation_id="2",
     )
-
     def get(self, request, *args, **kwargs):
         client_id = request.query_params.get("client_id")
         tab = request.query_params.get("tab")
         try:
             records = []
-            emp_inv = other_payment.objects.filter(client_id=client_id, payment_status=tab)
+            emp_inv = other_payment.objects.filter(
+                client_id=client_id, payment_status=tab
+            )
             if emp_inv:
                 for inv in emp_inv:
                     record = {
@@ -999,15 +1007,15 @@ class Other_Payment(APIView):
                         "due_date": inv.due_date,
                         "invoice_amount": inv.invoice_amount,
                         "payment_status": inv.payment_status,
-                        "invoice": inv.invoice.path
+                        "invoice": inv.invoice.path,
                     }
                     records.append(record)
-                return Response(records,status=status.HTTP_200_OK)
+                return Response(records, status=status.HTTP_200_OK)
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+
     @swagger_auto_schema(
         tags=["Client : Other Invoice/payment"],
         manual_parameters=[
@@ -1034,7 +1042,6 @@ class Other_Payment(APIView):
         operation_summary="Endpoint to delete a Other Invoice.",
         operation_id="3",
     )
-        
     def delete(self, request, *args, **kwargs):
         delete_id = request.query_params.get("id")
         try:
@@ -1058,36 +1065,51 @@ class Hr_Home(APIView):
                         "user": openapi.Schema(type=openapi.TYPE_STRING),
                         "company_image": openapi.Schema(type=openapi.TYPE_FILE),
                         "user_image": openapi.Schema(type=openapi.TYPE_FILE),
-                        "employee_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
-                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                        }),
-                        "client_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
-                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                        }),
-                        "leaves_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
-                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                        }),
-                        "invoices_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
-                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                        }),
-                        "policies_perms":openapi.Schema(type=openapi.TYPE_OBJECT,properties={
-                            "read":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                            "write":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                            "delete":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                            "download":openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                        }),
+                        "employee_perms": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            },
+                        ),
+                        "client_perms": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            },
+                        ),
+                        "leaves_perms": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            },
+                        ),
+                        "invoices_perms": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            },
+                        ),
+                        "policies_perms": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            },
+                        ),
                         "employees": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "clients": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "hiring_requests": openapi.Schema(type=openapi.TYPE_INTEGER),
@@ -1112,16 +1134,16 @@ class Hr_Home(APIView):
     )
     def get(self, request, *args, **kwargs):
         user = request.user.username
-        role=request.user.role
-        if role=="super_admin":
-            company=company_data.objects.all()
+        role = request.user.role
+        if role == "super_admin":
+            company = company_data.objects.all()
             if company:
-                comp_image=company[0].image.path
+                comp_image = company[0].image.path
             else:
-                comp_image=''
+                comp_image = ""
             record = {
                 "user": user,
-                "company_image":comp_image,
+                "company_image": comp_image,
                 "employees": employee.objects.all().count(),
                 "clients": client.objects.all().count(),
                 "hiring_requests": hiring_request.objects.all().count(),
@@ -1129,35 +1151,35 @@ class Hr_Home(APIView):
             }
             return Response(record, status=status.HTTP_200_OK)
         else:
-            company=company_data.objects.all()
+            company = company_data.objects.all()
             try:
-                user_account=account_n_persmission.objects.get(email=request.user)
-                user_image=user_account.image.path,
-                employee_perms=user_account.employee_perms,
-                client_perms=user_account.client_perms,
-                leaves_perms=user_account.leaves_perms,
-                invoices_perms=user_account.invoices_perms,
-                policies_perms=user_account.policies_perms,
+                user_account = account_n_persmission.objects.get(email=request.user)
+                user_image = (user_account.image.path,)
+                employee_perms = (user_account.employee_perms,)
+                client_perms = (user_account.client_perms,)
+                leaves_perms = (user_account.leaves_perms,)
+                invoices_perms = (user_account.invoices_perms,)
+                policies_perms = (user_account.policies_perms,)
             except:
-                user_image=''
-                employee_perms={}
-                client_perms={}
-                leaves_perms={}
-                invoices_perms={}
-                policies_perms={}
+                user_image = ""
+                employee_perms = {}
+                client_perms = {}
+                leaves_perms = {}
+                invoices_perms = {}
+                policies_perms = {}
             if company:
-                comp_image=company[0].image.path
+                comp_image = company[0].image.path
             else:
-                comp_image=''
+                comp_image = ""
             record = {
                 "user": user,
-                "company_image":comp_image,
-                "user_image":user_image,
-                "employee_perms":employee_perms,
-                "client_perms":client_perms,
-                "leaves_perms":leaves_perms,
-                "invoices_perms":invoices_perms,
-                "policies_perms":policies_perms,
+                "company_image": comp_image,
+                "user_image": user_image,
+                "employee_perms": employee_perms,
+                "client_perms": client_perms,
+                "leaves_perms": leaves_perms,
+                "invoices_perms": invoices_perms,
+                "policies_perms": policies_perms,
                 "employees": employee.objects.all().count(),
                 "clients": client.objects.all().count(),
                 "hiring_requests": hiring_request.objects.all().count(),
@@ -1215,7 +1237,7 @@ class Hr_Employees(APIView):
                 for emp in outsource:
                     try:
                         e_user = employee.objects.get(email=emp.employee_id)
-                        c_user = client.objects.get(email=emp.client_id) 
+                        c_user = client.objects.get(email=emp.client_id)
                         if e_user:
                             record = {
                                 "id": e_user.id,
@@ -1284,7 +1306,7 @@ class Hr_Employees(APIView):
 
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
-            
+
     @swagger_auto_schema(
         tags=["Employees "],
         manual_parameters=[
@@ -1309,14 +1331,24 @@ class Hr_Employees(APIView):
         },
         operation_summary="Endpoint to delete an employee.",
         operation_id="3",
-    )     
-     
+    )
     def delete(self, request, *args, **kwargs):
         employee_id = request.query_params.get("id")
         try:
             emp = employee.objects.get(id=employee_id)
-            related_models = [outsource_employees, asset, employee_contract,time_sheet,employee_invoice, leave_balance, leave_request,punch_request,offshore_contracts,end_user ]
-            with transaction.atomic(using='default'):  
+            related_models = [
+                outsource_employees,
+                asset,
+                employee_contract,
+                time_sheet,
+                employee_invoice,
+                leave_balance,
+                leave_request,
+                punch_request,
+                offshore_contracts,
+                end_user,
+            ]
+            with transaction.atomic(using="default"):
                 for model_class in related_models:
                     model_data = model_class.objects.filter(employee_id=emp.email)
                     if not model_data.exists():
@@ -1326,13 +1358,20 @@ class Hr_Employees(APIView):
                         model_data.delete()
                 emp.delete()
 
-            return Response({"message": "Employee and associated data removed successfully"}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Employee and associated data removed successfully"},
+                status=status.HTTP_200_OK,
+            )
         except employee.DoesNotExist:
-            return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND
+            )
         except Exception as e:
             print(f"Error: {str(e)}")
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -1606,6 +1645,328 @@ class Hr_Employee(APIView):
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
+class Time_and_leave(APIView):
+    @swagger_auto_schema(
+        tags=["Employees : Time & Leaves"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "time": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "check_in": openapi.Schema(type=openapi.TYPE_STRING),
+                                "check_out": openapi.Schema(type=openapi.TYPE_STRING),
+                            },
+                        ),
+                        "leaves": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                "casual_leaves": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "total": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "balanced": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "availed": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "status": openapi.Schema(
+                                            type=openapi.TYPE_STRING
+                                        ),
+                                    },
+                                ),
+                                "sick_leaves": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "total": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "balanced": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "availed": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "status": openapi.Schema(
+                                            type=openapi.TYPE_STRING
+                                        ),
+                                    },
+                                ),
+                                "annual_leaves": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "total": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "balanced": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "availed": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "status": openapi.Schema(
+                                            type=openapi.TYPE_STRING
+                                        ),
+                                    },
+                                ),
+                                "unpaid_leaves": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "total": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "balanced": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "availed": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "status": openapi.Schema(
+                                            type=openapi.TYPE_STRING
+                                        ),
+                                    },
+                                ),
+                                "paid_leaves": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "total": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "balanced": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "availed": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "status": openapi.Schema(
+                                            type=openapi.TYPE_STRING
+                                        ),
+                                    },
+                                ),
+                                "hajj_leaves": openapi.Schema(
+                                    type=openapi.TYPE_OBJECT,
+                                    properties={
+                                        "total": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "balanced": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "availed": openapi.Schema(
+                                            type=openapi.TYPE_INTEGER
+                                        ),
+                                        "status": openapi.Schema(
+                                            type=openapi.TYPE_STRING
+                                        ),
+                                    },
+                                ),
+                            },
+                        ),
+                    },
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+            400: openapi.Response(description="Bad Request"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Employee record ID",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "tab",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                enum=["time", "leaves"],
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_id=".",
+        operation_summary="Get Employee time and leaves Details",
+    )
+    def get(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        tab = request.query_params.get("tab")
+        if tab == "time":
+            try:
+                employee_data = employee.objects.get(id=record_id)
+                record = {
+                    "id": employee_data.id,
+                    "check_in": employee_data.punch_timings["check_in"],
+                    "check_out": employee_data.punch_timings["check_out"],
+                }
+                return Response(record, status=status.HTTP_200_OK)
+            except:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+        elif tab == "leaves":
+            try:
+                employee_data = employee.objects.get(id=record_id)
+                l_balance = leave_balance.objects.get(employee_id=employee_data.email)
+                record = {
+                    "id": l_balance.id,
+                    "casual_leaves": l_balance.casual_leaves,
+                    "sick_leaves": l_balance.sick_leaves,
+                    "annual_leaves": l_balance.annual_leaves,
+                    "unpaid_leaves": l_balance.unpaid_leaves,
+                    "paid_leaves": l_balance.paid_leaves,
+                    "hajj_leaves": l_balance.hajj_leaves,
+                }
+                return Response(record, status=status.HTTP_200_OK)
+            except:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        tags=["Employees : Time & Leaves"],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "check_in": openapi.Schema(type=openapi.TYPE_STRING),
+                "check_out": openapi.Schema(type=openapi.TYPE_STRING),
+                "casual_leaves": openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "total": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "balanced": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "availed": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "status": openapi.Schema(type=openapi.TYPE_STRING, enum=["enable", "disable"]),
+                    },
+                ),
+                "sick_leaves": openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "total": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "balanced": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "availed": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "status": openapi.Schema(type=openapi.TYPE_STRING, enum=["enable", "disable"]),
+                    },
+                ),
+                "annual_leaves": openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "total": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "balanced": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "availed": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "status": openapi.Schema(type=openapi.TYPE_STRING, enum=["enable", "disable"]),
+                    },
+                ),
+                "paid_leaves": openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "total": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "balanced": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "availed": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "status": openapi.Schema(type=openapi.TYPE_STRING, enum=["enable", "disable"]),
+                    },
+                ),
+                "unpaid_leaves": openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "total": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "balanced": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "availed": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "status": openapi.Schema(type=openapi.TYPE_STRING, enum=["enable", "disable"]),
+                    },
+                ),
+                "hajj_leaves": openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "total": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "balanced": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "availed": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "status": openapi.Schema(type=openapi.TYPE_STRING, enum=["enable", "disable"]),
+                    },
+                ),
+            },
+        ),
+        responses={
+            status.HTTP_200_OK: "Timings/leaves updated successfully",
+            status.HTTP_400_BAD_REQUEST: "Bad request",
+            status.HTTP_404_NOT_FOUND: "Employee record not found",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Employee record ID",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "tab",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                enum=["time", "leaves"],
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_id="1",
+        operation_summary="Update Employee time and leaves details",
+    )
+    def patch(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        tab = request.query_params.get("tab")
+        if tab == "time":
+            try:
+                check_in = request.data.get("check_in")
+                check_out = request.data.get("check_out")
+                employee_data = employee.objects.get(id=record_id)
+                employee_data.punch_timings["check_in"] = check_in
+                employee_data.punch_timings["check_out"] = check_out
+                employee_data.save()
+                return Response(
+                    {"message": "Timings updated successfully"},
+                    status=status.HTTP_200_OK,
+                )
+            except employee.DoesNotExist:
+                return Response(
+                    {"error": "Employee record not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        elif tab == "leaves":
+            updates = request.data
+            try:
+                emp_record = employee.objects.get(id=record_id)
+                l_balance = leave_balance.objects.get(employee_id=emp_record.email)
+            except:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+
+            for key in updates:
+                setattr(l_balance, key, updates[key])
+            l_balance.save()
+            return Response(
+                {"message": "leaves updated successfully"}, status=status.HTTP_200_OK
+            )
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 class Update_Emp_Info(APIView):
     @swagger_auto_schema(
         tags=["Employees"],
@@ -1641,7 +2002,11 @@ class Update_Emp_Info(APIView):
                 ),
                 "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
                 "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
-                "dob": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE, example="2024-02-24"),
+                "dob": openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    format=openapi.FORMAT_DATE,
+                    example="2024-02-24",
+                ),
                 "email": openapi.Schema(
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
                 ),
@@ -2386,7 +2751,10 @@ class Hr_Clients(APIView):
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except client.DoesNotExist:
-            return Response({"message": "Clients not found"},status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"message": "Clients not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
     @swagger_auto_schema(
         tags=["Clients"],
         responses={
@@ -2400,7 +2768,7 @@ class Hr_Clients(APIView):
                 "is_active": openapi.Schema(type=openapi.TYPE_BOOLEAN),
             },
             required=[
-               "is_active",    
+                "is_active",
             ],
         ),
         manual_parameters=[
@@ -2436,10 +2804,9 @@ class Hr_Clients(APIView):
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+
     @swagger_auto_schema(
         tags=["Clients"],
-        
         manual_parameters=[
             openapi.Parameter(
                 "id",
@@ -2455,7 +2822,6 @@ class Hr_Clients(APIView):
                 type=openapi.TYPE_STRING,
                 required=True,
             ),
-            
         ],
         responses={
             200: openapi.Response(description="Successful update"),
@@ -2468,7 +2834,20 @@ class Hr_Clients(APIView):
         try:
             client_id = request.query_params.get("id")
             clt = client.objects.get(id=client_id)
-            related_models= [outsource_employees,employee_invoice,hiring_request,interview_schedule,client_contract,offshore_contracts,onboarding,other_payment,punch_request,time_sheet,leave_request,end_user]
+            related_models = [
+                outsource_employees,
+                employee_invoice,
+                hiring_request,
+                interview_schedule,
+                client_contract,
+                offshore_contracts,
+                onboarding,
+                other_payment,
+                punch_request,
+                time_sheet,
+                leave_request,
+                end_user,
+            ]
             for model in related_models:
                 data = model.objects.filter(client_id=clt.email)
                 if not data.exists():
@@ -2477,11 +2856,19 @@ class Hr_Clients(APIView):
                 else:
                     data.delete()
             clt.delete()
-            return Response({"message": "client and associated data removed successfully"}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "client and associated data removed successfully"},
+                status=status.HTTP_200_OK,
+            )
         except client.DoesNotExist:
-            return Response({"error": "client not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "client not found"}, status=status.HTTP_404_NOT_FOUND
+            )
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -2758,7 +3145,7 @@ class Company_Settings(APIView):
                 for key in updates:
                     setattr(comp_data, key, updates[key])
                 try:
-                    comp_data.save()                
+                    comp_data.save()
                 except ValidationError as e:
                     return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
                 except:
@@ -2956,7 +3343,7 @@ class Accounts(APIView):
                                 "write": False,
                                 "delete": False,
                                 "download": False,
-                            }
+                            },
                         )
 
                         end_user.objects.create_user(
@@ -3392,14 +3779,12 @@ class Policies(APIView):
                     {"message": "Resquest created"}, status=status.HTTP_201_CREATED
                 )
             except ValidationError as e:
-                return Response(
-                    {"error": e}, status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
             except:
                 return Response(
                     {"error": "Invalid form fields"},
                     status=status.HTTP_400_BAD_REQUEST,
-                )            
+                )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -3634,7 +4019,9 @@ class Company_Contract(APIView):
                         properties={
                             "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "contract_name": openapi.Schema(type=openapi.TYPE_STRING),
-                            "client_id/employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                            "client_id/employee_id": openapi.Schema(
+                                type=openapi.TYPE_STRING
+                            ),
                             "date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
@@ -3663,7 +4050,10 @@ class Company_Contract(APIView):
                         "contract_doc": contract.contract_doc.path,
                     }
                 if not client_cont:
-                    return Response({"message": "No client contracts available"}, status=status.HTTP_204_NO_CONTENT)
+                    return Response(
+                        {"message": "No client contracts available"},
+                        status=status.HTTP_204_NO_CONTENT,
+                    )
                 return Response(str(client_cont), status=status.HTTP_200_OK)
 
             elif get_status == "employees":
@@ -3679,7 +4069,10 @@ class Company_Contract(APIView):
                     }
                 employee_cont.append(record)
                 if not employee_cont:
-                    return Response({"message": "No employee contracts available"}, status=status.HTTP_204_NO_CONTENT)
+                    return Response(
+                        {"message": "No employee contracts available"},
+                        status=status.HTTP_204_NO_CONTENT,
+                    )
                 return Response(str(employee_cont), status=status.HTTP_200_OK)
         return Response(
             {"message": "Invalid status parameter"}, status=status.HTTP_400_BAD_REQUEST
@@ -3829,10 +4222,10 @@ class Offshore_Contract(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
         except serializers.ValidationError as e:
-                    return Response(
-                        {"message": "Invalid offshore contract data", "errors": e.detail},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+            return Response(
+                {"message": "Invalid offshore contract data", "errors": e.detail},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     @swagger_auto_schema(
         tags=["Offshore Contract"],
@@ -3884,9 +4277,12 @@ class Offshore_Contract(APIView):
             }
         offshore_cont.append(record)
         if not offshore_cont:
-            return Response({"message": "No offshore contracts available"}, status=status.HTTP_204_NO_CONTENT)
+            return Response(
+                {"message": "No offshore contracts available"},
+                status=status.HTTP_204_NO_CONTENT,
+            )
         return Response(str(offshore_cont), status=status.HTTP_200_OK)
-    
+
     @swagger_auto_schema(
         tags=["Offshore Contract"],
         manual_parameters=[
@@ -3931,11 +4327,13 @@ class Offshore_Contract(APIView):
             return Response(
                 {"message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-    
+
+
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Invoices(APIView):
     parser_classes = (MultiPartParser,)
+
     @swagger_auto_schema(
         tags=["Invoices"],
         responses={
@@ -3949,7 +4347,9 @@ class Invoices(APIView):
                             "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "company_name": openapi.Schema(type=openapi.TYPE_STRING),
                             "client_id": openapi.Schema(type=openapi.TYPE_STRING),
-                            "email": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+                            "email": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
+                            ),
                             "is_active": openapi.Schema(type=openapi.TYPE_BOOLEAN),
                         },
                     ),
@@ -3972,20 +4372,23 @@ class Invoices(APIView):
     )
     def get(self, request, *args, **kwargs):
         client_users = client.objects.all()
-        client_data=[]
+        client_data = []
         try:
             for data in client_users:
-                user=end_user.objects.get(email=data.email)
-                record ={
-                    "id" : data.id,
-                    "company_name" : data.company_name,
-                    "client_id" : data.client_id,
+                user = end_user.objects.get(email=data.email)
+                record = {
+                    "id": data.id,
+                    "company_name": data.company_name,
+                    "client_id": data.client_id,
                     "email": data.email,
-                    "is_active":user.is_active,
+                    "is_active": user.is_active,
                 }
             client_data.append(record)
             if not client_data:
-                return Response({"message": "No invoices available"}, status=status.HTTP_204_NO_CONTENT)
+                return Response(
+                    {"message": "No invoices available"},
+                    status=status.HTTP_204_NO_CONTENT,
+                )
             return Response(str(client_data), status=status.HTTP_200_OK)
         except Exception as e:
             return Response(
@@ -4006,7 +4409,10 @@ class ClientEmployees(APIView):
                     properties={
                         "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "emp_pk": openapi.Schema(type=openapi.TYPE_INTEGER),
-                        "email": openapi.Schema(type=openapi.TYPE_STRING,format=openapi.FORMAT_EMAIL,),
+                        "email": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            format=openapi.FORMAT_EMAIL,
+                        ),
                         "name": openapi.Schema(type=openapi.TYPE_STRING),
                         "image": openapi.Schema(type=openapi.TYPE_STRING),
                         "job_title": openapi.Schema(type=openapi.TYPE_STRING),
@@ -4042,23 +4448,23 @@ class ClientEmployees(APIView):
         operation_id="1",
     )
     def get(self, request, *args, **kwargs):
-        c_email=request.query_params.get("c_email")
-        tab=request.query_params.get("tab")
-        if c_email and tab=="active" or tab=="terminated":
-            c_emps=outsource_employees.objects.filter(client_id=c_email, status=tab)
+        c_email = request.query_params.get("c_email")
+        tab = request.query_params.get("tab")
+        if c_email and tab == "active" or tab == "terminated":
+            c_emps = outsource_employees.objects.filter(client_id=c_email, status=tab)
             if c_emps:
-                records=[]
+                records = []
                 for c_emp in c_emps:
                     try:
-                        emp=employee.objects.get(email=c_emp.employee_id)
-                        record={
-                            "id":c_emp.id,
-                            "emp_pk":emp.id,
-                            "email":emp.email,
-                            "image":emp.image.path,
-                            "name":emp.first_name + " " + emp.last_name,
-                            "job_title":c_emp.job_title,
-                            "status":c_emp.status
+                        emp = employee.objects.get(email=c_emp.employee_id)
+                        record = {
+                            "id": c_emp.id,
+                            "emp_pk": emp.id,
+                            "email": emp.email,
+                            "image": emp.image.path,
+                            "name": emp.first_name + " " + emp.last_name,
+                            "job_title": c_emp.job_title,
+                            "status": c_emp.status,
                         }
                         records.append(record)
                     except:
@@ -4066,21 +4472,21 @@ class ClientEmployees(APIView):
                 return Response(records, status=status.HTTP_200_OK)
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
-        elif c_email and tab=="all":
-            c_emps=outsource_employees.objects.filter(client_id=c_email)
+        elif c_email and tab == "all":
+            c_emps = outsource_employees.objects.filter(client_id=c_email)
             if c_emps:
-                records=[]
+                records = []
                 for c_emp in c_emps:
                     try:
-                        emp=employee.objects.get(email=c_emp.employee_id)
-                        record={
-                            "id":c_emp.id,
-                            "emp_pk":emp.id,
-                            "email":emp.email,
-                            "image":emp.image.path,
-                            "name":emp.first_name + " " + emp.last_name,
-                            "job_title":c_emp.job_title,
-                            "status":c_emp.status
+                        emp = employee.objects.get(email=c_emp.employee_id)
+                        record = {
+                            "id": c_emp.id,
+                            "emp_pk": emp.id,
+                            "email": emp.email,
+                            "image": emp.image.path,
+                            "name": emp.first_name + " " + emp.last_name,
+                            "job_title": c_emp.job_title,
+                            "status": c_emp.status,
                         }
                         records.append(record)
                     except:
@@ -4109,7 +4515,9 @@ class ClientEmployees(APIView):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "status": openapi.Schema(type=openapi.TYPE_STRING, enum=["active","terminated"])
+                "status": openapi.Schema(
+                    type=openapi.TYPE_STRING, enum=["active", "terminated"]
+                )
             },
             required=["status"]
         ),
@@ -4123,12 +4531,12 @@ class ClientEmployees(APIView):
         operation_id="2",
     )
     def patch(self, request, *args, **kwargs):
-        id=request.query_params.get("id")
-        new_status=request.data.get("status")
+        id = request.query_params.get("id")
+        new_status = request.data.get("status")
         if new_status and id:
             try:
-                c_emp=outsource_employees.objects.get(id=id)
-                c_emp.status=new_status
+                c_emp = outsource_employees.objects.get(id=id)
+                c_emp.status = new_status
                 c_emp.save()
                 return Response(status=status.HTTP_200_OK)
             except:
@@ -4183,18 +4591,20 @@ class ClientAddEmployee(APIView):
         operation_id="1",
     )
     def get(self, request, *args, **kwargs):
-        outsourced_employees_employees=outsource_employees.objects.filter(client_id="talent@esparkconsultants.com")
+        outsourced_employees_employees = outsource_employees.objects.filter(
+            client_id="talent@esparkconsultants.com"
+        )
         if outsourced_employees_employees:
-            records=[]
+            records = []
             for outsrcd_emp in outsourced_employees_employees:
                 try:
-                    emp=employee.objects.get(email=outsrcd_emp.employee_id)
-                    record={
-                        "image":emp.image.path,
-                        "name":emp.first_name+" "+emp.last_name,
-                        "id":emp.id,
-                        "gender":emp.gender,
-                        "job_title":outsrcd_emp.job_title,
+                    emp = employee.objects.get(email=outsrcd_emp.employee_id)
+                    record = {
+                        "image": emp.image.path,
+                        "name": emp.first_name + " " + emp.last_name,
+                        "id": emp.id,
+                        "gender": emp.gender,
+                        "job_title": outsrcd_emp.job_title,
                     }
                     records.append(record)
                 except:
@@ -4253,20 +4663,23 @@ class ClientAddEmployee(APIView):
         operation_id="2",
     )
     def post(self, request, *args, **kwargs):
-        c_email=request.query_params.get("c_email")
-        id=request.data.get("id")
-        job_title=request.data.get("job_title")
-        country=request.data.get("country")
-        role_type=request.data.get("role")
-        employment_term=request.data.get("employment_term")
-        joining_date=request.data.get("joining_date")
-        salary=request.data.get("salary")
-        benefits=request.data.get("benefits")
+        c_email = request.query_params.get("c_email")
+        id = request.data.get("id")
+        job_title = request.data.get("job_title")
+        country = request.data.get("country")
+        role_type = request.data.get("role")
+        employment_term = request.data.get("employment_term")
+        joining_date = request.data.get("joining_date")
+        salary = request.data.get("salary")
+        benefits = request.data.get("benefits")
         if id and c_email:
             try:
-                emp=employee.objects.get(id=id)
+                emp = employee.objects.get(id=id)
             except employee.DoesNotExist:
-                return Response({"error":"Employee with this id does not exist"},status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": "Employee with this id does not exist"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             try:
                 outsource_employees.objects.create(
                     client_id=c_email,
@@ -4281,7 +4694,7 @@ class ClientAddEmployee(APIView):
                 )
                 return Response(status=status.HTTP_201_CREATED)
             except Exception as e:
-                return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
