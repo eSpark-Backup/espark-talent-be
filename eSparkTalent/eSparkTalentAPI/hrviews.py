@@ -1803,9 +1803,9 @@ class Time_and_leave(APIView):
     def get(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
         tab = request.query_params.get("tab")
-        employee_data = employee.objects.get(id=record_id)
         if tab == "time":
             try:
+                employee_data = employee.objects.get(id=record_id)
                 record = {
                     "id": employee_data.id,
                     "check_in": employee_data.punch_timings["check_in"],
@@ -1816,6 +1816,7 @@ class Time_and_leave(APIView):
                 return Response(status=status.HTTP_400_BAD_REQUEST)
         elif tab == "leaves":
             try:
+                employee_data = employee.objects.get(id=record_id)
                 l_balance = leave_balance.objects.get(employee_id=employee_data.email)
                 record = {
                     "id": l_balance.id,
