@@ -1,5 +1,5 @@
 from django.urls import path
-from .clientviews import LoginView
+from .clientviews import LoginView, Notifications
 from .employeeviews import *
 
 urlpatterns=[
@@ -11,4 +11,5 @@ urlpatterns=[
     path('emp_timesheet/', Time_Sheet.as_view()),
     path('emp_pr/', Punch_Request.as_view()),
     path('emp_policies/', Policies.as_view()),
+    path('notify/', Notifications.as_view()),
 ]

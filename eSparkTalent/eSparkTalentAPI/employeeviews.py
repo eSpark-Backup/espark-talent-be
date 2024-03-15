@@ -1370,6 +1370,18 @@ class Leave_Request(APIView):
                     attachment=request.data.get("attachment"),
                     status="pending",
                 )
+                
+                emp_data = end_user.objects.get(email=result.employee_id)
+                notifications.objects.create(
+                    email=result.client_id,
+                    notification_type="leave_notifications",
+                    description=f"{emp_data.username} {result.leave_type} leave request is pending" 
+                )
+                notifications.objects.create(
+                    email=result.employee_id,
+                    notification_type="leave_notifications",
+                    description=f"{result.leave_type} leave request is pending" 
+                )
                 return Response({"id": result.id}, status=status.HTTP_201_CREATED)
             except ValidationError as e:
                 return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
@@ -2223,6 +2235,19 @@ class Punch_Request(APIView):
                     description=serializer.validated_data["description"],
                     status="pending",
                 )
+                
+                emp_data = end_user.objects.get(email=result.employee_id)
+                notifications.objects.create(
+                    email=result.client_id,
+                    notification_type="punch_notifications",
+                    description=f"{emp_data.username} {result.punch_type} request is pending" 
+                )
+                notifications.objects.create(
+                    email=result.employee_id,
+                    notification_type="punch_notifications",
+                    description=f"{result.punch_type} request is pending" 
+                )
+                
                 return Response({"id": result.id}, status=status.HTTP_201_CREATED)
             except:
                 return Response(

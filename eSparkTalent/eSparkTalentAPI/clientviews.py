@@ -2543,3 +2543,50 @@ class Policies(APIView):
             return Response(policies, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Notifications(APIView):
+    @swagger_auto_schema(
+        tags=["Notifications"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "description": openapi.Schema(type=openapi.TYPE_STRING),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve Notifications",
+        operation_id=".",
+    )
+    def get(self, request, *args, **kwargs):
+        user_email = request.user
+        notifications_data = notifications.objects.filter(email=user_email)
+        noti_array = []
+        for data in notifications_data:
+            record = {
+                "description": data.description
+            }
+            noti_array.append(record)
+        if len(noti_array) > 0:
+            return Response(noti_array, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)

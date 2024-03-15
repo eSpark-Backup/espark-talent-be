@@ -21,4 +21,5 @@ urlpatterns=[
     path('c_cmpcontract/', Client_contract.as_view()),
     path('c_empcontract/', Employee_Contract.as_view()),
     path('c_policy/', Policies.as_view()),
+    path('notify/', Notifications.as_view()),
 ]
