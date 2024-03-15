@@ -611,3 +611,12 @@ class account_n_persmission(models.Model):
         except ValidationError as e:
             raise ValidationError(e)
         super().save(*args, **kwargs)
+        
+class notifications(models.Model):
+    id = models.AutoField(primary_key=True)
+    email=models.EmailField(default='')
+    notification_type=models.CharField(max_length=30, default='')
+    description=models.CharField(max_length=255, default='')
+    
+    def __str__(self):
+        return f"{self.email} - {self.id}"

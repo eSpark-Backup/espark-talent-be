@@ -89,7 +89,7 @@ class CompanyDataSerializer(serializers.ModelSerializer):
 class LeaveRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = leave_request
-        exclude = ["employee_id","status"]
+        exclude = ["employee_id","status", "attachment"]
 
 class PunchRequestSerializer(serializers.ModelSerializer):
     class Meta:
