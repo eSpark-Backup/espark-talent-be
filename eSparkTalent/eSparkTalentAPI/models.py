@@ -294,6 +294,7 @@ class leave_request(models.Model):
     count = models.IntegerField(default=1)
     reason = models.CharField(max_length=200, default="")
     attachment = models.FileField(
+        null=True,
         upload_to="employees/leave_requests",
         validators=[pdf_ext_valid, valid_pdffile_type],
         default="",
@@ -307,8 +308,9 @@ class leave_request(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            file_content = self.attachment.file.seek(0)
-            valid_pdffile_type(self.attachment.file)
+            if self.attachment:
+                file_content = self.attachment.file.seek(0)
+                valid_pdffile_type(self.attachment.file)
         except ValidationError as e:
             raise ValidationError(e)
         super().save(*args, **kwargs)
