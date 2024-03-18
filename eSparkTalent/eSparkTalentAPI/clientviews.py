@@ -20,7 +20,6 @@ from django.core.files.base import ContentFile
 import datetime
 from rest_framework.parsers import MultiPartParser
 import calendar
-from eSparkTalent.settings import talent_email
 
 
 class LoginView(APIView):
@@ -207,7 +206,7 @@ class Start_Hiring(APIView):
         if serializer.is_valid():
             try:
                 client_1 = client.objects.get(email=request.user)
-                h_req=hiring_request.objects.create(
+                hiring_request.objects.create(
                     client_id=client_1.email,
                     job_title=serializer.validated_data["job_title"],
                     role_type=serializer.validated_data["role_type"],
@@ -217,12 +216,6 @@ class Start_Hiring(APIView):
                     country=serializer.validated_data["country"],
                     hiring_start_date=serializer.validated_data["hiring_start_date"],
                     hiring_end_date=serializer.validated_data["hiring_end_date"],
-                )
-
-                notifications.objects.create(
-                    email=talent_email,
-                    notification_type="hiring",
-                    description=f"Hiring request is created for {h_req.job_title} postion."
                 )
                 return Response(
                     {"message": "Resquest created"}, status=status.HTTP_201_CREATED
@@ -470,11 +463,7 @@ class Interview_Schedule(APIView):
             if to_update_interview_status:
                 to_update_interview_status.status = to_update_status
                 to_update_interview_status.save()
-                notifications.objects.create(
-                    email=talent_email,
-                    notification_type=f"{to_update_status}_interviewee",
-                    description=f"{to_update_interview_status.employee_name} is {to_update_status} for {to_update_interview_status.job_title} position"
-                )
+                
                 return Response(status=status.HTTP_200_OK)
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
