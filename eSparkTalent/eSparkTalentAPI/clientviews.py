@@ -19,6 +19,7 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import datetime
 from rest_framework.parsers import MultiPartParser
+from eSparkTalent.settings import talent_email
 import calendar
 
 
@@ -217,9 +218,20 @@ class Start_Hiring(APIView):
                     hiring_start_date=serializer.validated_data["hiring_start_date"],
                     hiring_end_date=serializer.validated_data["hiring_end_date"],
                 )
-                return Response(
-                    {"message": "Resquest created"}, status=status.HTTP_201_CREATED
+                notifications.objects.create(
+                email=client_1.client_id,  
+                notification_type="Hiring Request Created",
+                description="A new hiring request created.",
                 )
+                
+                notifications.objects.create(
+                email=talent_email, 
+                notification_type="Hiring Request Created",
+                description="A new hiring request created.",
+                )
+                return Response({"message": "Resquest created"},status=status.HTTP_201_CREATED)
+            
+
             except client.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
             except:
@@ -463,10 +475,15 @@ class Interview_Schedule(APIView):
             if to_update_interview_status:
                 to_update_interview_status.status = to_update_status
                 to_update_interview_status.save()
-
+                notifications.objects.create(
+                    email=talent_email,
+                    notification_type=f"{to_update_status}_interviewee",
+                    description=f"{to_update_interview_status.employee_name} is {to_update_status} for {to_update_interview_status.job_title} position"
+                )
                 return Response(status=status.HTTP_200_OK)
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
+            
         except interview_schedule.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         except:
@@ -861,7 +878,7 @@ class Leave_Request(APIView):
                             ) + int(to_update_leave_request.count)
 
                         leave_balances_instance.save()
-
+                        
                     except leave_balance.DoesNotExist:
                         print(
                             "Leave balance record not found for the specified employee_id."
@@ -871,6 +888,13 @@ class Leave_Request(APIView):
                                 "error": "No leave_balance record found for the specified employee_id"
                             },
                             status=status.HTTP_404_NOT_FOUND,
+                        )
+                    
+                emp_name = end_user.objects.get(email=to_update_leave_request.employee_id)
+                notifications.objects.create(
+                            email=to_update_leave_request.employee_id,
+                            notification_type=f"{to_update_status}_request",
+                            description=f"{emp_name.username} is {to_update_status}"
                         )
 
                 return Response(
@@ -1635,7 +1659,9 @@ class ClockInOut_Request(APIView):
                 except Exception as e:
                     return Response(
                         {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
-                    )
+                   )
+            
+           
 
             except:
                 return Response(status=status.HTTP_404_NOT_FOUND)
@@ -1647,6 +1673,19 @@ class ClockInOut_Request(APIView):
                 return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
             to_update_clockinout_request.status = to_update_status
             to_update_clockinout_request.save()
+
+            emp_name = end_user.objects.get(email =to_update_clockinout_request.employee_id )
+            notifications.objects.create(
+                email = to_update_clockinout_request.employee_id,
+                notification_type=f"{to_update_status}_request",
+                description=f"{emp_name.username} is {to_update_status}"
+            )
+            emp_name = end_user.objects.get(email =to_update_clockinout_request.employee_id )
+            notifications.objects.create(
+                email = talent_email,
+                notification_type=f"{to_update_status}_request",
+                description=f"{emp_name.username} is {to_update_status}"
+            )
             return Response(status=status.HTTP_200_OK)
         else:
             return Response(
@@ -2369,22 +2408,31 @@ class Invoice_Payments(APIView):
         id = request.query_params.get("id")
         category = request.data["category"]
         new_pay_status = request.data["payment_status"]
-        if category == "employee_invoice":
-            try:
-                to_update_invoice_payments = employee_invoice.objects.get(id=id)
-                to_update_invoice_payments.payment_status = new_pay_status
-                to_update_invoice_payments.save()
-                return Response(status=status.HTTP_200_OK)
-            except:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
-        elif category == "other_payment":
-            try:
-                to_update_invoice_payments = other_payment.objects.get(id=id)
-                to_update_invoice_payments.payment_status = new_pay_status
-                to_update_invoice_payments.save()
-                return Response(status=status.HTTP_200_OK)
-            except:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
+        try:
+            if category == "employee_invoice":
+                try:
+                    to_update_invoice_payments = employee_invoice.objects.get(id=id)
+                    to_update_invoice_payments.payment_status = new_pay_status
+                    to_update_invoice_payments.save()
+                    
+                except:
+                    return Response(status=status.HTTP_400_BAD_REQUEST)
+            elif category == "other_payment":
+                try:
+                    to_update_invoice_payments = other_payment.objects.get(id=id)
+                    to_update_invoice_payments.payment_status = new_pay_status
+                    to_update_invoice_payments.save()
+        
+                except:
+                    return Response(status=status.HTTP_400_BAD_REQUEST)
+            notifications.objects.create(
+                        email=talent_email,
+                        notification_type="invoice update Status",
+                        description=f"{to_update_invoice_payments.employee_id} new invoice is {to_update_invoice_payments.payment_status}"
+                    )
+            return Response(status=status.HTTP_200_OK)
+        except:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
