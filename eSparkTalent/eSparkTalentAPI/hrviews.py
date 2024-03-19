@@ -4880,6 +4880,9 @@ class Attendance_Report(APIView):
                                             "location": openapi.Schema(
                                                 type=openapi.TYPE_STRING
                                             ),
+                                            "role_type": openapi.Schema(
+                                                type=openapi.TYPE_STRING
+                                            ),
                                             "job_title": openapi.Schema(
                                                 type=openapi.TYPE_STRING
                                             ),
@@ -4972,6 +4975,7 @@ class Attendance_Report(APIView):
                         "employee_name": emp.first_name + " " + emp.last_name,
                         "company": company_name,
                         "location": location,
+                        "role_type":outsrc_emp.role_type,
                         "job_title": outsrc_emp.job_title,
                         "joining_date": outsrc_emp.joining_date,
                     }
@@ -5031,6 +5035,7 @@ class Attendance_Report(APIView):
                         "employee_name": emp.first_name + " " + emp.last_name,
                         "company": company_name,
                         "location": location,
+                        "role_type":outsrc_emp.role_type,
                         "job_title": outsrc_emp.job_title,
                         "joining_date": outsrc_emp.joining_date,
                     }

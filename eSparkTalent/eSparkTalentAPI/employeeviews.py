@@ -1568,6 +1568,7 @@ class Time_Sheet(APIView):
                                 ),
                                 "company": openapi.Schema(type=openapi.TYPE_STRING),
                                 "location": openapi.Schema(type=openapi.TYPE_STRING),
+                                "role_type": openapi.Schema(type=openapi.TYPE_STRING),
                                 "job_title": openapi.Schema(type=openapi.TYPE_STRING),
                                 "joining_date": openapi.Schema(
                                     type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
@@ -1722,6 +1723,7 @@ class Time_Sheet(APIView):
                     "employee_name": emp.first_name + " " + emp.last_name,
                     "company": company_name,
                     "location": location,
+                    "role_type":outsrc_emp.role_type,
                     "job_title": outsrc_emp.job_title,
                     "joining_date": outsrc_emp.joining_date,
                 }
@@ -1854,6 +1856,7 @@ class Time_Sheet(APIView):
                     "employee_name": emp.first_name + " " + emp.last_name,
                     "company": company_name,
                     "location": location,
+                    "role_type":outsrc_emp.role_type,
                     "job_title": outsrc_emp.job_title,
                     "joining_date": outsrc_emp.joining_date,
                 }
