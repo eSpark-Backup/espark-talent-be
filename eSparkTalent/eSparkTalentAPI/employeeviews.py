@@ -1416,7 +1416,10 @@ class Leave_Request(APIView):
     def delete(self, request, *args, **kwargs):
         id = request.query_params.get("id")
         try:
-            leave_request.objects.get(id=id).delete()
+            record = leave_request.objects.get(id=id)
+            if record:
+                notifications.objects.get(ref_id=record.id).delete()
+                record.delete()
             return Response(status=status.HTTP_200_OK)
         except leave_request.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -2276,7 +2279,10 @@ class Punch_Request(APIView):
     def delete(self, request, *args, **kwargs):
         id = request.query_params.get("id")
         try:
-            punch_request.objects.get(id=id).delete()
+            record = punch_request.objects.get(id=id)
+            if record:
+                notifications.objects.get(ref_id=record.id).delete()
+                record.delete()
             return Response(status=status.HTTP_200_OK)
         except punch_request.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
