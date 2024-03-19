@@ -754,7 +754,7 @@ class Employee_Invoice(APIView):
                         "due_date": inv.due_date,
                         "invoice_amount": inv.invoice_amount,
                         "payment_status": inv.payment_status,
-                        "invoice": inv.invoice.path,
+                        "invoice": inv.invoice.url,
                     }
                     records.append(record)
                 return Response(records, status=status.HTTP_200_OK)
@@ -1009,7 +1009,7 @@ class Other_Payment(APIView):
                         "due_date": inv.due_date,
                         "invoice_amount": inv.invoice_amount,
                         "payment_status": inv.payment_status,
-                        "invoice": inv.invoice.path,
+                        "invoice": inv.invoice.url,
                     }
                     records.append(record)
                 return Response(records, status=status.HTTP_200_OK)
@@ -1142,7 +1142,7 @@ class Hr_Home(APIView):
         if role == "super_admin":
             company = company_data.objects.all()
             if company:
-                comp_image = company[0].image.path
+                comp_image = company[0].image.url
             else:
                 comp_image = ""
             record = {
@@ -1158,7 +1158,7 @@ class Hr_Home(APIView):
             company = company_data.objects.all()
             try:
                 user_account = account_n_persmission.objects.get(email=request.user)
-                user_image = (user_account.image.path,)
+                user_image = (user_account.image.url,)
                 employee_perms = (user_account.employee_perms,)
                 client_perms = (user_account.client_perms,)
                 leaves_perms = (user_account.leaves_perms,)
@@ -1172,7 +1172,7 @@ class Hr_Home(APIView):
                 invoices_perms = {}
                 policies_perms = {}
             if company:
-                comp_image = company[0].image.path
+                comp_image = company[0].image.url
             else:
                 comp_image = ""
             record = {
@@ -1247,7 +1247,7 @@ class Hr_Employees(APIView):
                                 "id": e_user.id,
                                 "employee_id": e_user.employee_id,
                                 "name": e_user.first_name + " " + e_user.last_name,
-                                "image_path": e_user.image.path,
+                                "image_path": e_user.image.url,
                                 "job_title": e_user.job_title,
                                 "company": c_user.company_name,
                                 "active": True,
@@ -1270,7 +1270,7 @@ class Hr_Employees(APIView):
                                 "id": emp.id,
                                 "employee_id": emp.employee_id,
                                 "name": emp.first_name + " " + emp.last_name,
-                                "image_path": emp.image.path,
+                                "image_path": emp.image.url,
                                 "designation": emp.job_title,
                                 "company": emp.company,
                                 "active": False,
@@ -1304,7 +1304,7 @@ class Hr_Employees(APIView):
                         "id": emp.id,
                         "employee_id": emp.employee_id,
                         "name": emp.first_name + " " + emp.last_name,
-                        "image_path": emp.image.path,
+                        "image_path": emp.image.url,
                         "designation": emp.job_title,
                         "company": company,
                         "active": active,
@@ -1642,8 +1642,8 @@ class Hr_Employee(APIView):
                     "dob": emp_record.dob,
                     "email": emp_record.email,
                     "marital_status": emp_record.marital_status,
-                    "image_path": emp_record.image.path,
-                    "resume_path": emp_record.resume.path,
+                    "image_path": emp_record.image.url,
+                    "resume_path": emp_record.resume.url,
                     "emergency_contact": emp_record.emergency_contact,
                     "joining_date": emp_record.joining_date,
                     "job_title": emp_record.job_title,
@@ -2778,7 +2778,7 @@ class Hr_Clients(APIView):
                         "id": cl.id,
                         "client_id": cl.client_id,
                         "name": cl.first_name + " " + cl.last_name,
-                        "image_path": cl.image.path,
+                        "image_path": cl.image.url,
                         "company_name": cl.company_name,
                         "active": user.is_active,
                     }
@@ -2969,7 +2969,7 @@ class Hr_Client(APIView):
                 "phone_number": client_data.phone_number,
                 "email": client_data.email,
                 "country": client_data.country,
-                "image_path": client_data.image.path,
+                "image_path": client_data.image.url,
                 "address": client_data.address,
                 "join_date": client_data.join_date,
             }
@@ -3120,7 +3120,7 @@ class Company_Settings(APIView):
                 "company_name": data.company_name,
                 "company_email": data.company_email,
                 "website_url": data.website_url,
-                "image": data.image.path,
+                "image": data.image.url,
             }
             return Response(record, status=status.HTTP_200_OK)
         else:
@@ -3268,7 +3268,7 @@ class Accounts(APIView):
                     "id": account.id,
                     "account_name": account.account_name,
                     "email": account.email,
-                    "image": account.image.path,
+                    "image": account.image.url,
                     "password": unciphered_data,
                 }
                 accounts_record.append(record)
@@ -4081,7 +4081,7 @@ class Company_Contract(APIView):
                         "contract_name": contract.contract_name,
                         "client_id": contract.client_id,
                         "date": contract.date,
-                        "contract_doc": contract.contract_doc.path,
+                        "contract_doc": contract.contract_doc.url,
                     }
                 if not client_cont:
                     return Response(
@@ -4099,7 +4099,7 @@ class Company_Contract(APIView):
                         "contract_name": contract.contract_name,
                         "employee_id": contract.employee_id,
                         "date": contract.date,
-                        "contract_doc": contract.contract_doc.path,
+                        "contract_doc": contract.contract_doc.url,
                     }
                 employee_cont.append(record)
                 if not employee_cont:
@@ -4307,7 +4307,7 @@ class Offshore_Contract(APIView):
                 "client_id": contract.client_id,
                 "employee_id": contract.employee_id,
                 "date": contract.date,
-                "contract_doc": contract.contract_doc.path,
+                "contract_doc": contract.contract_doc.url,
             }
         offshore_cont.append(record)
         if not offshore_cont:
@@ -4493,7 +4493,7 @@ class ClientEmployees(APIView):
                             "id": c_emp.id,
                             "emp_pk": emp.id,
                             "email": emp.email,
-                            "image": emp.image.path,
+                            "image": emp.image.url,
                             "name": emp.first_name + " " + emp.last_name,
                             "job_title": c_emp.job_title,
                             "status": c_emp.status,
@@ -4515,7 +4515,7 @@ class ClientEmployees(APIView):
                             "id": c_emp.id,
                             "emp_pk": emp.id,
                             "email": emp.email,
-                            "image": emp.image.path,
+                            "image": emp.image.url,
                             "name": emp.first_name + " " + emp.last_name,
                             "job_title": c_emp.job_title,
                             "status": c_emp.status,
@@ -4640,7 +4640,7 @@ class ClientAddEmployee(APIView):
                 try:
                     emp = employee.objects.get(email=outsrcd_emp.employee_id)
                     record = {
-                        "image": emp.image.path,
+                        "image": emp.image.url,
                         "name": emp.first_name + " " + emp.last_name,
                         "id": emp.id,
                         "gender": emp.gender,

@@ -142,7 +142,12 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-MEDIA_URL = '/media/'
+from storages.backends.s3boto3 import S3Boto3Storage
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+AWS_ACCESS_KEY_ID = '005af8ef4030c480000000003'
+AWS_SECRET_ACCESS_KEY = 'K005j2byFjHq8B2mUD6BMYpp5ReEOKU'
+AWS_STORAGE_BUCKET_NAME = 'Talent-Dashboard'
+AWS_S3_ENDPOINT_URL = 'https://s3.us-east-005.backblazeb2.com'
+MEDIA_URL = 'https://s3.us-east-005.backblazeb2.com/Talent-Dashboard/'
 
 talent_email="talent@esparkconsultants.com"

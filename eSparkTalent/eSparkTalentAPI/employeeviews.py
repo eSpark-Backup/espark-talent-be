@@ -282,7 +282,7 @@ class Employee_Home(APIView):
             + " "
             + current_employee.last_name,
             "employee_email": current_employee.email,
-            "image": current_employee.image.path,
+            "image": current_employee.image.url,
         }
         out_sourced_to = [
             w_space.client_id
@@ -328,7 +328,7 @@ class Employee_Home(APIView):
             except:
                 punch_timings = {}
             try:
-                company_image = company_data.objects.all()[0].image.path
+                company_image = company_data.objects.all()[0].image.url
             except:
                 company_image = ""
 
@@ -355,7 +355,7 @@ class Employee_Home(APIView):
             except:
                 punch_timings = {}
             try:
-                company_image = company_data.objects.all()[0].image.path
+                company_image = company_data.objects.all()[0].image.url
             except:
                 company_image = ""
             payload = {
@@ -661,7 +661,7 @@ class Company_Contract(APIView):
                     "employee_id": employee.objects.get(email=request.user).employee_id,
                     "contract_name": contract.contract_name,
                     "date": contract.date,
-                    "contract_doc": contract.contract_doc.path,
+                    "contract_doc": contract.contract_doc.url,
                 }
                 records.append(record)
 
@@ -730,7 +730,7 @@ class Offshore_Contract(APIView):
                     "employee_id": employee.objects.get(email=request.user).employee_id,
                     "contract_name": contract.contract_name,
                     "date": contract.date,
-                    "contract_doc": contract.contract_doc.path,
+                    "contract_doc": contract.contract_doc.url,
                 }
                 records.append(record)
             return Response(records, status=status.HTTP_200_OK)
@@ -2308,7 +2308,7 @@ class Policies(APIView):
             record = {
                 "id": emp_pol.id,
                 "policy_name": emp_pol.policy_name,
-                "policy_doc": emp_pol.policy_doc.path,
+                "policy_doc": emp_pol.policy_doc.url,
             }
             policies.append(record)
         if len(policies) > 0:
