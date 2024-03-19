@@ -629,6 +629,7 @@ class account_n_persmission(models.Model):
 class notifications(models.Model):
     id = models.AutoField(primary_key=True)
     email=models.EmailField(default='')
+    ref_id=models.IntegerField(null=True)
     notification_type=models.CharField(max_length=30, default='')
     description=models.CharField(max_length=255, default='')
     created_at = models.DateTimeField(auto_now_add=True)
