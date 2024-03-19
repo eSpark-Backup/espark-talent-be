@@ -442,6 +442,8 @@ class client_contract(models.Model):
         validators=[pdf_ext_valid, valid_pdffile_type],
         default="",
     )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.client_id} - {self.id}"
@@ -465,6 +467,8 @@ class employee_contract(models.Model):
         validators=[pdf_ext_valid, valid_pdffile_type],
         default="",
     )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.employee_id}  - {self.id}"
@@ -488,6 +492,8 @@ class offshore_contracts(models.Model):
         validators=[pdf_ext_valid, valid_pdffile_type],
         default="",
     )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.employee_id}  - {self.client_id} - {self.id}"
@@ -509,6 +515,8 @@ class asset(models.Model):
     assigned_date = models.DateTimeField()
     assignee_name = models.CharField(max_length=15, null=True)
     assignee_email = models.EmailField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.employee_id} - {self.id}"
@@ -542,6 +550,8 @@ class company_data(models.Model):
         validators=[img_ext_valid, valid_imgfile_type],
         default="",
     )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.id}"
@@ -573,6 +583,8 @@ class policy(models.Model):
     )
     employee = models.BooleanField()
     client = models.BooleanField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.policy_name} - {self.id}"
@@ -600,6 +612,8 @@ class account_n_persmission(models.Model):
     leaves_perms=models.JSONField()
     invoices_perms=models.JSONField()
     policies_perms=models.JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
         return f"{self.account_name} - {self.id}"
@@ -615,8 +629,11 @@ class account_n_persmission(models.Model):
 class notifications(models.Model):
     id = models.AutoField(primary_key=True)
     email=models.EmailField(default='')
+    ref_id=models.IntegerField(null=True)
     notification_type=models.CharField(max_length=30, default='')
     description=models.CharField(max_length=255, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
         return f"{self.email} - {self.id}"
