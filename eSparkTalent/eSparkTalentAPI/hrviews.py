@@ -2484,6 +2484,12 @@ class Interview_Schedule(APIView):
                 description="Bearer Token",
                 type=openapi.TYPE_STRING,
             ),
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Client id record",
+                type=openapi.TYPE_STRING,
+            ),
         ],
         operation_summary="Endpoint to retrieve hiring request data.",
         operation_id="1",
@@ -2696,6 +2702,8 @@ class Onboarding(APIView):
                     }
                     records.append(record)
                 return Response(records, status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
