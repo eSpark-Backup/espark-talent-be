@@ -4309,7 +4309,7 @@ class Offshore_Contract(APIView):
                 "date": contract.date,
                 "contract_doc": contract.contract_doc.path,
             }
-        offshore_cont.append(record)
+            offshore_cont.append(record)
         if not offshore_cont:
             return Response(
                 {"message": "No offshore contracts available"},
