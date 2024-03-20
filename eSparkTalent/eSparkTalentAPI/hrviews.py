@@ -1242,7 +1242,7 @@ class Hr_Employees(APIView):
                     try:
                         e_user = employee.objects.get(email=emp.employee_id)
                         c_user = client.objects.get(email=emp.client_id)
-                        if e_user:
+                        if e_user and c_user:
                             record = {
                                 "id": e_user.id,
                                 "employee_id": e_user.employee_id,
@@ -1264,7 +1264,7 @@ class Hr_Employees(APIView):
                 records = []
                 for emp in employees:
                     try:
-                        e_user = outsource_employees.objects.get(employee_id=emp.email)
+                        e_user = outsource_employees.objects.filter(employee_id=emp.email).exclude(client_id=talent_email)
                         if not e_user:
                             record = {
                                 "id": emp.id,
@@ -1288,11 +1288,15 @@ class Hr_Employees(APIView):
                 records = []
                 for emp in employees:
                     try:
-                        e_user = outsource_employees.objects.get(client_id=emp.email)
-                        c_user = client.objects.get(email=e_user.client_id)
-                        company = c_user.company_name
-                        active = True
-                    except outsource_employees.DoesNotExist:
+                        e_user = outsource_employees.objects.filter(employee_id=emp.email).exclude(client_id=talent_email)
+                        if e_user:
+                            c_user = client.objects.get(email=e_user[0].client_id)
+                            company = c_user.company_name
+                            active = True
+                        else:
+                            company = emp.company
+                            active = False
+                    except client.DoesNotExist:
                         company = emp.company
                         active = False
 
@@ -1564,10 +1568,10 @@ class Hr_Employee(APIView):
 
             active = outsource_employees.objects.filter(
                 employee_id=employee_data.email, status="active"
-            )
+            ).exclude(client_id=talent_email)
             terminated = outsource_employees.objects.filter(
                 employee_id=employee_data.email, status="terminated"
-            )
+            ).exclude(client_id=talent_email)
 
             if active or terminated:
                 for rec in active:
@@ -4305,7 +4309,7 @@ class Offshore_Contract(APIView):
                 "date": contract.date,
                 "contract_doc": contract.contract_doc.path,
             }
-        offshore_cont.append(record)
+            offshore_cont.append(record)
         if not offshore_cont:
             return Response(
                 {"message": "No offshore contracts available"},
