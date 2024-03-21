@@ -16,6 +16,7 @@ from drf_yasg import openapi
 from rest_framework.parsers import MultiPartParser
 from .emp_dash_funcs import *
 from eSparkTalent.settings import talent_email
+from . files_removal import remove_bucket_files
 
 
 @authentication_classes([JWTAuthentication])
@@ -1408,7 +1409,11 @@ class Leave_Request(APIView):
     def delete(self, request, *args, **kwargs):
         id = request.query_params.get("id")
         try:
-            leave_request.objects.get(id=id).delete()
+            lr=leave_request.objects.get(id=id)
+            removed=remove_bucket_files(lr.attachment.name)
+            if removed:
+                return Response({"error":str(removed)},status=status.HTTP_400_BAD_REQUEST)
+            lr.delete()
             return Response(status=status.HTTP_200_OK)
         except leave_request.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)

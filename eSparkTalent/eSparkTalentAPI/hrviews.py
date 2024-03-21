@@ -21,6 +21,8 @@ import json
 from dateutil import parser
 from django.db.models import Q
 from eSparkTalent.settings import talent_email
+from .files_removal import remove_bucket_files
+from django.db.models.fields.files import FileField
 
 
 @authentication_classes([JWTAuthentication])
@@ -792,7 +794,11 @@ class Employee_Invoice(APIView):
     def delete(self, request, *args, **kwargs):
         delete_id = request.query_params.get("id")
         try:
-            employee_invoice.objects.get(id=delete_id).delete()
+            emp_inv=employee_invoice.objects.get(id=delete_id)
+            removed=remove_bucket_files(emp_inv.invoice.name)
+            if removed:
+                return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+            emp_inv.delete()
             return Response(status=status.HTTP_200_OK)
         except employee_invoice.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -1047,7 +1053,11 @@ class Other_Payment(APIView):
     def delete(self, request, *args, **kwargs):
         delete_id = request.query_params.get("id")
         try:
-            other_payment.objects.get(id=delete_id).delete()
+            oth_pay=other_payment.objects.get(id=delete_id)
+            removed=remove_bucket_files(oth_pay.invoice.name)
+            if removed:
+                return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+            oth_pay.delete()
             return Response(status=status.HTTP_200_OK)
         except other_payment.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -1264,7 +1274,9 @@ class Hr_Employees(APIView):
                 records = []
                 for emp in employees:
                     try:
-                        e_user = outsource_employees.objects.filter(employee_id=emp.email).exclude(client_id=talent_email)
+                        e_user = outsource_employees.objects.filter(
+                            employee_id=emp.email
+                        ).exclude(client_id=talent_email)
                         if not e_user:
                             record = {
                                 "id": emp.id,
@@ -1288,7 +1300,9 @@ class Hr_Employees(APIView):
                 records = []
                 for emp in employees:
                     try:
-                        e_user = outsource_employees.objects.filter(employee_id=emp.email).exclude(client_id=talent_email)
+                        e_user = outsource_employees.objects.filter(
+                            employee_id=emp.email
+                        ).exclude(client_id=talent_email)
                         if e_user:
                             c_user = client.objects.get(email=e_user[0].client_id)
                             company = c_user.company_name
@@ -1358,14 +1372,35 @@ class Hr_Employees(APIView):
             ]
             with transaction.atomic(using="default"):
                 for model_class in related_models:
-                    model_data = model_class.objects.filter(employee_id=emp.email)
-                    if not model_data.exists():
+                    try:
+                        model_data = model_class.objects.filter(employee_id=emp.email)
+                    except:
                         model_data = model_class.objects.filter(email=emp.email)
-                        model_data.delete()
-                    else:
-                        model_data.delete()
-                emp.delete()
 
+                    for instance in model_data:
+                        for field in instance._meta.fields:
+                            if isinstance(field, FileField):
+                                file=getattr(instance, field.name)
+                                removed=remove_bucket_files(file.name)
+                                if removed:
+                                    return Response(
+                                        {"error": str(removed)},
+                                        status=status.HTTP_400_BAD_REQUEST,
+                                    )
+                    model_data.delete()
+                remove_image=remove_bucket_files(emp.image.name)
+                if remove_image:
+                    return Response(
+                        {"error": str(remove_image)},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                remove_resume=remove_bucket_files(emp.resume.name)
+                if remove_resume:
+                    return Response(
+                        {"error": str(remove_resume)},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                emp.delete()
             return Response(
                 {"message": "Employee and associated data removed successfully"},
                 status=status.HTTP_200_OK,
@@ -1561,7 +1596,7 @@ class Hr_Employee(APIView):
         try:
             employee_data = employee.objects.get(id=record_id)
         except Exception as e:
-            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         if tab == "client":
             active_clients = []
             terminated_clients = []
@@ -1612,7 +1647,7 @@ class Hr_Employee(APIView):
             try:
                 emp_record = employee.objects.get(id=record_id)
             except Exception as e:
-                return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
             assets = asset.objects.filter(employee_id=emp_record.email)
             if assets:
                 records = []
@@ -2117,8 +2152,12 @@ class Update_Emp_Profile_Pic(APIView):
         updates = request.data
         try:
             emp_record = employee.objects.get(id=record_id)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        except employee.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        removed = remove_bucket_files(emp_record.image.name)
+        if removed:
+            return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
 
         for key in updates:
             setattr(emp_record, key, updates[key])
@@ -2126,6 +2165,8 @@ class Update_Emp_Profile_Pic(APIView):
             emp_record.save()
         except ValidationError as e:
             return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_200_OK)
 
 
@@ -2326,7 +2367,7 @@ class Start_Hiring(APIView):
         try:
             client_data = client.objects.get(id=record_id)
         except Exception as e:
-            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         hiring_requests = hiring_request.objects.filter(client_id=client_data.email)
 
         if hiring_requests:
@@ -2380,7 +2421,7 @@ class Start_Hiring(APIView):
             hiring_request.objects.get(id=delete_id).delete()
             return Response(status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -2544,7 +2585,7 @@ class Interview_Schedule(APIView):
             interview_schedule.objects.get(id=delete_id).delete()
             return Response(status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -2731,7 +2772,7 @@ class Onboarding(APIView):
             onboarding.objects.get(id=delete_id).delete()
             return Response(status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -2885,12 +2926,28 @@ class Hr_Clients(APIView):
                 end_user,
             ]
             for model in related_models:
-                data = model.objects.filter(client_id=clt.email)
-                if not data.exists():
+                try:
+                    data = model.objects.filter(client_id=clt.email)
+                except:
                     data = model.objects.filter(email=clt.email)
-                    data.delete()
-                else:
-                    data.delete()
+
+                for instance in data:
+                    for field in instance._meta.fields:
+                        if isinstance(field, FileField):
+                            file=getattr(instance, field.name)
+                            removed=remove_bucket_files(file.name)
+                            if removed:
+                                return Response(
+                                    {"error": str(removed)},
+                                    status=status.HTTP_400_BAD_REQUEST,
+                                )
+                data.delete()
+            remove_image=remove_bucket_files(clt.image.name)
+            if remove_image:
+                return Response(
+                    {"error": str(remove_image)},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             clt.delete()
             return Response(
                 {"message": "client and associated data removed successfully"},
@@ -3060,7 +3117,14 @@ class Hr_Client(APIView):
         try:
             client_record = client.objects.get(id=record_id)
         except Exception as e:
-            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        if updates["image"]:
+            removed = remove_bucket_files(client_record.image.name)
+            if removed:
+                return Response(
+                    {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
+                )
 
         for key in updates:
             setattr(client_record, key, updates[key])
@@ -3170,11 +3234,18 @@ class Company_Settings(APIView):
     )
     def patch(self, request, *args, **kwargs):
         updates = request.data
-        comp_data = company_data.objects.all()
-        if comp_data:
+        comp_datas = company_data.objects.all()
+        if comp_datas:
             try:
-                comp_data = company_data.objects.all()[0]
+                comp_data = comp_datas[0]
                 for key in updates:
+                    if updates["image"]:
+                        removed = remove_bucket_files(comp_data.image.name)
+                        if removed:
+                            return Response(
+                                {"error": str(removed)},
+                                status=status.HTTP_400_BAD_REQUEST,
+                            )
                     setattr(comp_data, key, updates[key])
                 try:
                     comp_data.save()
@@ -3439,10 +3510,13 @@ class Accounts(APIView):
         try:
             account = account_n_persmission.objects.get(id=id)
             end_user.objects.get(email=account.email).delete()
+            removed=remove_bucket_files(account.image.name)
+            if removed:
+                return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
             account.delete()
             return Response(status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -3849,7 +3923,11 @@ class Policies(APIView):
     def delete(self, request, *args, **kwargs):
         delete_id = request.query_params.get("id")
         try:
-            policy.objects.get(id=delete_id).delete()
+            pol=policy.objects.get(id=delete_id)
+            removed=remove_bucket_files(pol.policy_doc.name)
+            if removed:
+                return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+            pol.delete()
             return Response(status=status.HTTP_200_OK)
         except policy.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -4150,9 +4228,17 @@ class Company_Contract(APIView):
         get_status = request.query_params.get("status")
         try:
             if get_status == "clients":
-                client_contract.objects.filter(id=delete_id).delete()
+                ccont=client_contract.objects.get(id=delete_id)
+                removed=remove_bucket_files(ccont.contract_doc.name)
+                if removed:
+                    return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+                ccont.delete()
             elif get_status == "employees":
-                employee_contract.objects.filter(id=delete_id).delete()
+                econt=employee_contract.objects.get(id=delete_id)
+                removed=remove_bucket_files(econt.contract_doc.name)
+                if removed:
+                    return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+                econt.delete()
             else:
                 return Response(
                     {"message": "Invalid status parameter"},
@@ -4346,7 +4432,11 @@ class Offshore_Contract(APIView):
     def delete(self, request, *args, **kwargs):
         delete_id = request.query_params.get("id")
         try:
-            offshore_contracts.objects.filter(id=delete_id).delete()
+            off_cont=offshore_contracts.objects.get(id=delete_id)
+            removed=remove_bucket_files(off_cont.contract_doc.name)
+            if removed:
+                return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+            off_cont.delete()
             return Response(
                 {"message": "Offshore Contract deleted successfully"},
                 status=status.HTTP_200_OK,
@@ -4975,7 +5065,7 @@ class Attendance_Report(APIView):
                         "employee_name": emp.first_name + " " + emp.last_name,
                         "company": company_name,
                         "location": location,
-                        "role_type":outsrc_emp.role_type,
+                        "role_type": outsrc_emp.role_type,
                         "job_title": outsrc_emp.job_title,
                         "joining_date": outsrc_emp.joining_date,
                     }
@@ -5035,7 +5125,7 @@ class Attendance_Report(APIView):
                         "employee_name": emp.first_name + " " + emp.last_name,
                         "company": company_name,
                         "location": location,
-                        "role_type":outsrc_emp.role_type,
+                        "role_type": outsrc_emp.role_type,
                         "job_title": outsrc_emp.job_title,
                         "joining_date": outsrc_emp.joining_date,
                     }
