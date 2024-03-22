@@ -532,6 +532,49 @@ class Add_Asset(APIView):
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
+class Delete_Asset(APIView):
+    @swagger_auto_schema(
+        tags=["Employee : Assets"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            400: openapi.Response(description="Bad Request"),
+            401: openapi.Response(description="Unauthorize"),
+            404: openapi.Response(description="Not Found"),
+        },
+        operation_summary="Endpoint to delete a an asset.",
+        operation_id=".",
+    )
+    def delete(self, request, *args, **kwargs):
+        id=request.query_params.get("id")
+        if id:
+            try:
+                asset.objects.get(id=id).delete()
+                return Response({"message":"Asset deleted successfully"}, status=status.HTTP_200_OK)
+            except asset.DoesNotExist:
+                return Response({"error":"Asset not found"}, status=status.HTTP_404_NOT_FOUND)
+            except Exception as e:
+                return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"error":"Id parameter required"}, status=status.HTTP_400_BAD_REQUEST)
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 class Employee_Invoice(APIView):
 
     parser_classes = (MultiPartParser,)
@@ -4191,7 +4234,7 @@ class Company_Contract(APIView):
         )
 
     @swagger_auto_schema(
-        tags=["Comapny Contract"],
+        tags=["Company Contract"],
         manual_parameters=[
             openapi.Parameter(
                 "status",

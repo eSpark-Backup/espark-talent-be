@@ -421,7 +421,7 @@ class client_contract(models.Model):
     client_id = models.EmailField()
     date = models.DateField()
     contract_doc = models.FileField(
-        upload_to="contracts/company/",
+        upload_to="contracts/client/",
         validators=[pdf_ext_valid, valid_pdffile_type],
         default="",
     )
