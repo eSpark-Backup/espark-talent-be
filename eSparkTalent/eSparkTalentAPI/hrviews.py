@@ -21,7 +21,7 @@ import json
 from dateutil import parser
 from django.db.models import Q
 from eSparkTalent.settings import talent_email
-from .files_removal import remove_bucket_files
+from .files_removal import remove_bucket_file
 from django.db.models.fields.files import FileField
 
 
@@ -529,10 +529,6 @@ class Add_Asset(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-class Delete_Asset(APIView):
     @swagger_auto_schema(
         tags=["Employee : Assets"],
         manual_parameters=[
@@ -838,7 +834,7 @@ class Employee_Invoice(APIView):
         delete_id = request.query_params.get("id")
         try:
             emp_inv=employee_invoice.objects.get(id=delete_id)
-            removed=remove_bucket_files(emp_inv.invoice.name)
+            removed=remove_bucket_file(emp_inv.invoice.name)
             if removed:
                 return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
             emp_inv.delete()
@@ -1097,7 +1093,7 @@ class Other_Payment(APIView):
         delete_id = request.query_params.get("id")
         try:
             oth_pay=other_payment.objects.get(id=delete_id)
-            removed=remove_bucket_files(oth_pay.invoice.name)
+            removed=remove_bucket_file(oth_pay.invoice.name)
             if removed:
                 return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
             oth_pay.delete()
@@ -1424,20 +1420,20 @@ class Hr_Employees(APIView):
                         for field in instance._meta.fields:
                             if isinstance(field, FileField):
                                 file=getattr(instance, field.name)
-                                removed=remove_bucket_files(file.name)
+                                removed=remove_bucket_file(file.name)
                                 if removed:
                                     return Response(
                                         {"error": str(removed)},
                                         status=status.HTTP_400_BAD_REQUEST,
                                     )
                     model_data.delete()
-                remove_image=remove_bucket_files(emp.image.name)
+                remove_image=remove_bucket_file(emp.image.name)
                 if remove_image:
                     return Response(
                         {"error": str(remove_image)},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-                remove_resume=remove_bucket_files(emp.resume.name)
+                remove_resume=remove_bucket_file(emp.resume.name)
                 if remove_resume:
                     return Response(
                         {"error": str(remove_resume)},
@@ -2198,7 +2194,7 @@ class Update_Emp_Profile_Pic(APIView):
         except employee.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        removed = remove_bucket_files(emp_record.image.name)
+        removed = remove_bucket_file(emp_record.image.name)
         if removed:
             return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -2978,14 +2974,14 @@ class Hr_Clients(APIView):
                     for field in instance._meta.fields:
                         if isinstance(field, FileField):
                             file=getattr(instance, field.name)
-                            removed=remove_bucket_files(file.name)
+                            removed=remove_bucket_file(file.name)
                             if removed:
                                 return Response(
                                     {"error": str(removed)},
                                     status=status.HTTP_400_BAD_REQUEST,
                                 )
                 data.delete()
-            remove_image=remove_bucket_files(clt.image.name)
+            remove_image=remove_bucket_file(clt.image.name)
             if remove_image:
                 return Response(
                     {"error": str(remove_image)},
@@ -3163,7 +3159,7 @@ class Hr_Client(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         if updates["image"]:
-            removed = remove_bucket_files(client_record.image.name)
+            removed = remove_bucket_file(client_record.image.name)
             if removed:
                 return Response(
                     {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
@@ -3283,7 +3279,7 @@ class Company_Settings(APIView):
                 comp_data = comp_datas[0]
                 for key in updates:
                     if updates["image"]:
-                        removed = remove_bucket_files(comp_data.image.name)
+                        removed = remove_bucket_file(comp_data.image.name)
                         if removed:
                             return Response(
                                 {"error": str(removed)},
@@ -3553,7 +3549,7 @@ class Accounts(APIView):
         try:
             account = account_n_persmission.objects.get(id=id)
             end_user.objects.get(email=account.email).delete()
-            removed=remove_bucket_files(account.image.name)
+            removed=remove_bucket_file(account.image.name)
             if removed:
                 return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
             account.delete()
@@ -3967,7 +3963,7 @@ class Policies(APIView):
         delete_id = request.query_params.get("id")
         try:
             pol=policy.objects.get(id=delete_id)
-            removed=remove_bucket_files(pol.policy_doc.name)
+            removed=remove_bucket_file(pol.policy_doc.name)
             if removed:
                 return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
             pol.delete()
@@ -4272,13 +4268,13 @@ class Company_Contract(APIView):
         try:
             if get_status == "clients":
                 ccont=client_contract.objects.get(id=delete_id)
-                removed=remove_bucket_files(ccont.contract_doc.name)
+                removed=remove_bucket_file(ccont.contract_doc.name)
                 if removed:
                     return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
                 ccont.delete()
             elif get_status == "employees":
                 econt=employee_contract.objects.get(id=delete_id)
-                removed=remove_bucket_files(econt.contract_doc.name)
+                removed=remove_bucket_file(econt.contract_doc.name)
                 if removed:
                     return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
                 econt.delete()
@@ -4476,7 +4472,7 @@ class Offshore_Contract(APIView):
         delete_id = request.query_params.get("id")
         try:
             off_cont=offshore_contracts.objects.get(id=delete_id)
-            removed=remove_bucket_files(off_cont.contract_doc.name)
+            removed=remove_bucket_file(off_cont.contract_doc.name)
             if removed:
                 return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
             off_cont.delete()

@@ -7,8 +7,8 @@ from eSparkTalent.settings import (
 from b2sdk.v2 import B2Api
 from django.db.models.fields.files import FileField
 
-def remove_bucket_files(file_name):
-    previous_profile_picture = file_name
+def remove_bucket_file(file_name):
+    old_file = file_name
     b2_api = B2Api()
     b2_api.authorize_account(
         "production",
@@ -16,13 +16,13 @@ def remove_bucket_files(file_name):
         application_key=AWS_SECRET_ACCESS_KEY,
     )
     bucket = b2_api.get_bucket_by_name(AWS_STORAGE_BUCKET_NAME)
-    if previous_profile_picture:
+    if old_file:
         try:
             for file_version in bucket.list_file_versions(
-                file_name=previous_profile_picture
+                file_name=old_file
             ):
                 bucket.delete_file_version(
-                    file_name=previous_profile_picture, file_id=file_version.id_
+                    file_name=old_file, file_id=file_version.id_
                 )
             return None
         except Exception as e:

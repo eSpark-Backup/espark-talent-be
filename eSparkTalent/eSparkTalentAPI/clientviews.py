@@ -20,7 +20,7 @@ from django.core.files.base import ContentFile
 import datetime
 from rest_framework.parsers import MultiPartParser
 import calendar
-from . files_removal import remove_bucket_files
+from . files_removal import remove_bucket_file
 
 
 class LoginView(APIView):
@@ -1944,7 +1944,7 @@ class UploadPictureView(APIView):
         picture_file = request.FILES.get("picture")
         if picture_file:
             record = client.objects.get(email=user)
-            removed=remove_bucket_files(record.image.name)
+            removed=remove_bucket_file(record.image.name)
             if removed:
                 return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
             record.image = picture_file
