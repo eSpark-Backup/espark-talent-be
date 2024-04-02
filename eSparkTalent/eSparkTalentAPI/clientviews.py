@@ -23,6 +23,7 @@ import calendar
 from datetime import datetime, timedelta
 from . files_removal import remove_bucket_file
 import datetime
+from django.utils import timezone
 
 class LoginView(APIView):
     @swagger_auto_schema(
@@ -2696,10 +2697,11 @@ class Notifications(APIView):
         noti_array = []
         if user.role == "employee":
             notifications_data = notifications.objects.filter(email=user_email).exclude(notification_type="employee_contract").exclude(notification_type="offshore_contracts")
-            one_week_ago = datetime.now() - timedelta(days=5)
-            emp_contract = notifications.objects.filter(email=user_email , notification_type="employee_contract", timestamp__gte=one_week_ago).order_by('-timestamp')
-            off_contract = notifications.objects.filter(email=user_email , notification_type="offshore_contracts", timestamp__gte=one_week_ago).order_by('-timestamp')
-            policies = policy.objects.filter(employee=True, timestamp__gte=one_week_ago).order_by('-timestamp')
+            current_time = timezone.now()
+            one_week_ago = current_time - timedelta(days=5)
+            emp_contract = notifications.objects.filter(email=user_email , notification_type="employee_contract", created_at__gte=one_week_ago).order_by('-created_at')
+            off_contract = notifications.objects.filter(email=user_email , notification_type="offshore_contracts", created_at__gte=one_week_ago).order_by('-created_at')
+            policies = policy.objects.filter(employee=True, created_at__gte=one_week_ago).order_by('-created_at')
             for data in notifications_data:
                 record = {
                     "type": data.notification_type,
@@ -2731,14 +2733,15 @@ class Notifications(APIView):
 
         elif user.role == "client":
             notifications_data = notifications.objects.filter(email=user_email).exclude(notification_type="client_contract").exclude(notification_type="offshore_contracts").exclude(notification_type="interview_schedule").exclude(notification_type="onboarding").exclude(notification_type="other_payment").exclude(notification_type="employee_invoice")
-            int_sch = notifications.objects.filter(email=user_email , notification_type="interview_schedule", status="added").order_by('-timestamp')
-            onboard = notifications.objects.filter(email=user_email , notification_type="onboarding", status="added").order_by('-timestamp')
-            oth_pay = notifications.objects.filter(email=user_email , notification_type="other_payment", status="added").order_by('-timestamp')
-            emp_inv = notifications.objects.filter(email=user_email , notification_type="employee_invoice", status="added").order_by('-timestamp')
-            one_week_ago = datetime.now() - timedelta(days=5)
-            clt_contract = notifications.objects.filter(email=user_email , notification_type="client_contract", timestamp__gte=one_week_ago).order_by('-timestamp')
-            off_contract = notifications.objects.filter(email=user_email , notification_type="offshore_contracts", timestamp__gte=one_week_ago).order_by('-timestamp')
-            policies = policy.objects.filter(client=True, timestamp__gte=one_week_ago).order_by('-timestamp')
+            int_sch = notifications.objects.filter(email=user_email , notification_type="interview_schedule", status="added").order_by('-created_at')
+            onboard = notifications.objects.filter(email=user_email , notification_type="onboarding", status="added").order_by('-created_at')
+            oth_pay = notifications.objects.filter(email=user_email , notification_type="other_payment", status="added").order_by('-created_at')
+            emp_inv = notifications.objects.filter(email=user_email , notification_type="employee_invoice", status="added").order_by('-created_at')
+            current_time = timezone.now()
+            one_week_ago = current_time - timedelta(days=5)
+            clt_contract = notifications.objects.filter(email=user_email , notification_type="client_contract", created_at__gte=one_week_ago).order_by('-created_at')
+            off_contract = notifications.objects.filter(email=user_email , notification_type="offshore_contracts", created_at__gte=one_week_ago).order_by('-created_at')
+            policies = policy.objects.filter(client=True, created_at__gte=one_week_ago).order_by('-created_at')
             for data in notifications_data:
                 record = {
                     "type": data.notification_type,
@@ -2797,7 +2800,7 @@ class Notifications(APIView):
                 record = {
                     "type": "invoice",
                     "description": description,
-                    "date": datetime.now().date()
+                    "date": datetime.datetime.now().date()
                 }
                 noti_array.append(record)
 
