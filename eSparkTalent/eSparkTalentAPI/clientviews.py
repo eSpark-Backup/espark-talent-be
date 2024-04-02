@@ -21,6 +21,7 @@ import datetime
 from rest_framework.parsers import MultiPartParser
 from eSparkTalent.settings import talent_email
 import calendar
+from . files_removal import remove_bucket_file
 
 
 class LoginView(APIView):
@@ -125,13 +126,13 @@ class Client_Home(APIView):
 
         try:
             client_data = client.objects.get(email=user)
-            image_path = client_data.image.path
+            image_path = client_data.image.url
         except client.DoesNotExist:
             image_path = None
 
         try:
             company_record = company_data.objects.get(id=1)
-            company_image = company_record.image.path
+            company_image = company_record.image.url
         except company_data.DoesNotExist:
             company_image = ""
 
@@ -478,6 +479,7 @@ class Interview_Schedule(APIView):
                 notifi.status=to_update_status
                 notifi.description=f"Candidate has been {to_update_status}"
                 notifi.save()
+
                 return Response(status=status.HTTP_200_OK)
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
@@ -2035,6 +2037,9 @@ class UploadPictureView(APIView):
         picture_file = request.FILES.get("picture")
         if picture_file:
             record = client.objects.get(email=user)
+            removed=remove_bucket_file(record.image.name)
+            if removed:
+                return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
             record.image = picture_file
             try:
                 record.save()
@@ -2390,7 +2395,7 @@ class Invoice_Payments(APIView):
                     "due_date": data.due_date,
                     "invoice_amount": data.invoice_amount,
                     "payment_status": pay_status,
-                    "download": data.invoice.path,
+                    "download": data.invoice.url,
                 }
                 emp_inv_records.append(record)
             records["employee_invoices"] = emp_inv_records
@@ -2407,7 +2412,7 @@ class Invoice_Payments(APIView):
                     "due_date": data.due_date,
                     "invoice_amount": data.invoice_amount,
                     "payment_status": pay_status,
-                    "download": data.invoice.path,
+                    "download": data.invoice.url,
                 }
             other_pays_records.append(record)
             records["other_payments"] = other_pays_records
@@ -2539,7 +2544,7 @@ class Client_contract(APIView):
                     "contract_name": data.contract_name,
                     "client_id": data.client_id,
                     "date": data.date,
-                    "contract_doc": data.contract_doc.path,
+                    "contract_doc": data.contract_doc.url,
                 }
                 records.append(record)
 
@@ -2593,7 +2598,7 @@ class Employee_Contract(APIView):
                     "contract_name": data.contract_name,
                     "employee_id": data.employee_id,
                     "date": data.date,
-                    "contract_doc": data.contract_doc.path,
+                    "contract_doc": data.contract_doc.url,
                 }
                 records.append(record)
             return Response(records, status=status.HTTP_200_OK)
@@ -2642,7 +2647,7 @@ class Policies(APIView):
             record = {
                 "id": client_pol.id,
                 "policy_name": client_pol.policy_name,
-                "policy_doc": client_pol.policy_doc.path,
+                "policy_doc": client_pol.policy_doc.url,
             }
             policies.append(record)
         if len(policies) > 0:

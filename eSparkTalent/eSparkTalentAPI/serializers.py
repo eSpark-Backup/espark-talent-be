@@ -74,7 +74,7 @@ class OtherPaymentSerializer(serializers.ModelSerializer):
 class onboardingSerializer(serializers.ModelSerializer):
     class Meta:
         model = onboarding
-        fields = "__all__"
+        exclude = ["benefits"]
 
 class AccountPermissionSerializer(serializers.ModelSerializer):
     class Meta:
