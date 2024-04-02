@@ -22,6 +22,7 @@ from eSparkTalent.settings import talent_email
 import calendar
 from datetime import datetime, timedelta
 from . files_removal import remove_bucket_file
+import datetime
 
 class LoginView(APIView):
     @swagger_auto_schema(
@@ -2668,7 +2669,9 @@ class Notifications(APIView):
                     items=openapi.Schema(
                         type=openapi.TYPE_OBJECT,
                         properties={
+                            "type": openapi.Schema(type=openapi.TYPE_STRING),
                             "description": openapi.Schema(type=openapi.TYPE_STRING),
+                            "date": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
                         },
                     ),
                 ),
