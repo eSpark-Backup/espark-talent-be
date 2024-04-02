@@ -17,12 +17,12 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-import datetime
 from rest_framework.parsers import MultiPartParser
 from eSparkTalent.settings import talent_email
 import calendar
+from datetime import datetime, timedelta
 from . files_removal import remove_bucket_file
-
+import datetime
 
 class LoginView(APIView):
     @swagger_auto_schema(
@@ -2652,5 +2652,157 @@ class Policies(APIView):
             policies.append(record)
         if len(policies) > 0:
             return Response(policies, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Notifications(APIView):
+    @swagger_auto_schema(
+        tags=["Notifications"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "type": openapi.Schema(type=openapi.TYPE_STRING),
+                            "description": openapi.Schema(type=openapi.TYPE_STRING),
+                            "date": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve Notifications",
+        operation_id=".",
+    )
+    def get(self, request, *args, **kwargs):
+        user_email = request.user
+        user = end_user.objects.get(email=user_email)
+        noti_array = []
+        if user.role == "employee":
+            notifications_data = notifications.objects.filter(email=user_email).exclude(notification_type="employee_contract").exclude(notification_type="offshore_contracts")
+            one_week_ago = datetime.now() - timedelta(days=5)
+            emp_contract = notifications.objects.filter(email=user_email , notification_type="employee_contract", timestamp__gte=one_week_ago).order_by('-timestamp')
+            off_contract = notifications.objects.filter(email=user_email , notification_type="offshore_contracts", timestamp__gte=one_week_ago).order_by('-timestamp')
+            policies = policy.objects.filter(employee=True, timestamp__gte=one_week_ago).order_by('-timestamp')
+            for data in notifications_data:
+                record = {
+                    "type": data.notification_type,
+                    "description": data.description,
+                    "date": data.updated_at
+                }
+                noti_array.append(record)
+            if emp_contract:
+                record = {
+                        "type": "company_contracts",
+                        "description": f"{emp_contract.count()} new contract has been added to company contracts.",
+                        "date": emp_contract[0].created_at
+                    }
+                noti_array.append(record)
+            if off_contract:
+                record = {
+                        "type": "client_contracts",
+                        "description": f"{off_contract.count()} new contract has been added to client contracts.",
+                        "date": off_contract[0].created_at
+                    }
+                noti_array.append(record)
+            if policies:
+                record = {
+                        "type": "Policy",
+                        "description": f"{policies.count()} new policies have been added.",
+                        "date": policies[0].created_at
+                    }
+                noti_array.append(record)
+
+        elif user.role == "client":
+            notifications_data = notifications.objects.filter(email=user_email).exclude(notification_type="client_contract").exclude(notification_type="offshore_contracts").exclude(notification_type="interview_schedule").exclude(notification_type="onboarding").exclude(notification_type="other_payment").exclude(notification_type="employee_invoice")
+            int_sch = notifications.objects.filter(email=user_email , notification_type="interview_schedule", status="added").order_by('-timestamp')
+            onboard = notifications.objects.filter(email=user_email , notification_type="onboarding", status="added").order_by('-timestamp')
+            oth_pay = notifications.objects.filter(email=user_email , notification_type="other_payment", status="added").order_by('-timestamp')
+            emp_inv = notifications.objects.filter(email=user_email , notification_type="employee_invoice", status="added").order_by('-timestamp')
+            one_week_ago = datetime.now() - timedelta(days=5)
+            clt_contract = notifications.objects.filter(email=user_email , notification_type="client_contract", timestamp__gte=one_week_ago).order_by('-timestamp')
+            off_contract = notifications.objects.filter(email=user_email , notification_type="offshore_contracts", timestamp__gte=one_week_ago).order_by('-timestamp')
+            policies = policy.objects.filter(client=True, timestamp__gte=one_week_ago).order_by('-timestamp')
+            for data in notifications_data:
+                record = {
+                    "type": data.notification_type,
+                    "description": data.description,
+                    "date": data.updated_at
+                }
+                noti_array.append(record)
+            if clt_contract:
+                record = {
+                        "type": "company_contracts",
+                        "description": f"{clt_contract.count()} new contract has been added to company contracts.",
+                        "date": clt_contract[0].created_at
+                    }
+                noti_array.append(record)
+            if off_contract:
+                record = {
+                        "type": "employee_contracts",
+                        "description": f"{off_contract.count()} new contract has been added to employee contracts.",
+                        "date": off_contract[0].created_at
+                    }
+                noti_array.append(record)
+            if policies:
+                record = {
+                        "type": "Policy",
+                        "description": f"{policies.count()} new policies have been added.",
+                        "date": policies[0].created_at
+                    }
+                noti_array.append(record)
+            if int_sch:
+                record = {
+                        "type": "interview_schedule",
+                        "description": f"You have {int_sch.count()} new interview scheduled.",
+                        "date": int_sch[0].created_at
+                    }
+                noti_array.append(record)
+
+            if onboard:
+                onboard_count = onboard.count()
+                if onboard_count == 1:
+                    description = "1 new employee is added"
+                else:
+                    description = f"{onboard_count} new employees are added"
+                record = {
+                    "type": "onboarding",
+                    "description": description,
+                    "date": onboard[0].created_at
+                }
+                noti_array.append(record)
+
+            if emp_inv or oth_pay:
+                invoice_count = emp_inv.count() + oth_pay.count()
+                if invoice_count == 1:
+                    description = "1 new invoice is added"
+                else:
+                    description = f"{invoice_count} new invoices are added"
+                record = {
+                    "type": "invoice",
+                    "description": description,
+                    "date": datetime.now().date()
+                }
+                noti_array.append(record)
+
+
+        if len(noti_array) > 0:
+            return Response(noti_array, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)

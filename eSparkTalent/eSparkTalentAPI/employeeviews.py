@@ -1371,6 +1371,15 @@ class Leave_Request(APIView):
                     attachment=request.data.get("attachment"),
                     status="pending",
                 )
+                
+                emp_data = end_user.objects.get(email=result.employee_id)
+                notifications.objects.create(
+                    ref_id=result.id,
+                    email=result.client_id,
+                    notification_type="leave_request",
+                    status="added",
+                    description=f"{emp_data.username} {result.leave_type} leave request is pending" 
+                )
                 return Response({"id": result.id}, status=status.HTTP_201_CREATED)
             except ValidationError as e:
                 return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
@@ -1413,6 +1422,7 @@ class Leave_Request(APIView):
             removed=remove_bucket_file(lr.attachment.name)
             if removed:
                 return Response({"error":str(removed)},status=status.HTTP_400_BAD_REQUEST)
+            notifications.objects.get(ref_id=lr.id, notification_type="leave_request").delete()
             lr.delete()
             return Response(status=status.HTTP_200_OK)
         except leave_request.DoesNotExist:
@@ -2231,6 +2241,16 @@ class Punch_Request(APIView):
                     description=serializer.validated_data["description"],
                     status="pending",
                 )
+                
+                emp_data = end_user.objects.get(email=result.employee_id)
+                notifications.objects.create(
+                    ref_id=result.id,
+                    email=result.client_id,
+                    notification_type="punch_request",
+                    status="added",
+                    description=f"{emp_data.username} {result.punch_type} request is pending" 
+                )
+                
                 return Response({"id": result.id}, status=status.HTTP_201_CREATED)
             except:
                 return Response(
@@ -2267,7 +2287,10 @@ class Punch_Request(APIView):
     def delete(self, request, *args, **kwargs):
         id = request.query_params.get("id")
         try:
-            punch_request.objects.get(id=id).delete()
+            record = punch_request.objects.get(id=id)
+            if record:
+                notifications.objects.get(ref_id=record.id, notification_type="punch_request").delete()
+                record.delete()
             return Response(status=status.HTTP_200_OK)
         except punch_request.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
