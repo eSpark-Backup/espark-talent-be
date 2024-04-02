@@ -606,6 +606,7 @@ class notifications(models.Model):
     email=models.EmailField(default='')
     ref_id=models.IntegerField(null=True)
     notification_type=models.CharField(max_length=30, default='')
+    status=models.CharField(max_length=10, default='')
     description=models.CharField(max_length=255, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

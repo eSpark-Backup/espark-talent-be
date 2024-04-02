@@ -464,7 +464,7 @@ class Interview_Schedule(APIView):
             if to_update_interview_status:
                 to_update_interview_status.status = to_update_status
                 to_update_interview_status.save()
-
+                
                 return Response(status=status.HTTP_200_OK)
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
