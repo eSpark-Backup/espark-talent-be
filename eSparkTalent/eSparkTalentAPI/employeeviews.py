@@ -16,6 +16,7 @@ from drf_yasg import openapi
 from rest_framework.parsers import MultiPartParser
 from .emp_dash_funcs import *
 from eSparkTalent.settings import talent_email
+from . files_removal import remove_bucket_file
 
 
 @authentication_classes([JWTAuthentication])
@@ -282,7 +283,7 @@ class Employee_Home(APIView):
             + " "
             + current_employee.last_name,
             "employee_email": current_employee.email,
-            "image": current_employee.image.path,
+            "image": current_employee.image.url,
         }
         out_sourced_to = [
             w_space.client_id
@@ -328,7 +329,7 @@ class Employee_Home(APIView):
             except:
                 punch_timings = {}
             try:
-                company_image = company_data.objects.all()[0].image.path
+                company_image = company_data.objects.all()[0].image.url
             except:
                 company_image = ""
 
@@ -355,7 +356,7 @@ class Employee_Home(APIView):
             except:
                 punch_timings = {}
             try:
-                company_image = company_data.objects.all()[0].image.path
+                company_image = company_data.objects.all()[0].image.url
             except:
                 company_image = ""
             payload = {
@@ -661,7 +662,7 @@ class Company_Contract(APIView):
                     "employee_id": employee.objects.get(email=request.user).employee_id,
                     "contract_name": contract.contract_name,
                     "date": contract.date,
-                    "contract_doc": contract.contract_doc.path,
+                    "contract_doc": contract.contract_doc.url,
                 }
                 records.append(record)
 
@@ -730,7 +731,7 @@ class Offshore_Contract(APIView):
                     "employee_id": employee.objects.get(email=request.user).employee_id,
                     "contract_name": contract.contract_name,
                     "date": contract.date,
-                    "contract_doc": contract.contract_doc.path,
+                    "contract_doc": contract.contract_doc.url,
                 }
                 records.append(record)
             return Response(records, status=status.HTTP_200_OK)
@@ -1417,10 +1418,12 @@ class Leave_Request(APIView):
     def delete(self, request, *args, **kwargs):
         id = request.query_params.get("id")
         try:
-            record = leave_request.objects.get(id=id)
-            if record:
-                notifications.objects.get(ref_id=record.id, notification_type="leave_request").delete()
-                record.delete()
+            lr=leave_request.objects.get(id=id)
+            removed=remove_bucket_file(lr.attachment.name)
+            if removed:
+                return Response({"error":str(removed)},status=status.HTTP_400_BAD_REQUEST)
+            notifications.objects.get(ref_id=lr.id, notification_type="leave_request").delete()
+            lr.delete()
             return Response(status=status.HTTP_200_OK)
         except leave_request.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -1580,6 +1583,7 @@ class Time_Sheet(APIView):
                                 ),
                                 "company": openapi.Schema(type=openapi.TYPE_STRING),
                                 "location": openapi.Schema(type=openapi.TYPE_STRING),
+                                "role_type": openapi.Schema(type=openapi.TYPE_STRING),
                                 "job_title": openapi.Schema(type=openapi.TYPE_STRING),
                                 "joining_date": openapi.Schema(
                                     type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
@@ -1734,6 +1738,7 @@ class Time_Sheet(APIView):
                     "employee_name": emp.first_name + " " + emp.last_name,
                     "company": company_name,
                     "location": location,
+                    "role_type":outsrc_emp.role_type,
                     "job_title": outsrc_emp.job_title,
                     "joining_date": outsrc_emp.joining_date,
                 }
@@ -1866,6 +1871,7 @@ class Time_Sheet(APIView):
                     "employee_name": emp.first_name + " " + emp.last_name,
                     "company": company_name,
                     "location": location,
+                    "role_type":outsrc_emp.role_type,
                     "job_title": outsrc_emp.job_title,
                     "joining_date": outsrc_emp.joining_date,
                 }
@@ -2333,7 +2339,7 @@ class Policies(APIView):
             record = {
                 "id": emp_pol.id,
                 "policy_name": emp_pol.policy_name,
-                "policy_doc": emp_pol.policy_doc.path,
+                "policy_doc": emp_pol.policy_doc.url,
             }
             policies.append(record)
         if len(policies) > 0:

@@ -141,15 +141,6 @@ class employee(models.Model):
             valid_pdffile_type(self.resume.file)
         except ValidationError as e:
             raise ValidationError(e)
-        # Delete the old image when updating
-        try:
-            old_employee = employee.objects.get(id=self.id)
-            if old_employee.image.name != self.image.name:
-                old_image_path = os.path.join("media", old_employee.image.name)
-                if os.path.exists(old_image_path):
-                    os.remove(old_image_path)
-        except employee.DoesNotExist:
-            pass
 
         super().save(*args, **kwargs)
 
@@ -182,14 +173,6 @@ class client(models.Model):
             valid_imgfile_type(self.image.file)
         except ValidationError as e:
             raise ValidationError(e)
-        try:
-            old_client = client.objects.get(id=self.id)
-            if old_client.image.name != self.image.name:
-                old_image_path = os.path.join("media", old_client.image.name)
-                if os.path.exists(old_image_path):
-                    os.remove(old_image_path)
-        except client.DoesNotExist:
-            pass
 
         super().save(*args, **kwargs)
 
@@ -438,7 +421,7 @@ class client_contract(models.Model):
     client_id = models.EmailField()
     date = models.DateField()
     contract_doc = models.FileField(
-        upload_to="contracts/company/",
+        upload_to="contracts/client/",
         validators=[pdf_ext_valid, valid_pdffile_type],
         default="",
     )
@@ -488,7 +471,7 @@ class offshore_contracts(models.Model):
     contract_name = models.CharField(max_length=255)
     date = models.DateField()
     contract_doc = models.FileField(
-        upload_to="contracts/employee/",
+        upload_to="contracts/offshore/",
         validators=[pdf_ext_valid, valid_pdffile_type],
         default="",
     )
@@ -562,14 +545,6 @@ class company_data(models.Model):
             valid_imgfile_type(self.image.file)
         except ValidationError as e:
             raise ValidationError(e)
-        try:
-            old_logo = company_data.objects.get(id=self.id)
-            if old_logo.image.name != self.image.name:
-                old_image_path = os.path.join("media", old_logo.image.name)
-                if os.path.exists(old_image_path):
-                    os.remove(old_image_path)
-        except company_data.DoesNotExist:
-            pass
 
         super().save(*args, **kwargs)
 
@@ -631,6 +606,7 @@ class notifications(models.Model):
     email=models.EmailField(default='')
     ref_id=models.IntegerField(null=True)
     notification_type=models.CharField(max_length=30, default='')
+    status=models.CharField(max_length=10, default='')
     description=models.CharField(max_length=255, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
