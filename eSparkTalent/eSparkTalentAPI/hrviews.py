@@ -687,11 +687,11 @@ class Employee_Invoice(APIView):
                     email=to_update_emp_inv.employee_id
                 )
                 notif = notifications.objects.get(
-                    email=to_update_emp_inv.client_id,
                     ref_id=to_update_emp_inv.id,
                     notification_type=f"employee_invoice",
                 )
                 notif.status = to_update_status
+                notif.email = to_update_emp_inv.client_id
                 notif.description = f"Invoice is {to_update_status} for {employee_data.first_name} {employee_data.last_name}"
                 notif.save()
                 return Response(status=status.HTTP_200_OK)
@@ -966,11 +966,11 @@ class Other_Payment(APIView):
             to_update_otherpay.payment_status = to_update_status
             to_update_otherpay.save()
             notif = notifications.objects.get(
-                email=to_update_otherpay.client_id,
                 ref_id=to_update_otherpay.id,
                 notification_type="other_payment",
             )
             notif.status = to_update_status
+            notif.email = to_update_otherpay.client_id
             notif.description = f"Invoice is {to_update_status} for {to_update_otherpay.invoice_reference}"
             notif.save()
             return Response(status=status.HTTP_200_OK)
@@ -2299,7 +2299,7 @@ class Start_Hiring(APIView):
     def post(self, request, *args, **kwargs):
         serializer = start_requestSerializer(data=request.data)
         if serializer.is_valid():
-            hr = hiring_request.objects.create(
+            hiring_request.objects.create(
                 client_id=serializer.validated_data["client_id"],
                 job_title=serializer.validated_data["job_title"],
                 role_type=serializer.validated_data["role_type"],
