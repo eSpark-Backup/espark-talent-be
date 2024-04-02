@@ -2480,7 +2480,7 @@ class Invoice_Payments(APIView):
                     to_update_invoice_payments = other_payment.objects.get(id=id)
                     to_update_invoice_payments.payment_status = new_pay_status
                     to_update_invoice_payments.save()
-                    notifi = notifications.objects.get(ref_id=id, notification_type="other_invoice")
+                    notifi = notifications.objects.get(ref_id=id, notification_type="other_payment")
                     notifi.email=talent_email
                     notifi.status=new_pay_status
                     notifi.description=f"other invoice has been {new_pay_status}"
