@@ -2579,14 +2579,32 @@ class Notifications(APIView):
     )
     def get(self, request, *args, **kwargs):
         user_email = request.user
-        notifications_data = notifications.objects.filter(email=user_email)
-        noti_array = []
-        for data in notifications_data:
+        user = end_user.objects.get(email=user_email)
+        if user.role == "employee":
+            notifications_data = notifications.objects.filter(email=user_email).exclude(notification_type="employee_contract").exclude(notification_type="offshore_contracts")
+            emp_contract = notifications.objects.filter(email=user_email , notification_type="employee_contract").order_by('-timestamp')
+            off_contract = notifications.objects.filter(email=user_email , notification_type="offshore_contracts").order_by('-timestamp')
+            noti_array = []
+            for data in notifications_data:
+                record = {
+                    "type": data.notification_type,
+                    "description": data.description,
+                    "date": data.updated_at
+                }
+                noti_array.append(record)
             record = {
-                "description": data.description
-            }
+                    "type": "company_contracts",
+                    "description": f"{emp_contract.count()} new contract has been added to company contracts.",
+                    "date": emp_contract[0].created_at
+                }
             noti_array.append(record)
-        if len(noti_array) > 0:
-            return Response(noti_array, status=status.HTTP_200_OK)
-        else:
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            record = {
+                    "type": "company_contracts",
+                    "description": f"{off_contract.count()} new contract has been added to client contracts.",
+                    "date": off_contract[0].created_at
+                }
+            noti_array.append(record)
+            if len(noti_array) > 0:
+                return Response(noti_array, status=status.HTTP_200_OK)
+            else:
+                return Response(status=status.HTTP_204_NO_CONTENT)

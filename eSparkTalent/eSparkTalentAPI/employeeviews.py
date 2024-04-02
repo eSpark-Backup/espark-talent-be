@@ -1375,7 +1375,8 @@ class Leave_Request(APIView):
                 notifications.objects.create(
                     ref_id=result.id,
                     email=result.client_id,
-                    notification_type="leave_notifications",
+                    notification_type="leave_request",
+                    status="added",
                     description=f"{emp_data.username} {result.leave_type} leave request is pending" 
                 )
                 return Response({"id": result.id}, status=status.HTTP_201_CREATED)
@@ -1418,7 +1419,7 @@ class Leave_Request(APIView):
         try:
             record = leave_request.objects.get(id=id)
             if record:
-                notifications.objects.get(ref_id=record.id).delete()
+                notifications.objects.get(ref_id=record.id, notification_type="leave_request").delete()
                 record.delete()
             return Response(status=status.HTTP_200_OK)
         except leave_request.DoesNotExist:
@@ -2239,7 +2240,8 @@ class Punch_Request(APIView):
                 notifications.objects.create(
                     ref_id=result.id,
                     email=result.client_id,
-                    notification_type="punch_notifications",
+                    notification_type="punch_request",
+                    status="added",
                     description=f"{emp_data.username} {result.punch_type} request is pending" 
                 )
                 
@@ -2281,7 +2283,7 @@ class Punch_Request(APIView):
         try:
             record = punch_request.objects.get(id=id)
             if record:
-                notifications.objects.get(ref_id=record.id).delete()
+                notifications.objects.get(ref_id=record.id, notification_type="punch_request").delete()
                 record.delete()
             return Response(status=status.HTTP_200_OK)
         except punch_request.DoesNotExist:
