@@ -2946,74 +2946,74 @@ class Notifications(APIView):
                 email=talent_email,
                 notification_type="interview_schedule",
                 status="short_list",
-            ).order_by("-created_at")
+            ).order_by("-updated_at")
             rej_int = notifications.objects.filter(
                 email=talent_email,
                 notification_type="interview_schedule",
                 status="rejected",
-            ).order_by("-created_at")
+            ).order_by("-updated_at")
             process_inv = notifications.objects.filter(
                 Q(notification_type="employee_invoice")
                 | Q(notification_type="other_payment"),
                 email=talent_email,
                 status="processing",
-            ).order_by("-created_at")
+            ).order_by("-updated_at")
             paid_inv = notifications.objects.filter(
                 Q(notification_type="employee_invoice")
                 | Q(notification_type="other_payment"),
                 email=talent_email,
                 status="paid",
-            ).order_by("-created_at")
+            ).order_by("-updated_at")
             if hire_req:
-                if hire_req.count()==1:
-                    description= "You got 1 new hiring request"
+                if hire_req.count() == 1:
+                    description = "You got 1 new hiring request"
                 else:
-                    description=f"You got {hire_req.count()} new hiring requests"
-                record={
+                    description = f"You got {hire_req.count()} new hiring requests"
+                record = {
                     "type": "hiring_request",
                     "description": description,
                     "date": hire_req[0].created_at.date(),
                 }
                 noti_array.append(record)
             if short_int:
-                if short_int.count()==1:
-                    description= "1 interviewee is shortlisted"
+                if short_int.count() == 1:
+                    description = "1 interviewee is shortlisted"
                 else:
-                    description=f"{short_int.count()} interviewees are shortlisted"
-                record={
+                    description = f"{short_int.count()} interviewees are shortlisted"
+                record = {
                     "type": "interview_schedule",
                     "description": description,
                     "date": short_int[0].updated_at.date(),
                 }
                 noti_array.append(record)
             if rej_int:
-                if rej_int.count()==1:
-                    description= "1 interviewee is rejected"
+                if rej_int.count() == 1:
+                    description = "1 interviewee is rejected"
                 else:
-                    description=f"{rej_int.count()} interviewees are rejected"
-                record={
+                    description = f"{rej_int.count()} interviewees are rejected"
+                record = {
                     "type": "interview_schedule",
                     "description": description,
                     "date": rej_int[0].updated_at.date(),
                 }
                 noti_array.append(record)
             if process_inv:
-                if process_inv.count()==1:
-                    description= "1 new invoice is processing"
+                if process_inv.count() == 1:
+                    description = "1 new invoice is processing"
                 else:
-                    description=f"{process_inv.count()} new invoices are processing"
-                record={
+                    description = f"{process_inv.count()} new invoices are processing"
+                record = {
                     "type": "invoice",
                     "description": description,
                     "date": process_inv[0].updated_at.date(),
                 }
                 noti_array.append(record)
             if paid_inv:
-                if paid_inv.count()==1:
-                    description= "1 new invoice is paid"
+                if paid_inv.count() == 1:
+                    description = "1 new invoice is paid"
                 else:
-                    description=f"{paid_inv.count()} new invoices are paid"
-                record={
+                    description = f"{paid_inv.count()} new invoices are paid"
+                record = {
                     "type": "invoice",
                     "description": description,
                     "date": paid_inv[0].updated_at.date(),
