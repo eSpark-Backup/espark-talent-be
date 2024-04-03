@@ -858,7 +858,6 @@ class Employee_Invoice(APIView):
             notifications.objects.get(
                 ref_id=emp_inv.id,
                 notification_type="employee_invoice",
-                email=emp_inv.client_id,
             ).delete()
             emp_inv.delete()
             return Response(status=status.HTTP_200_OK)
@@ -1135,7 +1134,6 @@ class Other_Payment(APIView):
             if removed:
                 return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
             notifications.objects.get(
-                email=oth_pay.client_id,
                 notification_type="other_payment",
                 ref_id=oth_pay.id,
             ).delete()
@@ -2679,7 +2677,6 @@ class Interview_Schedule(APIView):
         try:
             int_sch = interview_schedule.objects.get(id=delete_id)
             notifications.objects.get(
-                email=int_sch.client_id,
                 ref_id=int_sch.id,
                 notification_type="interview_schedule",
             ).delete()
@@ -4592,6 +4589,12 @@ class Offshore_Contract(APIView):
             
             notifications.objects.get(
                 email=off_cont.client_id,
+                ref_id=off_cont.id,
+                notification_type="offshore_contracts",
+            ).delete()
+            
+            notifications.objects.get(
+                email=off_cont.employee_id,
                 ref_id=off_cont.id,
                 notification_type="offshore_contracts",
             ).delete()
