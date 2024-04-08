@@ -4919,11 +4919,11 @@ class ClientAddEmployee(APIView):
         if outsourced_employees and c_outsourced_employees:
             records = []
             for outsrcd_emp in outsourced_employees:
-                is_present=0
+                is_present=False
                 for c_outsrcd_emp in c_outsourced_employees:
                     if c_outsrcd_emp.employee_id==outsrcd_emp.employee_id:
-                        is_present+=1
-                if is_present==0:
+                        is_present==True
+                if not is_present:
                     try:
                         emp = employee.objects.get(email=outsrcd_emp.employee_id)
                         record = {
