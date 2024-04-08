@@ -632,7 +632,7 @@ class Employee_Invoice(APIView):
                 name="client_id",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
-                format=openapi.FORMAT_DATE,
+                format=openapi.FORMAT_EMAIL,
                 required=True,
             ),
         ],
@@ -890,7 +890,7 @@ class Other_Payment(APIView):
                 name="client_id",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
-                format=openapi.FORMAT_DATE,
+                format=openapi.FORMAT_EMAIL,
                 required=True,
             ),
             openapi.Parameter(
@@ -4125,7 +4125,7 @@ class Company_Contract(APIView):
                 "status",
                 openapi.IN_QUERY,
                 type=openapi.TYPE_STRING,
-                enum=["clients", "employees"],
+                enum=["client", "employee"],
                 default="clients",
             ),
             openapi.Parameter(
@@ -4175,7 +4175,7 @@ class Company_Contract(APIView):
         posted_data = request.data
         get_status = request.query_params.get("status")
         if get_status:
-            if get_status == "clients":
+            if get_status == "client":
                 try:
                     clnt=client.objects.get(client_id=posted_data["client_id"])
                     posted_data["client_id"]=clnt.email
@@ -4209,7 +4209,7 @@ class Company_Contract(APIView):
                         {"error": str(e)},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-            elif get_status == "employees":
+            elif get_status == "employee":
                 try:
                     emp=employee.objects.get(employee_id=posted_data["employee_id"])
                     posted_data["employee_id"]=emp.email
