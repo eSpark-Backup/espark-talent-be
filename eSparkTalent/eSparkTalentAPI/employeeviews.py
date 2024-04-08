@@ -275,8 +275,8 @@ class Employee_Home(APIView):
         workspace = request.query_params.get("workspace")
         try:
             current_employee = employee.objects.get(email=e_email)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
         employee_details = {
             "employee_id": current_employee.employee_id,
             "employee_name": current_employee.first_name
@@ -318,8 +318,8 @@ class Employee_Home(APIView):
                 "hajj_leaves": leave_records.hajj_leaves,
                 "paid_leaves": leave_records.paid_leaves,
             }
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
         if workspace:
             today_activity = TodayActivity(e_email=e_email, workspace=workspace)
             statistics = Statistics(e_email=e_email, workspace=workspace)
@@ -464,7 +464,9 @@ class Employee_Home(APIView):
                             },
                         }
                         rec.save()
-                        return Response(status=status.HTTP_200_OK)
+                        return Response(
+                            {"message": "Check in punched"}, status=status.HTTP_200_OK
+                        )
             else:
                 time_sheet.objects.create(
                     month=now.strftime("%B"),
@@ -488,9 +490,11 @@ class Employee_Home(APIView):
                         }
                     },
                 )
-                return Response(status=status.HTTP_200_OK)
+                return Response(
+                    {"message": "Check in punched"}, status=status.HTTP_200_OK
+                )
 
-        if check_out:
+        elif check_out:
             months_timesheet = time_sheet.objects.filter(
                 month=now.strftime("%B"),
                 employee_id=e_email,
@@ -531,7 +535,9 @@ class Employee_Home(APIView):
                             "Missing"
                         ] = False
                         rec.save()
-                        return Response(status=status.HTTP_200_OK)
+                        return Response(
+                            {"message": "Check out punched"}, status=status.HTTP_200_OK
+                        )
 
                     elif hours_worked.total_seconds() // 3600 >= 9:
                         overtime = hours_worked - timedelta(hours=9)
@@ -563,9 +569,11 @@ class Employee_Home(APIView):
                         ] = over_duration
 
                         rec.save()
-                        return Response(status=status.HTTP_200_OK)
+                        return Response(
+                            {"message": "Check out punched"}, status=status.HTTP_200_OK
+                        )
 
-        if breaked:
+        elif breaked:
             months_timesheet = time_sheet.objects.filter(
                 month=now.strftime("%B"),
                 employee_id=e_email,
@@ -586,9 +594,11 @@ class Employee_Home(APIView):
                         rec.record[now.date().strftime("%d-%m-%Y")]["break"] = breaked
 
                         rec.save()
-                        return Response(status=status.HTTP_200_OK)
+                        return Response(
+                            {"message": "Break punched"}, status=status.HTTP_200_OK
+                        )
 
-        if resumed:
+        elif resumed:
             months_timesheet = time_sheet.objects.filter(
                 month=now.strftime("%B"),
                 employee_id=e_email,
@@ -610,9 +620,13 @@ class Employee_Home(APIView):
                         rec.record[now.date().strftime("%d-%m-%Y")]["resume"] = resumed
 
                         rec.save()
-                        return Response(status=status.HTTP_200_OK)
+                        return Response(
+                            {"message": "Resuming punched"}, status=status.HTTP_200_OK
+                        )
         else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid query parameter"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 @authentication_classes([JWTAuthentication])
@@ -631,7 +645,7 @@ class Company_Contract(APIView):
                         "contract_name": openapi.Schema(type=openapi.TYPE_STRING),
                         "date": openapi.Schema(
                             type=openapi.TYPE_STRING,
-                            format=openapi.FORMAT_DATETIME,
+                            format=openapi.FORMAT_DATE,
                         ),
                         "contract_doc": openapi.Schema(type=openapi.TYPE_FILE),
                     },
@@ -688,7 +702,7 @@ class Offshore_Contract(APIView):
                         "contract_name": openapi.Schema(type=openapi.TYPE_STRING),
                         "date": openapi.Schema(
                             type=openapi.TYPE_STRING,
-                            format=openapi.FORMAT_DATETIME,
+                            format=openapi.FORMAT_DATE,
                         ),
                         "contract_doc": openapi.Schema(type=openapi.TYPE_FILE),
                     },
@@ -1199,8 +1213,8 @@ class Leave_Request(APIView):
                     "paid_leaves": l_balance.paid_leaves,
                     "hajj_leaves": l_balance.hajj_leaves,
                 }
-            except:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
             if tab == "pending" or tab == "completed" or tab == "rejected":
                 l_request = leave_request.objects.filter(
                     employee_id=e_email, client_id=workspace, status=tab
@@ -1380,12 +1394,12 @@ class Leave_Request(APIView):
                     status="added",
                     description=f"{emp_data.username} {result.leave_type} leave request is pending" 
                 )
-                return Response({"id": result.id}, status=status.HTTP_201_CREATED)
+                return Response({"message":f"{result.leave_type} leave request is pending","id": result.id}, status=status.HTTP_201_CREATED)
             except ValidationError as e:
                 return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
-            except:
+            except Exception as e:
                 return Response(
-                    {"error": "Invalid form fields"}, status=status.HTTP_400_BAD_REQUEST
+                    {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
                 )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -1424,11 +1438,11 @@ class Leave_Request(APIView):
                 return Response({"error":str(removed)},status=status.HTTP_400_BAD_REQUEST)
             notifications.objects.get(ref_id=lr.id, notification_type="leave_request").delete()
             lr.delete()
-            return Response(status=status.HTTP_200_OK)
+            return Response({"message":"Leave request is successfully deleted"},status=status.HTTP_200_OK)
         except leave_request.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -2251,10 +2265,10 @@ class Punch_Request(APIView):
                     description=f"{emp_data.username} {result.punch_type} request is pending" 
                 )
                 
-                return Response({"id": result.id}, status=status.HTTP_201_CREATED)
-            except:
+                return Response({"message":f"{result.punch_type} request is pending","id": result.id}, status=status.HTTP_201_CREATED)
+            except Exception as e:
                 return Response(
-                    {"error": "Invalid form fields"}, status=status.HTTP_400_BAD_REQUEST
+                    {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
                 )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -2291,7 +2305,7 @@ class Punch_Request(APIView):
             if record:
                 notifications.objects.get(ref_id=record.id, notification_type="punch_request").delete()
                 record.delete()
-            return Response(status=status.HTTP_200_OK)
+            return Response({"message":"Punch request is successfully deleted"},status=status.HTTP_200_OK)
         except punch_request.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         except:
