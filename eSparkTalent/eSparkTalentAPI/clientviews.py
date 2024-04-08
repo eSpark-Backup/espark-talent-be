@@ -1053,9 +1053,7 @@ class ClockInOut_Request(APIView):
                             "date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
-                            "punch_time": openapi.Schema(
-                                type=openapi.TYPE_STRING
-                            ),
+                            "punch_time": openapi.Schema(type=openapi.TYPE_STRING),
                             "punch_type": openapi.Schema(type=openapi.TYPE_STRING),
                             "description": openapi.Schema(type=openapi.TYPE_STRING),
                             "status": openapi.Schema(type=openapi.TYPE_STRING),
@@ -2937,7 +2935,7 @@ class Notifications(APIView):
                 }
                 noti_array.append(record)
             if policies:
-                if policies.count()==1:
+                if policies.count() == 1:
                     record = {
                         "type": "Policy",
                         "description": f"1 new policy have been added.",

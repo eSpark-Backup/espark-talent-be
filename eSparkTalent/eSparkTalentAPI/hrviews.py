@@ -642,12 +642,9 @@ class Employee_Invoice(APIView):
     def post(self, request, *args, **kwargs):
         posted_data = request.data
         emp_id = posted_data.get("employee_id", None)
-        clnt_id = posted_data.get("client_id", None)
         try:
             employee_data = employee.objects.get(employee_id=emp_id)
-            client_data = client.objects.get(client_id=clnt_id)
             posted_data["employee_id"] = employee_data.email
-            posted_data["client_id"] = client_data.email
             serializer = EmployeeInvoiceSerializer(data=posted_data)
 
             if serializer.is_valid():
@@ -4922,10 +4919,11 @@ class ClientAddEmployee(APIView):
         if outsourced_employees and c_outsourced_employees:
             records = []
             for outsrcd_emp in outsourced_employees:
-                print("OUTSOURCED:", outsrcd_emp)
+                is_present=0
                 for c_outsrcd_emp in c_outsourced_employees:
                     if c_outsrcd_emp.employee_id==outsrcd_emp.employee_id:
-                        continue
+                        is_present+=1
+                if is_present==0:
                     try:
                         emp = employee.objects.get(email=outsrcd_emp.employee_id)
                         record = {
@@ -4946,7 +4944,6 @@ class ClientAddEmployee(APIView):
         elif outsourced_employees:
             records = []
             for outsrcd_emp in outsourced_employees:
-                print("OUTSOURCED:", outsrcd_emp)
                 try:
                     emp = employee.objects.get(email=outsrcd_emp.employee_id)
                     record = {
