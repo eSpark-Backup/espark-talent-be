@@ -231,15 +231,17 @@ class Start_Hiring(APIView):
                     description="A new hiring request created.",
                 )
                 return Response(
-                    {"message": "Resquest created"}, status=status.HTTP_201_CREATED
+                    {
+                        "message": "One new request is successfully added to hiring.",
+                        "id": hr_req.id,
+                    },
+                    status=status.HTTP_201_CREATED,
                 )
 
             except client.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
-            except:
-                return Response(
-                    {"error": "Invalid form fields"}, status=status.HTTP_400_BAD_REQUEST
-                )
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -364,9 +366,12 @@ class Hiring_Resquest(APIView):
             notifications.objects.get(
                 ref_id=delete_id, notification_type="hiring_request"
             ).delete()
-            return Response(status=status.HTTP_200_OK)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"message": "Hiring request is successfully deleted"},
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -490,14 +495,17 @@ class Interview_Schedule(APIView):
                 notifi.description = f"Candidate has been {to_update_status}"
                 notifi.save()
 
-                return Response(status=status.HTTP_200_OK)
+                return Response(
+                    {"message": f"One new interviewee is {to_update_status}"},
+                    status=status.HTTP_200_OK,
+                )
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
         except interview_schedule.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -687,6 +695,11 @@ class Team_Member(APIView):
                 return Response(records, status=status.HTTP_200_OK)
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response(
+                {"error": "Invalid status parameter"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
 
 @authentication_classes([JWTAuthentication])
@@ -733,7 +746,7 @@ class Leave_Request(APIView):
                             "count": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "reason": openapi.Schema(type=openapi.TYPE_STRING),
                             "requested_at": openapi.Schema(
-                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
                             "status": openapi.Schema(type=openapi.TYPE_STRING),
                         },
@@ -835,6 +848,9 @@ class Leave_Request(APIView):
             if to_update_leave_request:
                 to_update_leave_request.status = to_update_status
                 to_update_leave_request.save()
+                emp_rec = employee.objects.get(
+                    email=to_update_leave_request.employee_id
+                )
 
                 if to_update_status == "completed":
                     try:
@@ -887,6 +903,7 @@ class Leave_Request(APIView):
                             ) + int(to_update_leave_request.count)
 
                         leave_balances_instance.save()
+                        message = f"{emp_rec.first_name} {emp_rec.last_name} {to_update_leave_request.leave_type} leave request is accepted"
 
                     except leave_balance.DoesNotExist:
                         return Response(
@@ -895,7 +912,8 @@ class Leave_Request(APIView):
                             },
                             status=status.HTTP_404_NOT_FOUND,
                         )
-
+                else:
+                    message = f"{emp_rec.first_name} {emp_rec.last_name} {to_update_leave_request.leave_type} leave request is {to_update_status}"
                 notifi = notifications.objects.get(
                     ref_id=request_id, notification_type="leave_request", email=user
                 )
@@ -904,9 +922,7 @@ class Leave_Request(APIView):
                 notifi.description = f"leave request has been {to_update_status}"
                 notifi.save()
 
-                return Response(
-                    {"message": "Updated successfully"}, status=status.HTTP_200_OK
-                )
+                return Response({"message": message}, status=status.HTTP_200_OK)
 
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
@@ -918,7 +934,7 @@ class Leave_Request(APIView):
             )
 
         except Exception as e:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -1037,9 +1053,7 @@ class ClockInOut_Request(APIView):
                             "date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
-                            "punch_time": openapi.Schema(
-                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME
-                            ),
+                            "punch_time": openapi.Schema(type=openapi.TYPE_STRING),
                             "punch_type": openapi.Schema(type=openapi.TYPE_STRING),
                             "description": openapi.Schema(type=openapi.TYPE_STRING),
                             "status": openapi.Schema(type=openapi.TYPE_STRING),
@@ -1134,6 +1148,9 @@ class ClockInOut_Request(APIView):
         if to_update_status == "completed":
             try:
                 to_update_clockinout_request = punch_request.objects.get(id=request_id)
+                emp_req = employee.objects.get(
+                    email=to_update_clockinout_request.employee_id
+                )
                 try:
                     record_punch_type = to_update_clockinout_request.punch_type
                     if record_punch_type == "check_in":
@@ -1205,7 +1222,12 @@ class ClockInOut_Request(APIView):
                                         notifi.status = to_update_status
                                         notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                         notifi.save()
-                                        return Response(status=status.HTTP_200_OK)
+                                        return Response(
+                                            {
+                                                "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                            },
+                                            status=status.HTTP_200_OK,
+                                        )
 
                                     elif datetime.datetime.strptime(
                                         to_update_clockinout_request.date.strftime(
@@ -1248,7 +1270,12 @@ class ClockInOut_Request(APIView):
                                             notifi.status = to_update_status
                                             notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                             notifi.save()
-                                            return Response(status=status.HTTP_200_OK)
+                                            return Response(
+                                                {
+                                                    "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                                },
+                                                status=status.HTTP_200_OK,
+                                            )
                                         else:
                                             timesheet_record.record[
                                                 to_update_clockinout_request.date.strftime(
@@ -1271,7 +1298,12 @@ class ClockInOut_Request(APIView):
                                             notifi.status = to_update_status
                                             notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                             notifi.save()
-                                            return Response(status=status.HTTP_200_OK)
+                                            return Response(
+                                                {
+                                                    "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                                },
+                                                status=status.HTTP_200_OK,
+                                            )
 
                                 else:
                                     check_out_time = timesheet_record.record[
@@ -1324,7 +1356,12 @@ class ClockInOut_Request(APIView):
                                         notifi.status = to_update_status
                                         notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                         notifi.save()
-                                        return Response(status=status.HTTP_200_OK)
+                                        return Response(
+                                            {
+                                                "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                            },
+                                            status=status.HTTP_200_OK,
+                                        )
                                     elif hours_worked.total_seconds() // 3600 >= 9:
                                         overtime = hours_worked - datetime.timedelta(
                                             hours=9
@@ -1380,6 +1417,9 @@ class ClockInOut_Request(APIView):
                                         notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                         notifi.save()
                                         return Response(
+                                            {
+                                                "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                            },
                                             status=status.HTTP_200_OK,
                                         )
 
@@ -1415,6 +1455,9 @@ class ClockInOut_Request(APIView):
                                 notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                 notifi.save()
                                 return Response(
+                                    {
+                                        "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                    },
                                     status=status.HTTP_200_OK,
                                 )
 
@@ -1476,7 +1519,12 @@ class ClockInOut_Request(APIView):
                                     notifi.status = to_update_status
                                     notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                     notifi.save()
-                                    return Response(status=status.HTTP_200_OK)
+                                    return Response(
+                                        {
+                                            "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                        },
+                                        status=status.HTTP_200_OK,
+                                    )
                                 else:
                                     timesheet_record = time_sheet.objects.create(
                                         employee_id=to_update_clockinout_request.employee_id,
@@ -1519,7 +1567,12 @@ class ClockInOut_Request(APIView):
                                     notifi.status = to_update_status
                                     notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                     notifi.save()
-                                    return Response(status=status.HTTP_200_OK)
+                                    return Response(
+                                        {
+                                            "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                        },
+                                        status=status.HTTP_200_OK,
+                                    )
                             elif datetime.datetime.strptime(
                                 to_update_clockinout_request.date.strftime("%d-%m-%Y"),
                                 "%d-%m-%Y",
@@ -1564,7 +1617,12 @@ class ClockInOut_Request(APIView):
                             notifi.status = to_update_status
                             notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                             notifi.save()
-                            return Response(status=status.HTTP_200_OK)
+                            return Response(
+                                {
+                                    "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                },
+                                status=status.HTTP_200_OK,
+                            )
 
                     elif record_punch_type == "check_out":
                         try:
@@ -1624,7 +1682,12 @@ class ClockInOut_Request(APIView):
                                     notifi.status = to_update_status
                                     notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                     notifi.save()
-                                    return Response(status=status.HTTP_200_OK)
+                                    return Response(
+                                        {
+                                            "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                        },
+                                        status=status.HTTP_200_OK,
+                                    )
 
                                 else:
                                     check_in_time = timesheet_record.record[
@@ -1677,7 +1740,12 @@ class ClockInOut_Request(APIView):
                                         notifi.status = to_update_status
                                         notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                         notifi.save()
-                                        return Response(status=status.HTTP_200_OK)
+                                        return Response(
+                                            {
+                                                "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                            },
+                                            status=status.HTTP_200_OK,
+                                        )
                                     elif hours_worked.total_seconds() // 3600 >= 9:
                                         overtime = hours_worked - datetime.timedelta(
                                             hours=9
@@ -1732,7 +1800,12 @@ class ClockInOut_Request(APIView):
                                         notifi.status = to_update_status
                                         notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                         notifi.save()
-                                        return Response(status=status.HTTP_200_OK)
+                                        return Response(
+                                            {
+                                                "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                            },
+                                            status=status.HTTP_200_OK,
+                                        )
 
                             else:
                                 timesheet_record.record[
@@ -1765,7 +1838,12 @@ class ClockInOut_Request(APIView):
                                 notifi.status = to_update_status
                                 notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                 notifi.save()
-                                return Response(status=status.HTTP_200_OK)
+                                return Response(
+                                    {
+                                        "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                    },
+                                    status=status.HTTP_200_OK,
+                                )
                         except:
                             timesheet_record = time_sheet.objects.create(
                                 employee_id=to_update_clockinout_request.employee_id,
@@ -1804,7 +1882,12 @@ class ClockInOut_Request(APIView):
                             notifi.status = to_update_status
                             notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                             notifi.save()
-                            return Response(status=status.HTTP_200_OK)
+                            return Response(
+                                {
+                                    "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                },
+                                status=status.HTTP_200_OK,
+                            )
 
                 except Exception as e:
                     return Response(
@@ -1817,6 +1900,9 @@ class ClockInOut_Request(APIView):
         elif to_update_status == "rejected":
             try:
                 to_update_clockinout_request = punch_request.objects.get(id=request_id)
+                emp_req = employee.objects.get(
+                    email=to_update_clockinout_request.employee_id
+                )
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
             to_update_clockinout_request.status = to_update_status
@@ -1829,7 +1915,12 @@ class ClockInOut_Request(APIView):
             notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
             notifi.save()
 
-            return Response(status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                },
+                status=status.HTTP_200_OK,
+            )
         else:
             return Response(
                 {"error": "Invalid status value"}, status=status.HTTP_400_BAD_REQUEST
@@ -1898,7 +1989,7 @@ class Download_Report(APIView):
                     )
                     employee_data = employee_serializer.data
                     outsource = outsource_employees.objects.get(
-                        client_id=data.client_id
+                        client_id=data.client_id, employee_id=employee_data["email"]
                     )
 
                     row_data = [
@@ -1909,15 +2000,15 @@ class Download_Report(APIView):
                             + employee_data.get("last_name", ""),
                         ),
                         str(outsource.country),
-                        str(employee_data.get("department", "")),
+                        str(outsource.job_title),
                         str(data.leave_type),
                         str(data.count),
-                        str(data.created_at),
+                        str(data.created_at.date()),
                         str(data.status),
                     ]
                     table_data.append(row_data)
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
-                col_widths = [65, 80, 70, 70, 60, 35, 150, 60]
+                col_widths = [65, 90, 70, 90, 60, 35, 100, 60]
             elif get_tab == "cio":
                 records = punch_request.objects.filter(client_id=user)
                 current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
@@ -1985,14 +2076,16 @@ class Download_Report(APIView):
                         str(leaves.sick_leaves["balance"]),
                         str(leaves.annual_leaves["balance"]),
                         str(
-                            leaves.casual_leaves["availed"]
-                            + leaves.sick_leaves["availed"]
-                            + leaves.annual_leaves["availed"],
+                            int(leaves.casual_leaves["availed"])
+                            + int(leaves.sick_leaves["availed"])
+                            + int(leaves.annual_leaves["availed"]),
                         ),
                         str(
-                            leaves.casual_leaves["balance"]
-                            + leaves.sick_leaves["balance"]
-                            + leaves.annual_leaves["balance"],
+                            (
+                                int(leaves.casual_leaves["balance"])
+                                + int(leaves.sick_leaves["balance"])
+                                + int(leaves.annual_leaves["balance"])
+                            )
                         ),
                     ]
                     table_data.append(row_data)
@@ -2079,11 +2172,14 @@ class UpdateCompanyNameView(APIView):
                 record = client.objects.get(email=user)
                 record.company_name = new_company_name
                 record.save()
-                return Response(status=status.HTTP_200_OK)
+                return Response(
+                    {"message": "Company name is successfully updated"},
+                    status=status.HTTP_200_OK,
+                )
             except client.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
-            except:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(
                 {"error": "Invalid data provided"}, status=status.HTTP_400_BAD_REQUEST
@@ -2134,11 +2230,13 @@ class UploadPictureView(APIView):
             try:
                 record.save()
                 return Response(
-                    {"message": "Picture uploaded successfully"},
+                    {"message": "Profile picture is successfully updated"},
                     status=status.HTTP_201_CREATED,
                 )
             except ValidationError as e:
                 return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(
                 {"error": "No picture provided"}, status=status.HTTP_400_BAD_REQUEST
@@ -2197,7 +2295,8 @@ class UpdatePasswordView(APIView):
             record.set_password(new_password)
             record.save()
             return Response(
-                {"message": "Password updated successfully"}, status=status.HTTP_200_OK
+                {"message": "Password is successfully updated"},
+                status=status.HTTP_200_OK,
             )
         else:
             return Response(
@@ -2267,19 +2366,15 @@ class Time_Tracking(APIView):
                                     ),
                                     "check_in": openapi.Schema(
                                         type=openapi.TYPE_STRING,
-                                        format=openapi.FORMAT_DATETIME,
                                     ),
                                     "check_out": openapi.Schema(
                                         type=openapi.TYPE_STRING,
-                                        format=openapi.FORMAT_DATETIME,
                                     ),
                                     "hours_worked": openapi.Schema(
                                         type=openapi.TYPE_STRING,
-                                        format=openapi.FORMAT_DATETIME,
                                     ),
                                     "over_time": openapi.Schema(
                                         type=openapi.TYPE_STRING,
-                                        format=openapi.FORMAT_DATETIME,
                                     ),
                                     "status": openapi.Schema(
                                         type=openapi.TYPE_OBJECT,
@@ -2363,7 +2458,7 @@ class Time_Tracking(APIView):
         else:
             return Response(
                 {"employees": serialized_available_employees, "time_sheet": {}},
-                status=status.HTTP_200_OK,
+                status=status.HTTP_206_PARTIAL_CONTENT,
             )
 
 
@@ -2384,7 +2479,7 @@ class Invoice_Payments(APIView):
                 "payment_status",
                 in_=openapi.IN_QUERY,
                 type=openapi.TYPE_STRING,
-                enum=["Pending", "Processing", "Paid"],
+                enum=["pending", "processing", "paid"],
                 required=True,
             ),
         ],
@@ -2570,8 +2665,10 @@ class Invoice_Payments(APIView):
                     notifi.description = f"employee invoice has been {new_pay_status}"
                     notifi.save()
 
-                except:
-                    return Response(status=status.HTTP_400_BAD_REQUEST)
+                except Exception as e:
+                    return Response(
+                        {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+                    )
             elif category == "other_payment":
                 try:
                     to_update_invoice_payments = other_payment.objects.get(id=id)
@@ -2585,11 +2682,16 @@ class Invoice_Payments(APIView):
                     notifi.description = f"other invoice has been {new_pay_status}"
                     notifi.save()
 
-                except:
-                    return Response(status=status.HTTP_400_BAD_REQUEST)
-            return Response(status=status.HTTP_200_OK)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+                except Exception as e:
+                    return Response(
+                        {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+                    )
+            return Response(
+                {"message": f"One new invoice is {new_pay_status}"},
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -2833,11 +2935,18 @@ class Notifications(APIView):
                 }
                 noti_array.append(record)
             if policies:
-                record = {
-                    "type": "Policy",
-                    "description": f"{policies.count()} new policies have been added.",
-                    "date": policies[0].created_at.date(),
-                }
+                if policies.count() == 1:
+                    record = {
+                        "type": "Policy",
+                        "description": f"1 new policy have been added.",
+                        "date": policies[0].created_at.date(),
+                    }
+                else:
+                    record = {
+                        "type": "Policy",
+                        "description": f"{policies.count()} new policies have been added.",
+                        "date": policies[0].created_at.date(),
+                    }
                 noti_array.append(record)
 
         elif user.role == "client":
