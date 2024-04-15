@@ -1394,13 +1394,23 @@ class Leave_Request(APIView):
                     status="added",
                     description=f"{emp_data.username} {result.leave_type} leave request is pending",
                 )
-                return Response(
-                    {
-                        "message": f"{result.leave_type} leave request is pending",
-                        "id": result.id,
-                    },
-                    status=status.HTTP_201_CREATED,
-                )
+                if result.attachment:
+                    return Response(
+                        {
+                            "message": f"{result.leave_type} leave request is pending",
+                            "id": result.id,
+                            "attachment":result.attachment.url
+                        },
+                        status=status.HTTP_201_CREATED,
+                    )
+                else:
+                    return Response(
+                        {
+                            "message": f"{result.leave_type} leave request is pending",
+                            "id": result.id,
+                        },
+                        status=status.HTTP_201_CREATED,
+                    )
             except ValidationError as e:
                 return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
