@@ -4128,7 +4128,7 @@ class Company_Contract(APIView):
                 openapi.IN_QUERY,
                 type=openapi.TYPE_STRING,
                 enum=["client", "employee"],
-                default="clients",
+                default="client",
             ),
             openapi.Parameter(
                 "Authorization",
@@ -4177,7 +4177,7 @@ class Company_Contract(APIView):
         posted_data = request.data
         get_status = request.query_params.get("status")
         if get_status:
-            if get_status == "clients":
+            if get_status == "client":
                 try:
                     clnt=client.objects.get(client_id=posted_data["client_id"])
                     posted_data["client_id"]=clnt.email
@@ -4211,7 +4211,7 @@ class Company_Contract(APIView):
                         {"error": str(e)},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-            elif get_status == "employees":
+            elif get_status == "employee":
                 try:
                     emp=employee.objects.get(employee_id=posted_data["employee_id"])
                     posted_data["employee_id"]=emp.email
