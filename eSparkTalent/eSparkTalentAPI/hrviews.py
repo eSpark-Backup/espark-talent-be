@@ -310,7 +310,7 @@ class Add_Employee(APIView):
                         benefits={},
                     )
                     return Response(
-                        {"message": f"{emp.first_name} {emp.last_name} is added successfully", "id":emp.id}, status=status.HTTP_201_CREATED
+                        {"message": f"{emp.first_name} {emp.last_name} is added successfully", "id":emp.id, "image":emp.image.url, "resume":emp.resume.url}, status=status.HTTP_201_CREATED
                     )
                 except ValidationError as e:
                     return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
@@ -451,7 +451,7 @@ class Add_Client(APIView):
                         password=password,
                     )
                     return Response(
-                        {"message": f"{clnt.first_name} {clnt.last_name} is added successfully", "id":clnt.id}, status=status.HTTP_201_CREATED
+                        {"message": f"{clnt.first_name} {clnt.last_name} is added successfully", "id":clnt.id, "image":clnt.image.url}, status=status.HTTP_201_CREATED
                     )
                 except ValidationError as e:
                     return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
@@ -666,7 +666,7 @@ class Employee_Invoice(APIView):
                         description=f"Invoice is added for {employee_data.first_name} {employee_data.last_name}",
                     )
                     return Response(
-                        {"message": "One new invoice is added", "id":emp_inv.id}, status=status.HTTP_201_CREATED
+                        {"message": "One new invoice is added", "id":emp_inv.id, "invoice":emp_inv.invoice.url}, status=status.HTTP_201_CREATED
                     )
                 except ValidationError as e:
                     return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
@@ -957,7 +957,7 @@ class Other_Payment(APIView):
                     description=f"Invoice is added for {oth_pay.invoice_reference}",
                 )
                 return Response(
-                    {"message": "One new invoice is added", "id": oth_pay.id},  status=status.HTTP_201_CREATED
+                    {"message": "One new invoice is added", "id": oth_pay.id, "invoice":oth_pay.invoice.url},  status=status.HTTP_201_CREATED
                 )
             except ValidationError as e:
                 return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
@@ -2246,7 +2246,7 @@ class Update_Emp_Profile_Pic(APIView):
             return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"message":"Profile picture updated successfully"},status=status.HTTP_200_OK)
+        return Response({"message":"Profile picture updated successfully", "image":emp_record.image.url},status=status.HTTP_200_OK)
 
 
 @authentication_classes([JWTAuthentication])
@@ -3257,7 +3257,7 @@ class Hr_Client(APIView):
             client_record.save()
         except ValidationError as e:
             return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"message":"Information updated successfully"},status=status.HTTP_200_OK)
+        return Response({"message":"Information updated successfully", "image":client_record.image.url},status=status.HTTP_200_OK)
 
 
 @authentication_classes([JWTAuthentication])
@@ -3381,20 +3381,20 @@ class Company_Settings(APIView):
                         {"error": str(e)},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-                return Response({"message":"Company settings are successfully updated"},status=status.HTTP_200_OK)
+                return Response({"message":"Company settings are successfully updated", "image":comp_data.image.url},status=status.HTTP_200_OK)
             except Exception as e:
                 return Response({"error": str(e)},status=status.HTTP_400_BAD_REQUEST)
         else:
             serializer = CompanyDataSerializer(data=request.data)
             if serializer.is_valid():
                 try:
-                    company_data.objects.create(
+                    comp_data=company_data.objects.create(
                         company_name=serializer.validated_data["company_name"],
                         company_email=serializer.validated_data["company_email"],
                         website_url=serializer.validated_data["website_url"],
                         image=serializer.validated_data["image"],
                     )
-                    return Response({"message":"Company settings are successfully added"},status=status.HTTP_201_CREATED)
+                    return Response({"message":"Company settings are successfully added", "image":comp_data.image.url},status=status.HTTP_201_CREATED)
                 except ValidationError as e:
                     return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
                 except:
@@ -3581,7 +3581,7 @@ class Accounts(APIView):
                             password=password,
                         )
 
-                        return Response({"message":"Account has been added successfully", "id":acc_n_perm.id},status=status.HTTP_201_CREATED)
+                        return Response({"message":"Account has been added successfully", "id":acc_n_perm.id, "image":acc_n_perm.image.url},status=status.HTTP_201_CREATED)
                     except ValidationError as e:
                         return Response(
                             {"error": e}, status=status.HTTP_400_BAD_REQUEST
@@ -4004,7 +4004,7 @@ class Policies(APIView):
                     client=False,
                 )
                 return Response(
-                    {"message": "New policy has been added successfully", "id":pol.id}, status=status.HTTP_201_CREATED
+                    {"message": "New policy has been added successfully", "id":pol.id, "policy_doc":pol.policy_doc.url}, status=status.HTTP_201_CREATED
                 )
             except ValidationError as e:
                 return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
@@ -4098,19 +4098,21 @@ class Policies_Edit(APIView):
     )
     def patch(self, request, *args, **kwargs):
         policy_ids_array = json.loads(request.body)
-
-        for policy_id_json in policy_ids_array["data"]:
-            try:
-                policy_instance = policy.objects.get(id=policy_id_json["id"])
-            except policy.DoesNotExist:
-                return Response(
-                    {"error": "Policy not found"}, status=status.HTTP_404_NOT_FOUND
-                )
-            del policy_id_json["id"]
-            for key in policy_id_json:
-                setattr(policy_instance, key, policy_id_json[key])
-            policy_instance.save()
-        return Response({"message":"Changes have been saved successfully"},status=status.HTTP_200_OK)
+        try:
+            for policy_id_json in policy_ids_array["data"]:
+                try:
+                    policy_instance = policy.objects.get(id=policy_id_json["id"])
+                except policy.DoesNotExist:
+                    return Response(
+                        {"error": "Policy not found"}, status=status.HTTP_404_NOT_FOUND
+                    )
+                del policy_id_json["id"]
+                for key in policy_id_json:
+                    setattr(policy_instance, key, policy_id_json[key])
+                policy_instance.save()
+            return Response({"message":"Changes have been saved successfully"},status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -4126,7 +4128,7 @@ class Company_Contract(APIView):
                 openapi.IN_QUERY,
                 type=openapi.TYPE_STRING,
                 enum=["client", "employee"],
-                default="clients",
+                default="client",
             ),
             openapi.Parameter(
                 "Authorization",
@@ -4195,7 +4197,7 @@ class Company_Contract(APIView):
                             description=f"{cl_contract.contract_name} contract is added",
                         )
                         return Response(
-                            {"message": "One new contract has been added to company contracts", "id":cl_contract.id},
+                            {"message": "One new contract has been added to company contracts", "id":cl_contract.id, "contract_doc":cl_contract.contract_doc.url},
                             status=status.HTTP_201_CREATED,
                         )
                     else:
@@ -4229,7 +4231,7 @@ class Company_Contract(APIView):
                             description=f"{emp_contract.contract_name} contract is added",
                         )
                         return Response(
-                            {"message": "One new contract has been added to company contracts", "id":emp_contract.id},
+                            {"message": "One new contract has been added to company contracts", "id":emp_contract.id, "contract_doc":emp_contract.contract_doc.url},
                             status=status.HTTP_201_CREATED,
                         )
                     else:
@@ -4294,43 +4296,48 @@ class Company_Contract(APIView):
     def get(self, request, *args, **kwargs):
         get_status = request.query_params.get("status")
         if get_status:
-            if get_status == "clients":
-                contracts = client_contract.objects.all()
-                client_cont = []
-                for contract in contracts:
-                    record = {
-                        "id": contract.id,
-                        "contract_name": contract.contract_name,
-                        "client_id": contract.client_id,
-                        "date": contract.date,
-                        "contract_doc": contract.contract_doc.url,
-                    }
-                    client_cont.append(record)
-                if not client_cont:
-                    return Response(
-                        {"message": "No client contracts available"},
-                        status=status.HTTP_204_NO_CONTENT,
-                    )
-                return Response(client_cont, status=status.HTTP_200_OK)
+            try:
+                if get_status == "clients":
+                    contracts = client_contract.objects.all()
+                    client_cont = []
+                    for contract in contracts:
+                        record = {
+                            "id": contract.id,
+                            "contract_name": contract.contract_name,
+                            "client_id": contract.client_id,
+                            "date": contract.date,
+                            "contract_doc": contract.contract_doc.url,
+                        }
+                        client_cont.append(record)
+                    if not client_cont:
+                        return Response(
+                            {"message": "No client contracts available"},
+                            status=status.HTTP_204_NO_CONTENT,
+                        )
+                    return Response(client_cont, status=status.HTTP_200_OK)
 
-            elif get_status == "employees":
-                contracts = employee_contract.objects.all()
-                employee_cont = []
-                for contract in contracts:
-                    record = {
-                        "id": contract.id,
-                        "contract_name": contract.contract_name,
-                        "employee_id": contract.employee_id,
-                        "date": contract.date,
-                        "contract_doc": contract.contract_doc.url,
-                    }
-                employee_cont.append(record)
-                if not employee_cont:
-                    return Response(
-                        {"message": "No employee contracts available"},
-                        status=status.HTTP_204_NO_CONTENT,
-                    )
-                return Response(employee_cont, status=status.HTTP_200_OK)
+                elif get_status == "employees":
+                    contracts = employee_contract.objects.all()
+                    employee_cont = []
+                    for contract in contracts:
+                        record = {
+                            "id": contract.id,
+                            "contract_name": contract.contract_name,
+                            "employee_id": contract.employee_id,
+                            "date": contract.date,
+                            "contract_doc": contract.contract_doc.url,
+                        }
+                        employee_cont.append(record)
+                    if not employee_cont:
+                        return Response(
+                            {"message": "No employee contracts available"},
+                            status=status.HTTP_204_NO_CONTENT,
+                        )
+                    return Response(employee_cont, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response(
+                    {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+                )                
         return Response(
             {"error": "Invalid status parameter"}, status=status.HTTP_400_BAD_REQUEST
         )
@@ -4504,7 +4511,7 @@ class Offshore_Contract(APIView):
                     description=f"{off_cont.contract_name} contract is added",
                 )
                 return Response(
-                    {"message": "One new contract has been added to offshore contracts", "id":off_cont.id},
+                    {"message": "One new contract has been added to offshore contracts", "id":off_cont.id, "client_email":off_cont.client_id, "employee_email":off_cont.employee_id, "contract_doc":off_cont.contract_doc.url},
                     status=status.HTTP_201_CREATED,
                 )
             else:

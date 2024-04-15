@@ -2230,7 +2230,7 @@ class UploadPictureView(APIView):
             try:
                 record.save()
                 return Response(
-                    {"message": "Profile picture is successfully updated"},
+                    {"message": "Profile picture is successfully updated", "image":record.image.url},
                     status=status.HTTP_201_CREATED,
                 )
             except ValidationError as e:
