@@ -2627,7 +2627,12 @@ class Interview_Schedule(APIView):
         operation_id="1",
     )
     def get(self, request, *args, **kwargs):
-        interview_records = interview_schedule.objects.all()
+        record_id = request.query_params.get("id")
+        try:
+            client_data = client.objects.get(id=record_id)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        interview_records = interview_schedule.objects.filter(client_id=client_data.email)
 
         if interview_records:
             records = []
