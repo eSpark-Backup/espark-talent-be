@@ -472,7 +472,7 @@ class Add_Client(APIView):
 @permission_classes([IsAuthenticated])
 class Add_Asset(APIView):
     @swagger_auto_schema(
-        tags=["Employees : Add Asset"],
+        tags=["Employee : Add Asset"],
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
@@ -530,7 +530,7 @@ class Add_Asset(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
-        tags=["Employee : Assets"],
+        tags=["Employee : Add Asset"],
         manual_parameters=[
             openapi.Parameter(
                 "id",
@@ -1558,6 +1558,7 @@ class Hr_Employee(APIView):
                             items=openapi.Items(
                                 type=openapi.TYPE_OBJECT,
                                 properties={
+                                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                                     "gadget": openapi.Schema(type=openapi.TYPE_STRING),
                                     "asset_id": openapi.Schema(
                                         type=openapi.TYPE_STRING
@@ -1732,6 +1733,7 @@ class Hr_Employee(APIView):
                 records = []
                 for rec in assets:
                     record = {
+                        "id": rec.id,
                         "gadget": rec.gadget,
                         "asset_id": rec.asset_id,
                         "assigned_date": rec.assigned_date,
@@ -2388,6 +2390,13 @@ class Start_Hiring(APIView):
                 country=serializer.validated_data["country"],
                 hiring_start_date=serializer.validated_data["hiring_start_date"],
                 hiring_end_date=serializer.validated_data["hiring_end_date"],
+            )
+            notifications.objects.create(
+                email=talent_email,
+                ref_id=hire_req.id,
+                notification_type="hiring_request",
+                status="added",
+                description="A new hiring request created.",
             )
             return Response(
                 {"message": "One new request is successfully added to hiring", "id":hire_req.id}, status=status.HTTP_201_CREATED
@@ -4705,7 +4714,7 @@ class Invoices(APIView):
                     "email": data.email,
                     "is_active": user.is_active,
                 }
-            client_data.append(record)
+                client_data.append(record)
             if not client_data:
                 return Response(
                     {"message": "No invoices available"},
