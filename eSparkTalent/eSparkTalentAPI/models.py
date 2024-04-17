@@ -101,7 +101,7 @@ def upload_file(name):
     if name:
         date=datetime.now().strftime("%m-%d-%Y")
         time=datetime.now().strftime("%H-%M-%S")
-        new_name=name+"_"+date+"_"+time
+        new_name=date+"_"+time+"_"+name
         return new_name
 
 class employee(models.Model):
