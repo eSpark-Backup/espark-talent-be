@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.core.validators import FileExtensionValidator
 from django.core.exceptions import ValidationError
 import magic
-
+from datetime import datetime
 import os
 
 
@@ -97,6 +97,13 @@ def valid_file_type(file):
         raise ValidationError("File too large. Size should not exceed 5 MB.")
 
 
+def upload_file(name):
+    if name:
+        date=datetime.now().strftime("%m-%d-%Y")
+        time=datetime.now().strftime("%H-%M-%S")
+        new_name=name+"_"+date+"_"+time
+        return new_name
+
 class employee(models.Model):
     id = models.AutoField(primary_key=True)
     employee_id = models.CharField(max_length=15, unique=True, default="")
@@ -132,15 +139,34 @@ class employee(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            file_content = self.image.file.seek(0)
-            valid_imgfile_type(self.image.file)
-        except ValidationError as e:
-            raise ValidationError(e)
-        try:
-            file_content = self.resume.file.seek(0)
-            valid_pdffile_type(self.resume.file)
-        except ValidationError as e:
-            raise ValidationError(e)
+            emp=employee.objects.get(id=self.id)
+            if self.image != emp.image:
+                try:
+                    file_content = self.image.file.seek(0)
+                    valid_imgfile_type(self.image.file)
+                    self.image.name=upload_file(self.image.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
+            if self.resume != emp.resume:
+                try:
+                    file_content = self.resume.file.seek(0)
+                    valid_pdffile_type(self.resume.file)
+                    self.resume.name=upload_file(self.resume.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
+        except employee.DoesNotExist:
+            try:
+                file_content = self.image.file.seek(0)
+                valid_imgfile_type(self.image.file)
+                self.image.name=upload_file(self.image.name)
+            except ValidationError as e:
+                raise ValidationError(e)
+            try:
+                file_content = self.resume.file.seek(0)
+                valid_pdffile_type(self.resume.file)
+                self.resume.name=upload_file(self.resume.name)
+            except ValidationError as e:
+                raise ValidationError(e)
 
         super().save(*args, **kwargs)
 
@@ -169,10 +195,21 @@ class client(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            file_content = self.image.file.seek(0)
-            valid_imgfile_type(self.image.file)
-        except ValidationError as e:
-            raise ValidationError(e)
+            clnt=client.objects.get(id=self.id)
+            if self.image != clnt.image:
+                try:
+                    file_content = self.image.file.seek(0)
+                    valid_imgfile_type(self.image.file)
+                    self.image.name=upload_file(self.image.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
+        except client.DoesNotExist:
+            try:
+                file_content = self.image.file.seek(0)
+                valid_imgfile_type(self.image.file)
+                self.image.name=upload_file(self.image.name)
+            except ValidationError as e:
+                raise ValidationError(e)
 
         super().save(*args, **kwargs)
 
@@ -291,11 +328,22 @@ class leave_request(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            if self.attachment:
+            lr=leave_request.objects.get(id=self.id)
+            if self.attachment != lr.attachment:
+                try:
+                    file_content = self.attachment.file.seek(0)
+                    valid_pdffile_type(self.attachment.file)
+                    self.attachment.name=upload_file(self.attachment.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
+        except leave_request.DoesNotExist:
+            try:
                 file_content = self.attachment.file.seek(0)
                 valid_pdffile_type(self.attachment.file)
-        except ValidationError as e:
-            raise ValidationError(e)
+                self.attachment.name=upload_file(self.attachment.name)
+            except ValidationError as e:
+                raise ValidationError(e)
+
         super().save(*args, **kwargs)
 
 
@@ -375,10 +423,21 @@ class employee_invoice(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            file_content = self.invoice.file.seek(0)
-            valid_pdffile_type(self.invoice.file)
-        except ValidationError as e:
-            raise ValidationError(e)
+            emp_inv=employee_invoice.objects.get(id=self.id)
+            if self.invoice != emp_inv.invoice:
+                try:
+                    file_content = self.invoice.file.seek(0)
+                    valid_pdffile_type(self.invoice.file)
+                    self.invoice.name=upload_file(self.invoice.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
+        except employee_invoice.DoesNotExist:
+            try:
+                file_content = self.invoice.file.seek(0)
+                valid_pdffile_type(self.invoice.file)
+                self.invoice.name=upload_file(self.invoice.name)
+            except ValidationError as e:
+                raise ValidationError(e)
         super().save(*args, **kwargs)
 
 
@@ -408,10 +467,21 @@ class other_payment(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            file_content = self.invoice.file.seek(0)
-            valid_pdffile_type(self.invoice.file)
-        except ValidationError as e:
-            raise ValidationError(e)
+            oth_pay=other_payment.objects.get(id=self.id)
+            if self.invoice != oth_pay.invoice:
+                try:
+                    file_content = self.invoice.file.seek(0)
+                    valid_pdffile_type(self.invoice.file)
+                    self.invoice.name=upload_file(self.invoice.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
+        except other_payment.DoesNotExist:
+            try:
+                file_content = self.invoice.file.seek(0)
+                valid_pdffile_type(self.invoice.file)
+                self.invoice.name=upload_file(self.invoice.name)
+            except ValidationError as e:
+                raise ValidationError(e)
         super().save(*args, **kwargs)
 
 
@@ -433,10 +503,21 @@ class client_contract(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            file_content = self.contract_doc.file.seek(0)
-            valid_pdffile_type(self.contract_doc.file)
-        except ValidationError as e:
-            raise ValidationError(e)
+            clnt_cont=client_contract.objects.get(id=self.id)
+            if self.contract_doc != clnt_cont.contract_doc:
+                try:
+                    file_content = self.contract_doc.file.seek(0)
+                    valid_pdffile_type(self.contract_doc.file)
+                    self.contract_doc.name=upload_file(self.contract_doc.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
+        except client_contract.DoesNotExist:
+            try:
+                file_content = self.contract_doc.file.seek(0)
+                valid_pdffile_type(self.contract_doc.file)
+                self.contract_doc.name=upload_file(self.contract_doc.name)
+            except ValidationError as e:
+                raise ValidationError(e)
         super().save(*args, **kwargs)
 
 
@@ -458,10 +539,21 @@ class employee_contract(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            file_content = self.contract_doc.file.seek(0)
-            valid_pdffile_type(self.contract_doc.file)
-        except ValidationError as e:
-            raise ValidationError(e)
+            emp_cont=employee_contract.objects.get(id=self.id)
+            if self.contract_doc != emp_cont.contract_doc:
+                try:
+                    file_content = self.contract_doc.file.seek(0)
+                    valid_pdffile_type(self.contract_doc.file)
+                    self.contract_doc.name=upload_file(self.contract_doc.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
+        except employee_contract.DoesNotExist:
+            try:
+                file_content = self.contract_doc.file.seek(0)
+                valid_pdffile_type(self.contract_doc.file)
+                self.contract_doc.name=upload_file(self.contract_doc.name)
+            except ValidationError as e:
+                raise ValidationError(e)
         super().save(*args, **kwargs)
     
 class offshore_contracts(models.Model):
@@ -483,10 +575,21 @@ class offshore_contracts(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            file_content = self.contract_doc.file.seek(0)
-            valid_pdffile_type(self.contract_doc.file)
-        except ValidationError as e:
-            raise ValidationError(e)
+            off_cont=offshore_contracts.objects.get(id=self.id)
+            if self.contract_doc != off_cont.contract_doc:
+                try:
+                    file_content = self.contract_doc.file.seek(0)
+                    valid_pdffile_type(self.contract_doc.file)
+                    self.contract_doc.name=upload_file(self.contract_doc.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
+        except offshore_contracts.DoesNotExist:
+            try:
+                file_content = self.contract_doc.file.seek(0)
+                valid_pdffile_type(self.contract_doc.file)
+                self.contract_doc.name=upload_file(self.contract_doc.name)
+            except ValidationError as e:
+                raise ValidationError(e)
         super().save(*args, **kwargs)
 
 
@@ -541,10 +644,21 @@ class company_data(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            file_content = self.image.file.seek(0)
-            valid_imgfile_type(self.image.file)
-        except ValidationError as e:
-            raise ValidationError(e)
+            comp_data=company_data.objects.get(id=self.id)
+            if self.image != comp_data.image:
+                try:
+                    file_content = self.image.file.seek(0)
+                    valid_imgfile_type(self.image.file)
+                    self.image.name=upload_file(self.image.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
+        except company_data.DoesNotExist:
+            try:
+                file_content = self.image.file.seek(0)
+                valid_imgfile_type(self.image.file)
+                self.image.name=upload_file(self.image.name)
+            except ValidationError as e:
+                raise ValidationError(e)
 
         super().save(*args, **kwargs)
 
@@ -566,10 +680,21 @@ class policy(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            file_content = self.policy_doc.file.seek(0)
-            valid_pdffile_type(self.policy_doc.file)
-        except ValidationError as e:
-            raise ValidationError(e)
+            pol=policy.objects.get(id=self.id)
+            if self.policy_doc != pol.policy_doc:
+                try:
+                    file_content = self.policy_doc.file.seek(0)
+                    valid_pdffile_type(self.policy_doc.file)
+                    self.policy_doc.name=upload_file(self.policy_doc.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
+        except policy.DoesNotExist:
+            try:
+                file_content = self.policy_doc.file.seek(0)
+                valid_pdffile_type(self.policy_doc.file)
+                self.policy_doc.name=upload_file(self.policy_doc.name)
+            except ValidationError as e:
+                raise ValidationError(e)
         super().save(*args, **kwargs)
     
 class account_n_persmission(models.Model):
@@ -595,10 +720,22 @@ class account_n_persmission(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            file_content = self.image.file.seek(0)
-            valid_imgfile_type(self.image.file)
-        except ValidationError as e:
-            raise ValidationError(e)
+            a_n_p=account_n_persmission.objects.get(id=self.id)
+            if self.image != a_n_p.image:
+                try:
+                    file_content = self.image.file.seek(0)
+                    valid_imgfile_type(self.image.file)
+                    self.image.name=upload_file(self.image.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
+        except account_n_persmission.DoesNotExist:
+            try:
+                file_content = self.image.file.seek(0)
+                valid_imgfile_type(self.image.file)
+                self.image.name=upload_file(self.image.name)
+            except ValidationError as e:
+                raise ValidationError(e)
+
         super().save(*args, **kwargs)
         
 class notifications(models.Model):

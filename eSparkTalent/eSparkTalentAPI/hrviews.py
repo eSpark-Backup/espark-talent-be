@@ -2389,6 +2389,13 @@ class Start_Hiring(APIView):
                 hiring_start_date=serializer.validated_data["hiring_start_date"],
                 hiring_end_date=serializer.validated_data["hiring_end_date"],
             )
+            notifications.objects.create(
+                email=talent_email,
+                ref_id=hire_req.id,
+                notification_type="hiring_request",
+                status="added",
+                description="A new hiring request created.",
+            )
             return Response(
                 {"message": "One new request is successfully added to hiring", "id":hire_req.id}, status=status.HTTP_201_CREATED
             )
@@ -4705,7 +4712,7 @@ class Invoices(APIView):
                     "email": data.email,
                     "is_active": user.is_active,
                 }
-            client_data.append(record)
+                client_data.append(record)
             if not client_data:
                 return Response(
                     {"message": "No invoices available"},
