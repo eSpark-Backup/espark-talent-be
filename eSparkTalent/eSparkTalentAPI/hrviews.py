@@ -2770,6 +2770,7 @@ class Onboarding(APIView):
                 joining_date=serializer.validated_data["joining_date"],
                 notice_period=serializer.validated_data["notice_period"],
                 salary=serializer.validated_data["salary"],
+                employment_term=serializer.validated_data["employment_term"],
                 benefits=request.data.get("benefits"),
             )
             notifications.objects.create(

@@ -2599,7 +2599,7 @@ class Invoice_Payments(APIView):
                     "payment_status": pay_status,
                     "download": data.invoice.url,
                 }
-            other_pays_records.append(record)
+                other_pays_records.append(record)
             records["other_payments"] = other_pays_records
         else:
             no_val += 1
