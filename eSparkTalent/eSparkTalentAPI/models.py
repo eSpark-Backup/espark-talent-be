@@ -99,9 +99,9 @@ def valid_file_type(file):
 
 def upload_file(name):
     if name:
-        date=datetime.now().strftime("%m-%d-%Y")
-        time=datetime.now().strftime("%H-%M-%S")
-        new_name=date+"_"+time+"_"+name
+        date = datetime.now().strftime("%m-%d-%Y")
+        time = datetime.now().strftime("%H-%M-%S")
+        new_name = date + "_" + time + "_" + name
         return new_name
 
 
@@ -145,48 +145,48 @@ class employee(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            emp=employee.objects.get(id=self.id)
+            emp = employee.objects.get(id=self.id)
             if self.emergency_contact != emp.emergency_contact:
-                error=valid_json_check(self.emergency_contact)
+                error = valid_json_check(self.emergency_contact)
                 if error:
                     raise ValidationError(error)
             if self.punch_timings != emp.punch_timings:
-                error=valid_json_check(self.punch_timings)
+                error = valid_json_check(self.punch_timings)
                 if error:
                     raise ValidationError(error)
             if self.image != emp.image:
                 try:
                     file_content = self.image.file.seek(0)
                     valid_imgfile_type(self.image.file)
-                    self.image.name=upload_file(self.image.name)
+                    self.image.name = upload_file(self.image.name)
                 except ValidationError as e:
                     raise ValidationError(e)
             if self.resume != emp.resume:
                 try:
                     file_content = self.resume.file.seek(0)
                     valid_pdffile_type(self.resume.file)
-                    self.resume.name=upload_file(self.resume.name)
+                    self.resume.name = upload_file(self.resume.name)
                 except ValidationError as e:
                     raise ValidationError(e)
         except employee.DoesNotExist:
-            if self.emergency_contact or self.emergency_contact==0:
-                error=valid_json_check(self.emergency_contact)
+            if self.emergency_contact or self.emergency_contact == 0:
+                error = valid_json_check(self.emergency_contact)
                 if error:
                     raise ValidationError(error)
-            if self.punch_timings or self.punch_timings==0:
-                error=valid_json_check(self.punch_timings)
+            if self.punch_timings or self.punch_timings == 0:
+                error = valid_json_check(self.punch_timings)
                 if error:
                     raise ValidationError(error)
             try:
                 file_content = self.image.file.seek(0)
                 valid_imgfile_type(self.image.file)
-                self.image.name=upload_file(self.image.name)
+                self.image.name = upload_file(self.image.name)
             except ValidationError as e:
                 raise ValidationError(e)
             try:
                 file_content = self.resume.file.seek(0)
                 valid_pdffile_type(self.resume.file)
-                self.resume.name=upload_file(self.resume.name)
+                self.resume.name = upload_file(self.resume.name)
             except ValidationError as e:
                 raise ValidationError(e)
 
@@ -217,19 +217,19 @@ class client(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            clnt=client.objects.get(id=self.id)
+            clnt = client.objects.get(id=self.id)
             if self.image != clnt.image:
                 try:
                     file_content = self.image.file.seek(0)
                     valid_imgfile_type(self.image.file)
-                    self.image.name=upload_file(self.image.name)
+                    self.image.name = upload_file(self.image.name)
                 except ValidationError as e:
                     raise ValidationError(e)
         except client.DoesNotExist:
             try:
                 file_content = self.image.file.seek(0)
                 valid_imgfile_type(self.image.file)
-                self.image.name=upload_file(self.image.name)
+                self.image.name = upload_file(self.image.name)
             except ValidationError as e:
                 raise ValidationError(e)
 
@@ -254,13 +254,14 @@ class hiring_request(models.Model):
         return f"{self.client_id} - {self.id}"
 
     def save(self, *args, **kwargs):
-        if self.salary_range or self.salary_range==0:
-            error=valid_json_check(self.salary_range)
+        if self.salary_range or self.salary_range == 0:
+            error = valid_json_check(self.salary_range)
             if error:
                 raise ValidationError(error)
 
         super().save(*args, **kwargs)
-    
+
+
 class interview_schedule(models.Model):
     status = [
         ("short_list", "short_list"),
@@ -305,8 +306,8 @@ class onboarding(models.Model):
         return f"{self.client_id} - {self.id}"
 
     def save(self, *args, **kwargs):
-        if self.benefits or self.benefits==0:
-            error=valid_json_check(self.benefits)
+        if self.benefits or self.benefits == 0:
+            error = valid_json_check(self.benefits)
             if error:
                 raise ValidationError(error)
 
@@ -366,19 +367,19 @@ class leave_request(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            lr=leave_request.objects.get(id=self.id)
+            lr = leave_request.objects.get(id=self.id)
             if self.attachment != lr.attachment:
                 try:
                     file_content = self.attachment.file.seek(0)
                     valid_pdffile_type(self.attachment.file)
-                    self.attachment.name=upload_file(self.attachment.name)
+                    self.attachment.name = upload_file(self.attachment.name)
                 except ValidationError as e:
                     raise ValidationError(e)
         except leave_request.DoesNotExist:
             try:
                 file_content = self.attachment.file.seek(0)
                 valid_pdffile_type(self.attachment.file)
-                self.attachment.name=upload_file(self.attachment.name)
+                self.attachment.name = upload_file(self.attachment.name)
             except ValidationError as e:
                 raise ValidationError(e)
 
@@ -447,7 +448,9 @@ class employee_invoice(models.Model):
     invoice_date = models.DateField()
     due_date = models.DateField()
     invoice_amount = models.IntegerField()
-    payment_status = models.CharField(max_length=15, choices=payment_status, default="pending")
+    payment_status = models.CharField(
+        max_length=15, choices=payment_status, default="pending"
+    )
     invoice = models.FileField(
         upload_to="invoices/employee_invoices/",
         validators=[pdf_ext_valid, valid_pdffile_type],
@@ -461,19 +464,19 @@ class employee_invoice(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            emp_inv=employee_invoice.objects.get(id=self.id)
+            emp_inv = employee_invoice.objects.get(id=self.id)
             if self.invoice != emp_inv.invoice:
                 try:
                     file_content = self.invoice.file.seek(0)
                     valid_pdffile_type(self.invoice.file)
-                    self.invoice.name=upload_file(self.invoice.name)
+                    self.invoice.name = upload_file(self.invoice.name)
                 except ValidationError as e:
                     raise ValidationError(e)
         except employee_invoice.DoesNotExist:
             try:
                 file_content = self.invoice.file.seek(0)
                 valid_pdffile_type(self.invoice.file)
-                self.invoice.name=upload_file(self.invoice.name)
+                self.invoice.name = upload_file(self.invoice.name)
             except ValidationError as e:
                 raise ValidationError(e)
         super().save(*args, **kwargs)
@@ -491,7 +494,9 @@ class other_payment(models.Model):
     invoice_date = models.DateField()
     due_date = models.DateField()
     invoice_amount = models.IntegerField()
-    payment_status = models.CharField(max_length=15, choices=payment_status, default="pending")
+    payment_status = models.CharField(
+        max_length=15, choices=payment_status, default="pending"
+    )
     invoice = models.FileField(
         upload_to="invoices/other_payments/",
         validators=[pdf_ext_valid, valid_pdffile_type],
@@ -505,19 +510,19 @@ class other_payment(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            oth_pay=other_payment.objects.get(id=self.id)
+            oth_pay = other_payment.objects.get(id=self.id)
             if self.invoice != oth_pay.invoice:
                 try:
                     file_content = self.invoice.file.seek(0)
                     valid_pdffile_type(self.invoice.file)
-                    self.invoice.name=upload_file(self.invoice.name)
+                    self.invoice.name = upload_file(self.invoice.name)
                 except ValidationError as e:
                     raise ValidationError(e)
         except other_payment.DoesNotExist:
             try:
                 file_content = self.invoice.file.seek(0)
                 valid_pdffile_type(self.invoice.file)
-                self.invoice.name=upload_file(self.invoice.name)
+                self.invoice.name = upload_file(self.invoice.name)
             except ValidationError as e:
                 raise ValidationError(e)
         super().save(*args, **kwargs)
@@ -541,19 +546,19 @@ class client_contract(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            clnt_cont=client_contract.objects.get(id=self.id)
+            clnt_cont = client_contract.objects.get(id=self.id)
             if self.contract_doc != clnt_cont.contract_doc:
                 try:
                     file_content = self.contract_doc.file.seek(0)
                     valid_pdffile_type(self.contract_doc.file)
-                    self.contract_doc.name=upload_file(self.contract_doc.name)
+                    self.contract_doc.name = upload_file(self.contract_doc.name)
                 except ValidationError as e:
                     raise ValidationError(e)
         except client_contract.DoesNotExist:
             try:
                 file_content = self.contract_doc.file.seek(0)
                 valid_pdffile_type(self.contract_doc.file)
-                self.contract_doc.name=upload_file(self.contract_doc.name)
+                self.contract_doc.name = upload_file(self.contract_doc.name)
             except ValidationError as e:
                 raise ValidationError(e)
         super().save(*args, **kwargs)
@@ -577,23 +582,24 @@ class employee_contract(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            emp_cont=employee_contract.objects.get(id=self.id)
+            emp_cont = employee_contract.objects.get(id=self.id)
             if self.contract_doc != emp_cont.contract_doc:
                 try:
                     file_content = self.contract_doc.file.seek(0)
                     valid_pdffile_type(self.contract_doc.file)
-                    self.contract_doc.name=upload_file(self.contract_doc.name)
+                    self.contract_doc.name = upload_file(self.contract_doc.name)
                 except ValidationError as e:
                     raise ValidationError(e)
         except employee_contract.DoesNotExist:
             try:
                 file_content = self.contract_doc.file.seek(0)
                 valid_pdffile_type(self.contract_doc.file)
-                self.contract_doc.name=upload_file(self.contract_doc.name)
+                self.contract_doc.name = upload_file(self.contract_doc.name)
             except ValidationError as e:
                 raise ValidationError(e)
         super().save(*args, **kwargs)
-    
+
+
 class offshore_contracts(models.Model):
     id = models.AutoField(primary_key=True)
     client_id = models.EmailField()
@@ -613,19 +619,19 @@ class offshore_contracts(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            off_cont=offshore_contracts.objects.get(id=self.id)
+            off_cont = offshore_contracts.objects.get(id=self.id)
             if self.contract_doc != off_cont.contract_doc:
                 try:
                     file_content = self.contract_doc.file.seek(0)
                     valid_pdffile_type(self.contract_doc.file)
-                    self.contract_doc.name=upload_file(self.contract_doc.name)
+                    self.contract_doc.name = upload_file(self.contract_doc.name)
                 except ValidationError as e:
                     raise ValidationError(e)
         except offshore_contracts.DoesNotExist:
             try:
                 file_content = self.contract_doc.file.seek(0)
                 valid_pdffile_type(self.contract_doc.file)
-                self.contract_doc.name=upload_file(self.contract_doc.name)
+                self.contract_doc.name = upload_file(self.contract_doc.name)
             except ValidationError as e:
                 raise ValidationError(e)
         super().save(*args, **kwargs)
@@ -665,12 +671,13 @@ class outsource_employees(models.Model):
         return f"{self.client_id} - {self.id}"
 
     def save(self, *args, **kwargs):
-        if self.benefits or self.benefits==0:
-            error=valid_json_check(self.benefits)
+        if self.benefits or self.benefits == 0:
+            error = valid_json_check(self.benefits)
             if error:
                 raise ValidationError(error)
 
         super().save(*args, **kwargs)
+
 
 class company_data(models.Model):
     id = models.AutoField(primary_key=True)
@@ -690,23 +697,24 @@ class company_data(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            comp_data=company_data.objects.get(id=self.id)
+            comp_data = company_data.objects.get(id=self.id)
             if self.image != comp_data.image:
                 try:
                     file_content = self.image.file.seek(0)
                     valid_imgfile_type(self.image.file)
-                    self.image.name=upload_file(self.image.name)
+                    self.image.name = upload_file(self.image.name)
                 except ValidationError as e:
                     raise ValidationError(e)
         except company_data.DoesNotExist:
             try:
                 file_content = self.image.file.seek(0)
                 valid_imgfile_type(self.image.file)
-                self.image.name=upload_file(self.image.name)
+                self.image.name = upload_file(self.image.name)
             except ValidationError as e:
                 raise ValidationError(e)
 
         super().save(*args, **kwargs)
+
 
 class policy(models.Model):
     id = models.AutoField(primary_key=True)
@@ -726,93 +734,95 @@ class policy(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            pol=policy.objects.get(id=self.id)
+            pol = policy.objects.get(id=self.id)
             if self.policy_doc != pol.policy_doc:
                 try:
                     file_content = self.policy_doc.file.seek(0)
                     valid_pdffile_type(self.policy_doc.file)
-                    self.policy_doc.name=upload_file(self.policy_doc.name)
+                    self.policy_doc.name = upload_file(self.policy_doc.name)
                 except ValidationError as e:
                     raise ValidationError(e)
         except policy.DoesNotExist:
             try:
                 file_content = self.policy_doc.file.seek(0)
                 valid_pdffile_type(self.policy_doc.file)
-                self.policy_doc.name=upload_file(self.policy_doc.name)
+                self.policy_doc.name = upload_file(self.policy_doc.name)
             except ValidationError as e:
                 raise ValidationError(e)
         super().save(*args, **kwargs)
-    
+
+
 class account_n_persmission(models.Model):
     id = models.AutoField(primary_key=True)
-    account_name=models.CharField(max_length=30, default='')
-    email=models.EmailField(default='')
-    password=models.BinaryField(default=b'')
+    account_name = models.CharField(max_length=30, default="")
+    email = models.EmailField(default="")
+    password = models.BinaryField(default=b"")
     image = models.ImageField(
         upload_to="accounts/profiles",
         validators=[img_ext_valid, valid_imgfile_type],
         default="",
     )
-    employee_perms=models.JSONField()
-    client_perms=models.JSONField()
-    leaves_perms=models.JSONField()
-    invoices_perms=models.JSONField()
-    policies_perms=models.JSONField()
+    employee_perms = models.JSONField()
+    client_perms = models.JSONField()
+    leaves_perms = models.JSONField()
+    invoices_perms = models.JSONField()
+    policies_perms = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return f"{self.account_name} - {self.id}"
 
     def save(self, *args, **kwargs):
         try:
-            a_n_p=account_n_persmission.objects.get(id=self.id)
+            a_n_p = account_n_persmission.objects.get(id=self.id)
             if self.client_perms != a_n_p.client_perms:
-                error=valid_json_check(self.client_perms)
+                error = valid_json_check(self.client_perms)
                 if error:
                     raise ValidationError(error)
             if self.employee_perms != a_n_p.employee_perms:
-                error=valid_json_check(self.employee_perms)
+                error = valid_json_check(self.employee_perms)
                 if error:
                     raise ValidationError(error)
             if self.leaves_perms != a_n_p.leaves_perms:
-                error=valid_json_check(self.leaves_perms)
+                error = valid_json_check(self.leaves_perms)
                 if error:
                     raise ValidationError(error)
             if self.invoices_perms != a_n_p.invoices_perms:
-                error=valid_json_check(self.invoices_perms)
+                error = valid_json_check(self.invoices_perms)
                 if error:
                     raise ValidationError(error)
             if self.policies_perms != a_n_p.policies_perms:
-                error=valid_json_check(self.policies_perms)
+                error = valid_json_check(self.policies_perms)
                 if error:
                     raise ValidationError(error)
             if self.image != a_n_p.image:
                 try:
                     file_content = self.image.file.seek(0)
                     valid_imgfile_type(self.image.file)
-                    self.image.name=upload_file(self.image.name)
+                    self.image.name = upload_file(self.image.name)
                 except ValidationError as e:
                     raise ValidationError(e)
         except account_n_persmission.DoesNotExist:
             try:
                 file_content = self.image.file.seek(0)
                 valid_imgfile_type(self.image.file)
-                self.image.name=upload_file(self.image.name)
+                self.image.name = upload_file(self.image.name)
             except ValidationError as e:
                 raise ValidationError(e)
 
         super().save(*args, **kwargs)
-        
+
+
 class notifications(models.Model):
     id = models.AutoField(primary_key=True)
-    email=models.EmailField(default='')
-    ref_id=models.IntegerField(null=True)
-    notification_type=models.CharField(max_length=30, default='')
-    status=models.CharField(max_length=10, default='')
-    description=models.CharField(max_length=255, default='')
+    email = models.EmailField(default="")
+    ref_id = models.IntegerField(null=True)
+    notification_type = models.CharField(max_length=30, default="")
+    status = models.CharField(max_length=10, default="")
+    description = models.CharField(max_length=255, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return f"{self.email} - {self.id}"

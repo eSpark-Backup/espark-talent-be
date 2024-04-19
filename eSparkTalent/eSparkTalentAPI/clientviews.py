@@ -844,7 +844,7 @@ class Leave_Request(APIView):
         try:
             to_update_leave_request = leave_request.objects.get(id=request_id)
 
-            if to_update_leave_request and to_update_leave_request.status=="pending":
+            if to_update_leave_request and to_update_leave_request.status == "pending":
                 to_update_leave_request.status = to_update_status
                 to_update_leave_request.save()
                 emp_rec = employee.objects.get(
@@ -1147,7 +1147,7 @@ class ClockInOut_Request(APIView):
         if to_update_status == "completed":
             try:
                 to_update_clockinout_request = punch_request.objects.get(id=request_id)
-                if to_update_clockinout_request.status=="pending":
+                if to_update_clockinout_request.status == "pending":
                     emp_req = employee.objects.get(
                         email=to_update_clockinout_request.employee_id
                     )
@@ -1164,14 +1164,18 @@ class ClockInOut_Request(APIView):
                                     year=to_update_clockinout_request.date.year,
                                 )
                                 if (
-                                    to_update_clockinout_request.date.strftime("%d-%m-%Y")
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
+                                    )
                                     in timesheet_record.record
                                 ):
                                     timesheet_record.record[
                                         to_update_clockinout_request.date.strftime(
                                             "%d-%m-%Y"
                                         )
-                                    ]["check_in"] = to_update_clockinout_request.punch_time
+                                    ][
+                                        "check_in"
+                                    ] = to_update_clockinout_request.punch_time
                                     timesheet_record.record[
                                         to_update_clockinout_request.date.strftime(
                                             "%d-%m-%Y"
@@ -1359,8 +1363,9 @@ class ClockInOut_Request(APIView):
                                                 status=status.HTTP_200_OK,
                                             )
                                         elif hours_worked.total_seconds() // 3600 >= 9:
-                                            overtime = hours_worked - datetime.timedelta(
-                                                hours=9
+                                            overtime = (
+                                                hours_worked
+                                                - datetime.timedelta(hours=9)
                                             )
                                             overtime_min = (overtime.seconds // 60) % 60
                                             overtime_hours = overtime.seconds // 3600
@@ -1438,13 +1443,17 @@ class ClockInOut_Request(APIView):
                                         },
                                     }
                                     timesheet_record.save()
-                                    to_update_clockinout_request.status = to_update_status
+                                    to_update_clockinout_request.status = (
+                                        to_update_status
+                                    )
                                     to_update_clockinout_request.save()
                                     notifi = notifications.objects.get(
                                         ref_id=request_id,
                                         notification_type="punch_request",
                                     )
-                                    notifi.email = to_update_clockinout_request.employee_id
+                                    notifi.email = (
+                                        to_update_clockinout_request.employee_id
+                                    )
                                     notifi.status = to_update_status
                                     notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                     notifi.save()
@@ -1457,7 +1466,9 @@ class ClockInOut_Request(APIView):
 
                             except:
                                 if datetime.datetime.strptime(
-                                    to_update_clockinout_request.date.strftime("%d-%m-%Y"),
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
+                                    ),
                                     "%d-%m-%Y",
                                 ) == datetime.datetime.strptime(
                                     datetime.datetime.now().date().strftime("%d-%m-%Y"),
@@ -1566,7 +1577,9 @@ class ClockInOut_Request(APIView):
                                             status=status.HTTP_200_OK,
                                         )
                                 elif datetime.datetime.strptime(
-                                    to_update_clockinout_request.date.strftime("%d-%m-%Y"),
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
+                                    ),
                                     "%d-%m-%Y",
                                 ) < datetime.datetime.strptime(
                                     datetime.datetime.now().date().strftime("%d-%m-%Y"),
@@ -1626,14 +1639,18 @@ class ClockInOut_Request(APIView):
                                     year=to_update_clockinout_request.date.year,
                                 )
                                 if (
-                                    to_update_clockinout_request.date.strftime("%d-%m-%Y")
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
+                                    )
                                     in timesheet_record.record
                                 ):
                                     timesheet_record.record[
                                         to_update_clockinout_request.date.strftime(
                                             "%d-%m-%Y"
                                         )
-                                    ]["check_out"] = to_update_clockinout_request.punch_time
+                                    ][
+                                        "check_out"
+                                    ] = to_update_clockinout_request.punch_time
                                     timesheet_record.record[
                                         to_update_clockinout_request.date.strftime(
                                             "%d-%m-%Y"
@@ -1736,8 +1753,9 @@ class ClockInOut_Request(APIView):
                                                 status=status.HTTP_200_OK,
                                             )
                                         elif hours_worked.total_seconds() // 3600 >= 9:
-                                            overtime = hours_worked - datetime.timedelta(
-                                                hours=9
+                                            overtime = (
+                                                hours_worked
+                                                - datetime.timedelta(hours=9)
                                             )
                                             overtime_min = (overtime.seconds // 60) % 60
                                             overtime_hours = overtime.seconds // 3600
@@ -1815,13 +1833,17 @@ class ClockInOut_Request(APIView):
                                         },
                                     }
                                     timesheet_record.save()
-                                    to_update_clockinout_request.status = to_update_status
+                                    to_update_clockinout_request.status = (
+                                        to_update_status
+                                    )
                                     to_update_clockinout_request.save()
                                     notifi = notifications.objects.get(
                                         ref_id=request_id,
                                         notification_type="punch_request",
                                     )
-                                    notifi.email = to_update_clockinout_request.employee_id
+                                    notifi.email = (
+                                        to_update_clockinout_request.employee_id
+                                    )
                                     notifi.status = to_update_status
                                     notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                     notifi.save()
@@ -1880,7 +1902,9 @@ class ClockInOut_Request(APIView):
                             {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
                         )
                 else:
-                    return Response({"message":"This request is closed"}, status=status.HTTP_200_OK)
+                    return Response(
+                        {"message": "This request is closed"}, status=status.HTTP_200_OK
+                    )
             except:
                 return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -1892,7 +1916,7 @@ class ClockInOut_Request(APIView):
                 )
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
-            if to_update_clockinout_request.status=="pending":
+            if to_update_clockinout_request.status == "pending":
                 to_update_clockinout_request.status = to_update_status
                 to_update_clockinout_request.save()
                 notifi = notifications.objects.get(
@@ -1910,7 +1934,9 @@ class ClockInOut_Request(APIView):
                     status=status.HTTP_200_OK,
                 )
             else:
-                return Response({"message":"This request is closed"}, status=status.HTTP_200_OK)
+                return Response(
+                    {"message": "This request is closed"}, status=status.HTTP_200_OK
+                )
         else:
             return Response(
                 {"error": "Invalid status value"}, status=status.HTTP_400_BAD_REQUEST
@@ -2220,7 +2246,10 @@ class UploadPictureView(APIView):
             try:
                 record.save()
                 return Response(
-                    {"message": "Profile picture is successfully updated", "image":record.image.url},
+                    {
+                        "message": "Profile picture is successfully updated",
+                        "image": record.image.url,
+                    },
                     status=status.HTTP_201_CREATED,
                 )
             except ValidationError as e:

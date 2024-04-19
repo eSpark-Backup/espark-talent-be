@@ -1399,7 +1399,7 @@ class Leave_Request(APIView):
                         {
                             "message": f"{result.leave_type} leave request is pending",
                             "id": result.id,
-                            "attachment":result.attachment.url
+                            "attachment": result.attachment.url,
                         },
                         status=status.HTTP_201_CREATED,
                     )
