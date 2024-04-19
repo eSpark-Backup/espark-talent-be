@@ -228,7 +228,7 @@ class Add_Employee(APIView):
             serializer = EmployeeSerializer(data=posted_data)
             if serializer.is_valid():
                 try:
-                    emp=employee.objects.create(
+                    emp = employee.objects.create(
                         employee_id=serializer.validated_data["employee_id"],
                         first_name=serializer.validated_data["first_name"],
                         last_name=serializer.validated_data["last_name"],
@@ -310,7 +310,13 @@ class Add_Employee(APIView):
                         benefits={},
                     )
                     return Response(
-                        {"message": f"{emp.first_name} {emp.last_name} is added successfully", "id":emp.id, "image":emp.image.url, "resume":emp.resume.url}, status=status.HTTP_201_CREATED
+                        {
+                            "message": f"{emp.first_name} {emp.last_name} is added successfully",
+                            "id": emp.id,
+                            "image": emp.image.url,
+                            "resume": emp.resume.url,
+                        },
+                        status=status.HTTP_201_CREATED,
                     )
                 except ValidationError as e:
                     return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
@@ -432,7 +438,7 @@ class Add_Client(APIView):
             serializer = ClientSerializer(data=posted_data)
             if serializer.is_valid():
                 try:
-                    clnt=client.objects.create(
+                    clnt = client.objects.create(
                         client_id=serializer.validated_data["client_id"],
                         first_name=serializer.validated_data["first_name"],
                         last_name=serializer.validated_data["last_name"],
@@ -451,7 +457,12 @@ class Add_Client(APIView):
                         password=password,
                     )
                     return Response(
-                        {"message": f"{clnt.first_name} {clnt.last_name} is added successfully", "id":clnt.id, "image":clnt.image.url}, status=status.HTTP_201_CREATED
+                        {
+                            "message": f"{clnt.first_name} {clnt.last_name} is added successfully",
+                            "id": clnt.id,
+                            "image": clnt.image.url,
+                        },
+                        status=status.HTTP_201_CREATED,
                     )
                 except ValidationError as e:
                     return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
@@ -515,7 +526,7 @@ class Add_Asset(APIView):
     def post(self, request, *args, **kwargs):
         serializer = AssetSerializer(data=request.data)
         if serializer.is_valid():
-            ast=asset.objects.create(
+            ast = asset.objects.create(
                 asset_id=serializer.validated_data["asset_id"],
                 employee_id=serializer.validated_data["employee_id"],
                 gadget=serializer.validated_data["gadget"],
@@ -524,7 +535,8 @@ class Add_Asset(APIView):
                 assignee_email=serializer.validated_data["assignee_email"],
             )
             return Response(
-                {"message": "One new asset has been added", "id":ast.id}, status=status.HTTP_201_CREATED
+                {"message": "One new asset has been added", "id": ast.id},
+                status=status.HTTP_201_CREATED,
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -557,17 +569,24 @@ class Add_Asset(APIView):
         operation_id=".",
     )
     def delete(self, request, *args, **kwargs):
-        id=request.query_params.get("id")
+        id = request.query_params.get("id")
         if id:
             try:
                 asset.objects.get(id=id).delete()
-                return Response({"message":"Asset has been deleted"}, status=status.HTTP_200_OK)
+                return Response(
+                    {"message": "Asset has been deleted"}, status=status.HTTP_200_OK
+                )
             except asset.DoesNotExist:
-                return Response({"error":"Asset not found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                    {"error": "Asset not found"}, status=status.HTTP_404_NOT_FOUND
+                )
             except Exception as e:
-                return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"error":"Id parameter required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Id parameter required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -666,7 +685,12 @@ class Employee_Invoice(APIView):
                         description=f"Invoice is added for {employee_data.first_name} {employee_data.last_name}",
                     )
                     return Response(
-                        {"message": "One new invoice is added", "id":emp_inv.id, "invoice":emp_inv.invoice.url}, status=status.HTTP_201_CREATED
+                        {
+                            "message": "One new invoice is added",
+                            "id": emp_inv.id,
+                            "invoice": emp_inv.invoice.url,
+                        },
+                        status=status.HTTP_201_CREATED,
                     )
                 except ValidationError as e:
                     return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
@@ -735,7 +759,10 @@ class Employee_Invoice(APIView):
                 notif.email = to_update_emp_inv.client_id
                 notif.description = f"Invoice is {to_update_status} for {employee_data.first_name} {employee_data.last_name}"
                 notif.save()
-                return Response({"message": f"One new invoice is {to_update_status}"}, status=status.HTTP_200_OK)
+                return Response(
+                    {"message": f"One new invoice is {to_update_status}"},
+                    status=status.HTTP_200_OK,
+                )
             except employee_invoice.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
             except Exception as e:
@@ -820,7 +847,7 @@ class Employee_Invoice(APIView):
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
-            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         tags=["Client : Employee Invoice"],
@@ -851,16 +878,20 @@ class Employee_Invoice(APIView):
     def delete(self, request, *args, **kwargs):
         delete_id = request.query_params.get("id")
         try:
-            emp_inv=employee_invoice.objects.get(id=delete_id)
-            removed=remove_bucket_file(emp_inv.invoice.name)
+            emp_inv = employee_invoice.objects.get(id=delete_id)
+            removed = remove_bucket_file(emp_inv.invoice.name)
             if removed:
-                return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
+                )
             notifications.objects.get(
                 ref_id=emp_inv.id,
                 notification_type="employee_invoice",
             ).delete()
             emp_inv.delete()
-            return Response({"message": "One new invoice is removed"}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "One new invoice is removed"}, status=status.HTTP_200_OK
+            )
         except employee_invoice.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
@@ -957,7 +988,12 @@ class Other_Payment(APIView):
                     description=f"Invoice is added for {oth_pay.invoice_reference}",
                 )
                 return Response(
-                    {"message": "One new invoice is added", "id": oth_pay.id, "invoice":oth_pay.invoice.url},  status=status.HTTP_201_CREATED
+                    {
+                        "message": "One new invoice is added",
+                        "id": oth_pay.id,
+                        "invoice": oth_pay.invoice.url,
+                    },
+                    status=status.HTTP_201_CREATED,
                 )
             except ValidationError as e:
                 return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
@@ -1016,7 +1052,10 @@ class Other_Payment(APIView):
             notif.email = to_update_otherpay.client_id
             notif.description = f"Invoice is {to_update_status} for {to_update_otherpay.invoice_reference}"
             notif.save()
-            return Response({"message": f"One new invoice is {to_update_status}"}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": f"One new invoice is {to_update_status}"},
+                status=status.HTTP_200_OK,
+            )
         except other_payment.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
@@ -1098,7 +1137,7 @@ class Other_Payment(APIView):
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
-            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         tags=["Client : Other Invoice/payment"],
@@ -1129,16 +1168,20 @@ class Other_Payment(APIView):
     def delete(self, request, *args, **kwargs):
         delete_id = request.query_params.get("id")
         try:
-            oth_pay=other_payment.objects.get(id=delete_id)
-            removed=remove_bucket_file(oth_pay.invoice.name)
+            oth_pay = other_payment.objects.get(id=delete_id)
+            removed = remove_bucket_file(oth_pay.invoice.name)
             if removed:
-                return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
+                )
             notifications.objects.get(
                 notification_type="other_payment",
                 ref_id=oth_pay.id,
             ).delete()
             oth_pay.delete()
-            return Response({"message": "One new invoice is removed"}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "One new invoice is removed"}, status=status.HTTP_200_OK
+            )
         except other_payment.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
@@ -1438,7 +1481,7 @@ class Hr_Employees(APIView):
         employee_id = request.query_params.get("id")
         try:
             emp = employee.objects.get(id=employee_id)
-            emp_name=f"{emp.first_name} {emp.last_name}"
+            emp_name = f"{emp.first_name} {emp.last_name}"
             related_models = [
                 outsource_employees,
                 asset,
@@ -1461,21 +1504,21 @@ class Hr_Employees(APIView):
                     for instance in model_data:
                         for field in instance._meta.fields:
                             if isinstance(field, FileField):
-                                file=getattr(instance, field.name)
-                                removed=remove_bucket_file(file.name)
+                                file = getattr(instance, field.name)
+                                removed = remove_bucket_file(file.name)
                                 if removed:
                                     return Response(
                                         {"error": str(removed)},
                                         status=status.HTTP_400_BAD_REQUEST,
                                     )
                     model_data.delete()
-                remove_image=remove_bucket_file(emp.image.name)
+                remove_image = remove_bucket_file(emp.image.name)
                 if remove_image:
                     return Response(
                         {"error": str(remove_image)},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-                remove_resume=remove_bucket_file(emp.resume.name)
+                remove_resume = remove_bucket_file(emp.resume.name)
                 if remove_resume:
                     return Response(
                         {"error": str(remove_resume)},
@@ -1767,7 +1810,7 @@ class Hr_Employee(APIView):
                 }
                 return Response(record, status=status.HTTP_200_OK)
             except Exception as e:
-                return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -1943,7 +1986,7 @@ class Time_and_leave(APIView):
                 }
                 return Response(record, status=status.HTTP_200_OK)
             except Exception as e:
-                return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         elif tab == "leaves":
             try:
                 employee_data = employee.objects.get(id=record_id)
@@ -1959,7 +2002,7 @@ class Time_and_leave(APIView):
                 }
                 return Response(record, status=status.HTTP_200_OK)
             except Exception as e:
-                return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -2095,7 +2138,7 @@ class Time_and_leave(APIView):
                 emp_record = employee.objects.get(id=record_id)
                 l_balance = leave_balance.objects.get(employee_id=emp_record.email)
             except Exception as e:
-                return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
             for key in updates:
                 setattr(l_balance, key, updates[key])
@@ -2186,12 +2229,20 @@ class Update_Emp_Info(APIView):
         try:
             emp_record = employee.objects.get(id=record_id)
         except Exception as e:
-            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         for key in updates:
             setattr(emp_record, key, updates[key])
-        emp_record.save()
-        return Response({"message":"Personal information updated successfully"},status=status.HTTP_200_OK)
+        try:
+            emp_record.save()
+        except ValidationError as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"message": "Personal information updated successfully"},
+            status=status.HTTP_200_OK,
+        )
 
 
 @authentication_classes([JWTAuthentication])
@@ -2248,7 +2299,13 @@ class Update_Emp_Profile_Pic(APIView):
             return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"message":"Profile picture updated successfully", "image":emp_record.image.url},status=status.HTTP_200_OK)
+        return Response(
+            {
+                "message": "Profile picture updated successfully",
+                "image": emp_record.image.url,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 @authentication_classes([JWTAuthentication])
@@ -2379,30 +2436,39 @@ class Start_Hiring(APIView):
     )
     def post(self, request, *args, **kwargs):
         serializer = start_requestSerializer(data=request.data)
-        if serializer.is_valid():
-            hire_req=hiring_request.objects.create(
-                client_id=serializer.validated_data["client_id"],
-                job_title=serializer.validated_data["job_title"],
-                role_type=serializer.validated_data["role_type"],
-                gender=serializer.validated_data["gender"],
-                employment_term=serializer.validated_data["employment_term"],
-                salary_range=serializer.validated_data["salary_range"],
-                country=serializer.validated_data["country"],
-                hiring_start_date=serializer.validated_data["hiring_start_date"],
-                hiring_end_date=serializer.validated_data["hiring_end_date"],
-            )
-            notifications.objects.create(
-                email=talent_email,
-                ref_id=hire_req.id,
-                notification_type="hiring_request",
-                status="added",
-                description="A new hiring request created.",
-            )
-            return Response(
-                {"message": "One new request is successfully added to hiring", "id":hire_req.id}, status=status.HTTP_201_CREATED
-            )
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            if serializer.is_valid():
+                hire_req = hiring_request.objects.create(
+                    client_id=serializer.validated_data["client_id"],
+                    job_title=serializer.validated_data["job_title"],
+                    role_type=serializer.validated_data["role_type"],
+                    gender=serializer.validated_data["gender"],
+                    employment_term=serializer.validated_data["employment_term"],
+                    salary_range=serializer.validated_data["salary_range"],
+                    country=serializer.validated_data["country"],
+                    hiring_start_date=serializer.validated_data["hiring_start_date"],
+                    hiring_end_date=serializer.validated_data["hiring_end_date"],
+                )
+                notifications.objects.create(
+                    email=talent_email,
+                    ref_id=hire_req.id,
+                    notification_type="hiring_request",
+                    status="added",
+                    description="A new hiring request created.",
+                )
+                return Response(
+                    {
+                        "message": "One new request is successfully added to hiring",
+                        "id": hire_req.id,
+                    },
+                    status=status.HTTP_201_CREATED,
+                )
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
@@ -2506,13 +2572,15 @@ class Start_Hiring(APIView):
     def delete(self, request, *args, **kwargs):
         delete_id = request.query_params.get("id")
         try:
-            hr_req=hiring_request.objects.get(id=delete_id)
+            hr_req = hiring_request.objects.get(id=delete_id)
             notifications.objects.filter(
-                    email=talent_email,
-                    ref_id=hr_req.id,
-                    notification_type="hiring_request").delete()
+                email=talent_email, ref_id=hr_req.id, notification_type="hiring_request"
+            ).delete()
             hr_req.delete()
-            return Response({"message":"Hiring request is successfully deleted"},status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Hiring request is successfully deleted"},
+                status=status.HTTP_200_OK,
+            )
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -2586,7 +2654,8 @@ class Interview_Schedule(APIView):
                 description=f"Interview of {int_sch.employee_name} is scheduled for {int_sch.job_title} position",
             )
             return Response(
-                {"message": "Interview is successfully set", "id":int_sch.id}, status=status.HTTP_201_CREATED
+                {"message": "Interview is successfully set", "id": int_sch.id},
+                status=status.HTTP_201_CREATED,
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -2641,7 +2710,9 @@ class Interview_Schedule(APIView):
             client_data = client.objects.get(id=record_id)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        interview_records = interview_schedule.objects.filter(client_id=client_data.email)
+        interview_records = interview_schedule.objects.filter(
+            client_id=client_data.email
+        )
 
         if interview_records:
             records = []
@@ -2699,7 +2770,10 @@ class Interview_Schedule(APIView):
                 notification_type="interview_schedule",
             ).delete()
             int_sch.delete()
-            return Response({"message":"Interview is successfully deleted"},status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Interview is successfully deleted"},
+                status=status.HTTP_200_OK,
+            )
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -2724,7 +2798,7 @@ class Onboarding(APIView):
                 "joining_date": openapi.Schema(
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                 ),
-                "notice_period": openapi.Schema(type=openapi.TYPE_STRING),
+                "notice_period": openapi.Schema(type=openapi.TYPE_INTEGER),
                 "salary": openapi.Schema(type=openapi.TYPE_INTEGER),
                 "benefits": openapi.Schema(type=openapi.TYPE_OBJECT),
             },
@@ -2759,32 +2833,41 @@ class Onboarding(APIView):
     )
     def post(self, request, *args, **kwargs):
         serializer = onboardingSerializer(data=request.data)
-        if serializer.is_valid():
-            onb = onboarding.objects.create(
-                client_id=serializer.validated_data["client_id"],
-                employee_name=serializer.validated_data["employee_name"],
-                gender=serializer.validated_data["gender"],
-                country=serializer.validated_data["country"],
-                job_title=serializer.validated_data["job_title"],
-                role_type=serializer.validated_data["role_type"],
-                joining_date=serializer.validated_data["joining_date"],
-                notice_period=serializer.validated_data["notice_period"],
-                salary=serializer.validated_data["salary"],
-                employment_term=serializer.validated_data["employment_term"],
-                benefits=request.data.get("benefits"),
-            )
-            notifications.objects.create(
-                email=onb.client_id,
-                ref_id=onb.id,
-                notification_type="onboarding",
-                status="added",
-                description=f"{onb.employee_name} is onboard for {onb.job_title} position",
-            )
-            return Response(
-                {"message": f"You have set {onb.employee_name} to onboarding", "id":onb.id}, status=status.HTTP_201_CREATED
-            )
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            if serializer.is_valid():
+                onb = onboarding.objects.create(
+                    client_id=serializer.validated_data["client_id"],
+                    employee_name=serializer.validated_data["employee_name"],
+                    gender=serializer.validated_data["gender"],
+                    country=serializer.validated_data["country"],
+                    job_title=serializer.validated_data["job_title"],
+                    role_type=serializer.validated_data["role_type"],
+                    joining_date=serializer.validated_data["joining_date"],
+                    notice_period=serializer.validated_data["notice_period"],
+                    salary=serializer.validated_data["salary"],
+                    employment_term=serializer.validated_data["employment_term"],
+                    benefits=request.data.get("benefits"),
+                )
+                notifications.objects.create(
+                    email=onb.client_id,
+                    ref_id=onb.id,
+                    notification_type="onboarding",
+                    status="added",
+                    description=f"{onb.employee_name} is onboard for {onb.job_title} position",
+                )
+                return Response(
+                    {
+                        "message": f"You have set {onb.employee_name} to onboarding",
+                        "id": onb.id,
+                    },
+                    status=status.HTTP_201_CREATED,
+                )
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
@@ -2865,7 +2948,7 @@ class Onboarding(APIView):
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
-            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
@@ -2897,12 +2980,15 @@ class Onboarding(APIView):
         delete_id = request.query_params.get("id")
         try:
             onb = onboarding.objects.get(id=delete_id)
-            employee_name=f"{onb.employee_name}"
+            employee_name = f"{onb.employee_name}"
             notifications.objects.get(
                 email=onb.client_id, ref_id=onb.id, notification_type="onboarding"
             ).delete()
             onb.delete()
-            return Response({"message":f"{employee_name} is successfully removed from onboarding"},status=status.HTTP_200_OK)
+            return Response(
+                {"message": f"{employee_name} is successfully removed from onboarding"},
+                status=status.HTTP_200_OK,
+            )
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -3008,18 +3094,28 @@ class Hr_Clients(APIView):
             client_data = client.objects.get(id=request_id)
             update_client_status = end_user.objects.get(email=client_data.email)
             if update_client_status:
-                if to_update_status==True:
+                if to_update_status == True:
                     update_client_status.is_active = to_update_status
                     update_client_status.save()
-                    return Response({"message":f"{client_data.first_name} {client_data.last_name} is set to active"},status=status.HTTP_200_OK)
-                elif to_update_status==False:
+                    return Response(
+                        {
+                            "message": f"{client_data.first_name} {client_data.last_name} is set to active"
+                        },
+                        status=status.HTTP_200_OK,
+                    )
+                elif to_update_status == False:
                     update_client_status.is_active = to_update_status
                     update_client_status.save()
-                    return Response({"message":f"{client_data.first_name} {client_data.last_name} is set to inactive"},status=status.HTTP_200_OK)
+                    return Response(
+                        {
+                            "message": f"{client_data.first_name} {client_data.last_name} is set to inactive"
+                        },
+                        status=status.HTTP_200_OK,
+                    )
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
-            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         tags=["Clients"],
@@ -3050,7 +3146,7 @@ class Hr_Clients(APIView):
         try:
             client_id = request.query_params.get("id")
             clt = client.objects.get(id=client_id)
-            client_name=f"{clt.first_name} {clt.last_name}"
+            client_name = f"{clt.first_name} {clt.last_name}"
             related_models = [
                 outsource_employees,
                 employee_invoice,
@@ -3074,15 +3170,15 @@ class Hr_Clients(APIView):
                 for instance in data:
                     for field in instance._meta.fields:
                         if isinstance(field, FileField):
-                            file=getattr(instance, field.name)
-                            removed=remove_bucket_file(file.name)
+                            file = getattr(instance, field.name)
+                            removed = remove_bucket_file(file.name)
                             if removed:
                                 return Response(
                                     {"error": str(removed)},
                                     status=status.HTTP_400_BAD_REQUEST,
                                 )
                 data.delete()
-            remove_image=remove_bucket_file(clt.image.name)
+            remove_image = remove_bucket_file(clt.image.name)
             if remove_image:
                 return Response(
                     {"error": str(remove_image)},
@@ -3172,7 +3268,7 @@ class Hr_Client(APIView):
             }
             return Response(record, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         tags=["Clients : Profile"],
@@ -3272,7 +3368,13 @@ class Hr_Client(APIView):
             client_record.save()
         except ValidationError as e:
             return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"message":"Information updated successfully", "image":client_record.image.url},status=status.HTTP_200_OK)
+        return Response(
+            {
+                "message": "Information updated successfully",
+                "image": client_record.image.url,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 @authentication_classes([JWTAuthentication])
@@ -3396,20 +3498,32 @@ class Company_Settings(APIView):
                         {"error": str(e)},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-                return Response({"message":"Company settings are successfully updated", "image":comp_data.image.url},status=status.HTTP_200_OK)
+                return Response(
+                    {
+                        "message": "Company settings are successfully updated",
+                        "image": comp_data.image.url,
+                    },
+                    status=status.HTTP_200_OK,
+                )
             except Exception as e:
-                return Response({"error": str(e)},status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         else:
             serializer = CompanyDataSerializer(data=request.data)
             if serializer.is_valid():
                 try:
-                    comp_data=company_data.objects.create(
+                    comp_data = company_data.objects.create(
                         company_name=serializer.validated_data["company_name"],
                         company_email=serializer.validated_data["company_email"],
                         website_url=serializer.validated_data["website_url"],
                         image=serializer.validated_data["image"],
                     )
-                    return Response({"message":"Company settings are successfully added", "image":comp_data.image.url},status=status.HTTP_201_CREATED)
+                    return Response(
+                        {
+                            "message": "Company settings are successfully added",
+                            "image": comp_data.image.url,
+                        },
+                        status=status.HTTP_201_CREATED,
+                    )
                 except ValidationError as e:
                     return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
                 except:
@@ -3552,7 +3666,7 @@ class Accounts(APIView):
                         pad(message_bytes, AES.block_size)
                     )
                     try:
-                        acc_n_perm=account_n_persmission.objects.create(
+                        acc_n_perm = account_n_persmission.objects.create(
                             account_name=serializer.validated_data["account_name"],
                             email=serializer.validated_data["email"],
                             image=serializer.validated_data["image"],
@@ -3596,7 +3710,14 @@ class Accounts(APIView):
                             password=password,
                         )
 
-                        return Response({"message":"Account has been added successfully", "id":acc_n_perm.id, "image":acc_n_perm.image.url},status=status.HTTP_201_CREATED)
+                        return Response(
+                            {
+                                "message": "Account has been added successfully",
+                                "id": acc_n_perm.id,
+                                "image": acc_n_perm.image.url,
+                            },
+                            status=status.HTTP_201_CREATED,
+                        )
                     except ValidationError as e:
                         return Response(
                             {"error": e}, status=status.HTTP_400_BAD_REQUEST
@@ -3615,9 +3736,7 @@ class Accounts(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
         except Exception as e:
-            return Response(
-                {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         tags=["Settings: Accounts"],
@@ -3649,11 +3768,16 @@ class Accounts(APIView):
         try:
             account = account_n_persmission.objects.get(id=id)
             end_user.objects.get(email=account.email).delete()
-            removed=remove_bucket_file(account.image.name)
+            removed = remove_bucket_file(account.image.name)
             if removed:
-                return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
+                )
             account.delete()
-            return Response({"message":"Account has been deleted successfully"},status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Account has been deleted successfully"},
+                status=status.HTTP_200_OK,
+            )
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -3707,7 +3831,10 @@ class Change_Password(APIView):
             if end_user_instance.check_password(current_password):
                 end_user_instance.set_password(new_password)
                 end_user_instance.save()
-                return Response({"message":"Credentials have been updated successfully"},status=status.HTTP_200_OK)
+                return Response(
+                    {"message": "Credentials have been updated successfully"},
+                    status=status.HTTP_200_OK,
+                )
             else:
                 return Response(
                     {"error": "Invalid current password"},
@@ -3918,9 +4045,14 @@ class Roles_n_Permissions(APIView):
             for key in updates:
                 setattr(account, key, updates[key])
             account.save()
-            return Response({"message": "Changes have been saved successfully"},status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Changes have been saved successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except ValidationError as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -4012,14 +4144,19 @@ class Policies(APIView):
         serializer = PolicySerializer(data=request.data)
         if serializer.is_valid():
             try:
-                pol=policy.objects.create(
+                pol = policy.objects.create(
                     policy_name=serializer.validated_data["policy_name"],
                     policy_doc=serializer.validated_data["policy_doc"],
                     employee=False,
                     client=False,
                 )
                 return Response(
-                    {"message": "New policy has been added successfully", "id":pol.id, "policy_doc":pol.policy_doc.url}, status=status.HTTP_201_CREATED
+                    {
+                        "message": "New policy has been added successfully",
+                        "id": pol.id,
+                        "policy_doc": pol.policy_doc.url,
+                    },
+                    status=status.HTTP_201_CREATED,
                 )
             except ValidationError as e:
                 return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
@@ -4060,12 +4197,17 @@ class Policies(APIView):
     def delete(self, request, *args, **kwargs):
         delete_id = request.query_params.get("id")
         try:
-            pol=policy.objects.get(id=delete_id)
-            removed=remove_bucket_file(pol.policy_doc.name)
+            pol = policy.objects.get(id=delete_id)
+            removed = remove_bucket_file(pol.policy_doc.name)
             if removed:
-                return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
+                )
             pol.delete()
-            return Response({"message":"Policy has been removed successfully"},status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Policy has been removed successfully"},
+                status=status.HTTP_200_OK,
+            )
         except policy.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         except:
@@ -4125,7 +4267,10 @@ class Policies_Edit(APIView):
                 for key in policy_id_json:
                     setattr(policy_instance, key, policy_id_json[key])
                 policy_instance.save()
-            return Response({"message":"Changes have been saved successfully"},status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Changes have been saved successfully"},
+                status=status.HTTP_200_OK,
+            )
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -4194,8 +4339,8 @@ class Company_Contract(APIView):
         if get_status:
             if get_status == "client":
                 try:
-                    clnt=client.objects.get(client_id=posted_data["client_id"])
-                    posted_data["client_id"]=clnt.email
+                    clnt = client.objects.get(client_id=posted_data["client_id"])
+                    posted_data["client_id"] = clnt.email
                     serializer = ClientContractSerializers(data=posted_data)
                     if serializer.is_valid():
                         cl_contract = client_contract.objects.create(
@@ -4212,7 +4357,11 @@ class Company_Contract(APIView):
                             description=f"{cl_contract.contract_name} contract is added",
                         )
                         return Response(
-                            {"message": "One new contract has been added to company contracts", "id":cl_contract.id, "contract_doc":cl_contract.contract_doc.url},
+                            {
+                                "message": "One new contract has been added to company contracts",
+                                "id": cl_contract.id,
+                                "contract_doc": cl_contract.contract_doc.url,
+                            },
                             status=status.HTTP_201_CREATED,
                         )
                     else:
@@ -4228,8 +4377,8 @@ class Company_Contract(APIView):
                     )
             elif get_status == "employee":
                 try:
-                    emp=employee.objects.get(employee_id=posted_data["employee_id"])
-                    posted_data["employee_id"]=emp.email
+                    emp = employee.objects.get(employee_id=posted_data["employee_id"])
+                    posted_data["employee_id"] = emp.email
                     serializer = EmployeeContractSerializers(data=posted_data)
                     if serializer.is_valid():
                         emp_contract = employee_contract.objects.create(
@@ -4246,7 +4395,11 @@ class Company_Contract(APIView):
                             description=f"{emp_contract.contract_name} contract is added",
                         )
                         return Response(
-                            {"message": "One new contract has been added to company contracts", "id":emp_contract.id, "contract_doc":emp_contract.contract_doc.url},
+                            {
+                                "message": "One new contract has been added to company contracts",
+                                "id": emp_contract.id,
+                                "contract_doc": emp_contract.contract_doc.url,
+                            },
                             status=status.HTTP_201_CREATED,
                         )
                     else:
@@ -4350,9 +4503,7 @@ class Company_Contract(APIView):
                         )
                     return Response(employee_cont, status=status.HTTP_200_OK)
             except Exception as e:
-                return Response(
-                    {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
-                )                
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(
             {"error": "Invalid status parameter"}, status=status.HTTP_400_BAD_REQUEST
         )
@@ -4395,10 +4546,12 @@ class Company_Contract(APIView):
         get_status = request.query_params.get("status")
         try:
             if get_status == "clients":
-                cl_contract=client_contract.objects.get(id=delete_id)
-                removed=remove_bucket_file(cl_contract.contract_doc.name)
+                cl_contract = client_contract.objects.get(id=delete_id)
+                removed = remove_bucket_file(cl_contract.contract_doc.name)
                 if removed:
-                    return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response(
+                        {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
+                    )
                 notifications.objects.get(
                     email=cl_contract.client_id,
                     ref_id=cl_contract.id,
@@ -4406,10 +4559,12 @@ class Company_Contract(APIView):
                 ).delete()
                 cl_contract.delete()
             elif get_status == "employees":
-                emp_contract=employee_contract.objects.get(id=delete_id)
-                removed=remove_bucket_file(emp_contract.contract_doc.name)
+                emp_contract = employee_contract.objects.get(id=delete_id)
+                removed = remove_bucket_file(emp_contract.contract_doc.name)
                 if removed:
-                    return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response(
+                        {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
+                    )
                 notifications.objects.get(
                     email=emp_contract.employee_id,
                     ref_id=emp_contract.id,
@@ -4423,7 +4578,8 @@ class Company_Contract(APIView):
                 )
 
             return Response(
-                {"message": "One contract has been removed from company contracts"}, status=status.HTTP_200_OK
+                {"message": "One contract has been removed from company contracts"},
+                status=status.HTTP_200_OK,
             )
 
         except client_contract.DoesNotExist:
@@ -4437,9 +4593,7 @@ class Company_Contract(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
         except Exception as e:
-            return Response(
-                {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -4498,10 +4652,10 @@ class Offshore_Contract(APIView):
     def post(self, request, *args, **kwargs):
         posted_data = request.data
         try:
-            emp=employee.objects.get(employee_id=posted_data["employee_id"])
-            posted_data["employee_id"]=emp.email
-            clnt=client.objects.get(client_id=posted_data["client_id"])
-            posted_data["client_id"]=clnt.email
+            emp = employee.objects.get(employee_id=posted_data["employee_id"])
+            posted_data["employee_id"] = emp.email
+            clnt = client.objects.get(client_id=posted_data["client_id"])
+            posted_data["client_id"] = clnt.email
             serializer = OffshoreContractSerializers(data=posted_data)
             if serializer.is_valid():
                 off_cont = offshore_contracts.objects.create(
@@ -4526,7 +4680,13 @@ class Offshore_Contract(APIView):
                     description=f"{off_cont.contract_name} contract is added",
                 )
                 return Response(
-                    {"message": "One new contract has been added to offshore contracts", "id":off_cont.id, "client_email":off_cont.client_id, "employee_email":off_cont.employee_id, "contract_doc":off_cont.contract_doc.url},
+                    {
+                        "message": "One new contract has been added to offshore contracts",
+                        "id": off_cont.id,
+                        "client_email": off_cont.client_id,
+                        "employee_email": off_cont.employee_id,
+                        "contract_doc": off_cont.contract_doc.url,
+                    },
                     status=status.HTTP_201_CREATED,
                 )
             else:
@@ -4541,7 +4701,7 @@ class Offshore_Contract(APIView):
             )
         except Exception as e:
             return Response(
-                {"error":str(e)},
+                {"error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -4630,17 +4790,19 @@ class Offshore_Contract(APIView):
     def delete(self, request, *args, **kwargs):
         delete_id = request.query_params.get("id")
         try:
-            off_cont=offshore_contracts.objects.get(id=delete_id)
-            removed=remove_bucket_file(off_cont.contract_doc.name)
+            off_cont = offshore_contracts.objects.get(id=delete_id)
+            removed = remove_bucket_file(off_cont.contract_doc.name)
             if removed:
-                return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
-            
+                return Response(
+                    {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
+                )
+
             notifications.objects.get(
                 email=off_cont.client_id,
                 ref_id=off_cont.id,
                 notification_type="offshore_contracts",
             ).delete()
-            
+
             notifications.objects.get(
                 email=off_cont.employee_id,
                 ref_id=off_cont.id,
@@ -4658,9 +4820,7 @@ class Offshore_Contract(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
         except Exception as e:
-            return Response(
-                {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -4723,9 +4883,7 @@ class Invoices(APIView):
                 )
             return Response(client_data, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response(
-                {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -4882,13 +5040,21 @@ class ClientEmployees(APIView):
                     )
                     notif.save()
                 c_emp.save()
-                return Response({"message":f"{emp.first_name} {emp.last_name} is set to {new_status}"},status=status.HTTP_200_OK)
+                return Response(
+                    {
+                        "message": f"{emp.first_name} {emp.last_name} is set to {new_status}"
+                    },
+                    status=status.HTTP_200_OK,
+                )
             except outsource_employees.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
             except Exception as e:
-                return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"error":"Invalid query parameters"},status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid query parameters"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
 
 @authentication_classes([JWTAuthentication])
@@ -4931,20 +5097,18 @@ class ClientAddEmployee(APIView):
         operation_id="1",
     )
     def get(self, request, *args, **kwargs):
-        c_email=request.query_params.get("c_email")
+        c_email = request.query_params.get("c_email")
         outsourced_employees = outsource_employees.objects.filter(
-                client_id=talent_email
-            )
-        c_outsourced_employees = outsource_employees.objects.filter(
-                client_id=c_email
-            )
+            client_id=talent_email
+        )
+        c_outsourced_employees = outsource_employees.objects.filter(client_id=c_email)
         if outsourced_employees and c_outsourced_employees:
             records = []
             for outsrcd_emp in outsourced_employees:
-                is_present=False
+                is_present = False
                 for c_outsrcd_emp in c_outsourced_employees:
-                    if c_outsrcd_emp.employee_id==outsrcd_emp.employee_id:
-                        is_present=True
+                    if c_outsrcd_emp.employee_id == outsrcd_emp.employee_id:
+                        is_present = True
                 if not is_present:
                     try:
                         emp = employee.objects.get(email=outsrcd_emp.employee_id)
@@ -5054,7 +5218,7 @@ class ClientAddEmployee(APIView):
                     status=status.HTTP_404_NOT_FOUND,
                 )
             try:
-                out_emp=outsource_employees.objects.create(
+                out_emp = outsource_employees.objects.create(
                     client_id=c_email,
                     employee_id=emp.email,
                     job_title=job_title,
@@ -5066,13 +5230,20 @@ class ClientAddEmployee(APIView):
                     benefits=benefits,
                 )
                 return Response(
-                    {"message": f"{emp.first_name} {emp.last_name} is added successfully", "id":out_emp.id},
+                    {
+                        "message": f"{emp.first_name} {emp.last_name} is added successfully",
+                        "id": out_emp.id,
+                    },
                     status=status.HTTP_201_CREATED,
                 )
+            except ValidationError as e:
+                return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"error":"Invalid query parmeters"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid query parmeters"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 @authentication_classes([JWTAuthentication])

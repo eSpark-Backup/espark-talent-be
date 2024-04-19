@@ -488,7 +488,6 @@ class Interview_Schedule(APIView):
                 notifi = notifications.objects.get(
                     ref_id=request_id,
                     notification_type="interview_schedule",
-                    email=user,
                 )
                 notifi.email = talent_email
                 notifi.status = to_update_status
@@ -845,7 +844,7 @@ class Leave_Request(APIView):
         try:
             to_update_leave_request = leave_request.objects.get(id=request_id)
 
-            if to_update_leave_request:
+            if to_update_leave_request and to_update_leave_request.status == "pending":
                 to_update_leave_request.status = to_update_status
                 to_update_leave_request.save()
                 emp_rec = employee.objects.get(
@@ -915,7 +914,7 @@ class Leave_Request(APIView):
                 else:
                     message = f"{emp_rec.first_name} {emp_rec.last_name} {to_update_leave_request.leave_type} leave request is {to_update_status}"
                 notifi = notifications.objects.get(
-                    ref_id=request_id, notification_type="leave_request", email=user
+                    ref_id=request_id, notification_type="leave_request"
                 )
                 notifi.email = to_update_leave_request.employee_id
                 notifi.status = to_update_status
@@ -1148,135 +1147,64 @@ class ClockInOut_Request(APIView):
         if to_update_status == "completed":
             try:
                 to_update_clockinout_request = punch_request.objects.get(id=request_id)
-                emp_req = employee.objects.get(
-                    email=to_update_clockinout_request.employee_id
-                )
-                try:
-                    record_punch_type = to_update_clockinout_request.punch_type
-                    if record_punch_type == "check_in":
-                        try:
-                            timesheet_record = time_sheet.objects.get(
-                                employee_id=to_update_clockinout_request.employee_id,
-                                client_id=user,
-                                month=calendar.month_name[
-                                    to_update_clockinout_request.date.month
-                                ],
-                                year=to_update_clockinout_request.date.year,
-                            )
-                            if (
-                                to_update_clockinout_request.date.strftime("%d-%m-%Y")
-                                in timesheet_record.record
-                            ):
-                                timesheet_record.record[
-                                    to_update_clockinout_request.date.strftime(
-                                        "%d-%m-%Y"
-                                    )
-                                ]["check_in"] = to_update_clockinout_request.punch_time
-                                timesheet_record.record[
-                                    to_update_clockinout_request.date.strftime(
-                                        "%d-%m-%Y"
-                                    )
-                                ]["status"]["Present"] = True
-                                timesheet_record.record[
-                                    to_update_clockinout_request.date.strftime(
-                                        "%d-%m-%Y"
-                                    )
-                                ]["status"]["Absent"] = False
+                if to_update_clockinout_request.status == "pending":
+                    emp_req = employee.objects.get(
+                        email=to_update_clockinout_request.employee_id
+                    )
+                    try:
+                        record_punch_type = to_update_clockinout_request.punch_type
+                        if record_punch_type == "check_in":
+                            try:
+                                timesheet_record = time_sheet.objects.get(
+                                    employee_id=to_update_clockinout_request.employee_id,
+                                    client_id=user,
+                                    month=calendar.month_name[
+                                        to_update_clockinout_request.date.month
+                                    ],
+                                    year=to_update_clockinout_request.date.year,
+                                )
                                 if (
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
+                                    )
+                                    in timesheet_record.record
+                                ):
                                     timesheet_record.record[
                                         to_update_clockinout_request.date.strftime(
                                             "%d-%m-%Y"
                                         )
-                                    ]["check_out"]
-                                    == "-"
-                                ):
-                                    if datetime.datetime.strptime(
+                                    ][
+                                        "check_in"
+                                    ] = to_update_clockinout_request.punch_time
+                                    timesheet_record.record[
                                         to_update_clockinout_request.date.strftime(
                                             "%d-%m-%Y"
-                                        ),
-                                        "%d-%m-%Y",
-                                    ) < datetime.datetime.strptime(
-                                        datetime.datetime.now()
-                                        .date()
-                                        .strftime("%d-%m-%Y"),
-                                        "%d-%m-%Y",
-                                    ):
+                                        )
+                                    ]["status"]["Present"] = True
+                                    timesheet_record.record[
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        )
+                                    ]["status"]["Absent"] = False
+                                    if (
                                         timesheet_record.record[
                                             to_update_clockinout_request.date.strftime(
                                                 "%d-%m-%Y"
                                             )
-                                        ]["status"]["Missing"] = True
-                                        timesheet_record.save()
-                                        to_update_clockinout_request.status = (
-                                            to_update_status
-                                        )
-                                        to_update_clockinout_request.save()
-                                        notifi = notifications.objects.get(
-                                            ref_id=request_id,
-                                            notification_type="punch_request",
-                                            email=user,
-                                        )
-                                        notifi.email = (
-                                            to_update_clockinout_request.employee_id
-                                        )
-                                        notifi.status = to_update_status
-                                        notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
-                                        notifi.save()
-                                        return Response(
-                                            {
-                                                "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
-                                            },
-                                            status=status.HTTP_200_OK,
-                                        )
-
-                                    elif datetime.datetime.strptime(
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        ),
-                                        "%d-%m-%Y",
-                                    ) == datetime.datetime.strptime(
-                                        datetime.datetime.now()
-                                        .date()
-                                        .strftime("%d-%m-%Y"),
-                                        "%d-%m-%Y",
+                                        ]["check_out"]
+                                        == "-"
                                     ):
-                                        check_out_time = employee.objects.get(
-                                            email=to_update_clockinout_request.employee_id
-                                        ).punch_timings["check_out"]
-                                        if (
-                                            datetime.datetime.strptime(
-                                                check_out_time, "%I:%M %p"
-                                            ).time()
-                                            > datetime.datetime.now().time()
+                                        if datetime.datetime.strptime(
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            ),
+                                            "%d-%m-%Y",
+                                        ) < datetime.datetime.strptime(
+                                            datetime.datetime.now()
+                                            .date()
+                                            .strftime("%d-%m-%Y"),
+                                            "%d-%m-%Y",
                                         ):
-                                            timesheet_record.record[
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                )
-                                            ]["status"]["Missing"] = False
-                                            timesheet_record.save()
-                                            to_update_clockinout_request.status = (
-                                                to_update_status
-                                            )
-                                            to_update_clockinout_request.save()
-                                            notifi = notifications.objects.get(
-                                                ref_id=request_id,
-                                                notification_type="punch_request",
-                                                email=user,
-                                            )
-                                            notifi.email = (
-                                                to_update_clockinout_request.employee_id
-                                            )
-                                            notifi.status = to_update_status
-                                            notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
-                                            notifi.save()
-                                            return Response(
-                                                {
-                                                    "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
-                                                },
-                                                status=status.HTTP_200_OK,
-                                            )
-                                        else:
                                             timesheet_record.record[
                                                 to_update_clockinout_request.date.strftime(
                                                     "%d-%m-%Y"
@@ -1290,7 +1218,197 @@ class ClockInOut_Request(APIView):
                                             notifi = notifications.objects.get(
                                                 ref_id=request_id,
                                                 notification_type="punch_request",
-                                                email=user,
+                                            )
+                                            notifi.email = (
+                                                to_update_clockinout_request.employee_id
+                                            )
+                                            notifi.status = to_update_status
+                                            notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
+                                            notifi.save()
+                                            return Response(
+                                                {
+                                                    "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                                },
+                                                status=status.HTTP_200_OK,
+                                            )
+
+                                        elif datetime.datetime.strptime(
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            ),
+                                            "%d-%m-%Y",
+                                        ) == datetime.datetime.strptime(
+                                            datetime.datetime.now()
+                                            .date()
+                                            .strftime("%d-%m-%Y"),
+                                            "%d-%m-%Y",
+                                        ):
+                                            check_out_time = employee.objects.get(
+                                                email=to_update_clockinout_request.employee_id
+                                            ).punch_timings["check_out"]
+                                            if (
+                                                datetime.datetime.strptime(
+                                                    check_out_time, "%I:%M %p"
+                                                ).time()
+                                                > datetime.datetime.now().time()
+                                            ):
+                                                timesheet_record.record[
+                                                    to_update_clockinout_request.date.strftime(
+                                                        "%d-%m-%Y"
+                                                    )
+                                                ]["status"]["Missing"] = False
+                                                timesheet_record.save()
+                                                to_update_clockinout_request.status = (
+                                                    to_update_status
+                                                )
+                                                to_update_clockinout_request.save()
+                                                notifi = notifications.objects.get(
+                                                    ref_id=request_id,
+                                                    notification_type="punch_request",
+                                                )
+                                                notifi.email = (
+                                                    to_update_clockinout_request.employee_id
+                                                )
+                                                notifi.status = to_update_status
+                                                notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
+                                                notifi.save()
+                                                return Response(
+                                                    {
+                                                        "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                                    },
+                                                    status=status.HTTP_200_OK,
+                                                )
+                                            else:
+                                                timesheet_record.record[
+                                                    to_update_clockinout_request.date.strftime(
+                                                        "%d-%m-%Y"
+                                                    )
+                                                ]["status"]["Missing"] = True
+                                                timesheet_record.save()
+                                                to_update_clockinout_request.status = (
+                                                    to_update_status
+                                                )
+                                                to_update_clockinout_request.save()
+                                                notifi = notifications.objects.get(
+                                                    ref_id=request_id,
+                                                    notification_type="punch_request",
+                                                )
+                                                notifi.email = (
+                                                    to_update_clockinout_request.employee_id
+                                                )
+                                                notifi.status = to_update_status
+                                                notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
+                                                notifi.save()
+                                                return Response(
+                                                    {
+                                                        "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                                    },
+                                                    status=status.HTTP_200_OK,
+                                                )
+
+                                    else:
+                                        check_out_time = timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ]["check_out"]
+                                        hours_worked = datetime.datetime.strptime(
+                                            check_out_time, "%I:%M %p"
+                                        ) - datetime.datetime.strptime(
+                                            to_update_clockinout_request.punch_time,
+                                            "%I:%M %p",
+                                        )
+                                        if hours_worked.total_seconds() // 3600 < 9:
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ]["overtime"] = "0h"
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ][
+                                                "hours_worked"
+                                            ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ]["status"]["Short Duration"] = True
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ]["status"]["Missing"] = False
+                                            timesheet_record.save()
+                                            to_update_clockinout_request.status = (
+                                                to_update_status
+                                            )
+                                            to_update_clockinout_request.save()
+                                            notifi = notifications.objects.get(
+                                                ref_id=request_id,
+                                                notification_type="punch_request",
+                                            )
+                                            notifi.email = (
+                                                to_update_clockinout_request.employee_id
+                                            )
+                                            notifi.status = to_update_status
+                                            notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
+                                            notifi.save()
+                                            return Response(
+                                                {
+                                                    "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                                },
+                                                status=status.HTTP_200_OK,
+                                            )
+                                        elif hours_worked.total_seconds() // 3600 >= 9:
+                                            overtime = (
+                                                hours_worked
+                                                - datetime.timedelta(hours=9)
+                                            )
+                                            overtime_min = (overtime.seconds // 60) % 60
+                                            overtime_hours = overtime.seconds // 3600
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ][
+                                                "hours_worked"
+                                            ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ]["status"]["Short Duration"] = False
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ]["status"]["Missing"] = False
+                                            if overtime_hours and overtime_min:
+                                                over_duration = (
+                                                    f"{overtime_hours}h {overtime_min}m"
+                                                )
+                                            elif overtime_hours and not overtime_min:
+                                                over_duration = f"{overtime_hours}h"
+                                            elif not overtime_hours and overtime_min:
+                                                over_duration = f"{overtime_min}m"
+                                            else:
+                                                over_duration = "0h"
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ]["overtime"] = over_duration
+                                            timesheet_record.save()
+                                            to_update_clockinout_request.status = (
+                                                to_update_status
+                                            )
+                                            to_update_clockinout_request.save()
+                                            notifi = notifications.objects.get(
+                                                ref_id=request_id,
+                                                notification_type="punch_request",
                                             )
                                             notifi.email = (
                                                 to_update_clockinout_request.employee_id
@@ -1306,204 +1424,25 @@ class ClockInOut_Request(APIView):
                                             )
 
                                 else:
-                                    check_out_time = timesheet_record.record[
+                                    timesheet_record.record[
                                         to_update_clockinout_request.date.strftime(
                                             "%d-%m-%Y"
                                         )
-                                    ]["check_out"]
-                                    hours_worked = datetime.datetime.strptime(
-                                        check_out_time, "%I:%M %p"
-                                    ) - datetime.datetime.strptime(
-                                        to_update_clockinout_request.punch_time,
-                                        "%I:%M %p",
-                                    )
-                                    if hours_worked.total_seconds() // 3600 < 9:
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["overtime"] = "0h"
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ][
-                                            "hours_worked"
-                                        ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["status"]["Short Duration"] = True
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["status"]["Missing"] = False
-                                        timesheet_record.save()
-                                        to_update_clockinout_request.status = (
-                                            to_update_status
-                                        )
-                                        to_update_clockinout_request.save()
-                                        notifi = notifications.objects.get(
-                                            ref_id=request_id,
-                                            notification_type="punch_request",
-                                            email=user,
-                                        )
-                                        notifi.email = (
-                                            to_update_clockinout_request.employee_id
-                                        )
-                                        notifi.status = to_update_status
-                                        notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
-                                        notifi.save()
-                                        return Response(
-                                            {
-                                                "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
-                                            },
-                                            status=status.HTTP_200_OK,
-                                        )
-                                    elif hours_worked.total_seconds() // 3600 >= 9:
-                                        overtime = hours_worked - datetime.timedelta(
-                                            hours=9
-                                        )
-                                        overtime_min = (overtime.seconds // 60) % 60
-                                        overtime_hours = overtime.seconds // 3600
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ][
-                                            "hours_worked"
-                                        ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["status"]["Short Duration"] = False
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["status"]["Missing"] = False
-                                        if overtime_hours and overtime_min:
-                                            over_duration = (
-                                                f"{overtime_hours}h {overtime_min}m"
-                                            )
-                                        elif overtime_hours and not overtime_min:
-                                            over_duration = f"{overtime_hours}h"
-                                        elif not overtime_hours and overtime_min:
-                                            over_duration = f"{overtime_min}m"
-                                        else:
-                                            over_duration = "0h"
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["overtime"] = over_duration
-                                        timesheet_record.save()
-                                        to_update_clockinout_request.status = (
-                                            to_update_status
-                                        )
-                                        to_update_clockinout_request.save()
-                                        notifi = notifications.objects.get(
-                                            ref_id=request_id,
-                                            notification_type="punch_request",
-                                            email=user,
-                                        )
-                                        notifi.email = (
-                                            to_update_clockinout_request.employee_id
-                                        )
-                                        notifi.status = to_update_status
-                                        notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
-                                        notifi.save()
-                                        return Response(
-                                            {
-                                                "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
-                                            },
-                                            status=status.HTTP_200_OK,
-                                        )
-
-                            else:
-                                timesheet_record.record[
-                                    to_update_clockinout_request.date.strftime(
-                                        "%d-%m-%Y"
-                                    )
-                                ] = {
-                                    "check_in": to_update_clockinout_request.punch_time,
-                                    "check_out": "-",
-                                    "hours_worked": "-",
-                                    "overtime": "-",
-                                    "status": {
-                                        "Present": True,
-                                        "Missing": False,
-                                        "Absent": False,
-                                        "Day Off": False,
-                                        "Full Leave": False,
-                                        "Short Duration": False,
-                                    },
-                                }
-                                timesheet_record.save()
-                                to_update_clockinout_request.status = to_update_status
-                                to_update_clockinout_request.save()
-                                notifi = notifications.objects.get(
-                                    ref_id=request_id,
-                                    notification_type="punch_request",
-                                    email=user,
-                                )
-                                notifi.email = to_update_clockinout_request.employee_id
-                                notifi.status = to_update_status
-                                notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
-                                notifi.save()
-                                return Response(
-                                    {
-                                        "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
-                                    },
-                                    status=status.HTTP_200_OK,
-                                )
-
-                        except:
-                            if datetime.datetime.strptime(
-                                to_update_clockinout_request.date.strftime("%d-%m-%Y"),
-                                "%d-%m-%Y",
-                            ) == datetime.datetime.strptime(
-                                datetime.datetime.now().date().strftime("%d-%m-%Y"),
-                                "%d-%m-%Y",
-                            ):
-                                check_out_time = employee.objects.get(
-                                    email=to_update_clockinout_request.employee_id
-                                ).punch_timings["check_out"]
-                                if (
-                                    datetime.datetime.strptime(
-                                        check_out_time, "%I:%M %p"
-                                    ).time()
-                                    > datetime.datetime.now().time()
-                                ):
-                                    timesheet_record = time_sheet.objects.create(
-                                        employee_id=to_update_clockinout_request.employee_id,
-                                        client_id=user,
-                                        month=calendar.month_name[
-                                            to_update_clockinout_request.date.month
-                                        ],
-                                        year=to_update_clockinout_request.date.year,
-                                        record={
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            ): {
-                                                "check_in": to_update_clockinout_request.punch_time,
-                                                "check_out": "-",
-                                                "hours_worked": "-",
-                                                "overtime": "-",
-                                                "status": {
-                                                    "Present": True,
-                                                    "Missing": False,
-                                                    "Absent": False,
-                                                    "Day Off": False,
-                                                    "Full Leave": False,
-                                                    "Short Duration": False,
-                                                },
-                                            },
+                                    ] = {
+                                        "check_in": to_update_clockinout_request.punch_time,
+                                        "check_out": "-",
+                                        "hours_worked": "-",
+                                        "overtime": "-",
+                                        "status": {
+                                            "Present": True,
+                                            "Missing": False,
+                                            "Absent": False,
+                                            "Day Off": False,
+                                            "Full Leave": False,
+                                            "Short Duration": False,
                                         },
-                                    )
+                                    }
+                                    timesheet_record.save()
                                     to_update_clockinout_request.status = (
                                         to_update_status
                                     )
@@ -1511,7 +1450,6 @@ class ClockInOut_Request(APIView):
                                     notifi = notifications.objects.get(
                                         ref_id=request_id,
                                         notification_type="punch_request",
-                                        email=user,
                                     )
                                     notifi.email = (
                                         to_update_clockinout_request.employee_id
@@ -1525,7 +1463,128 @@ class ClockInOut_Request(APIView):
                                         },
                                         status=status.HTTP_200_OK,
                                     )
-                                else:
+
+                            except:
+                                if datetime.datetime.strptime(
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
+                                    ),
+                                    "%d-%m-%Y",
+                                ) == datetime.datetime.strptime(
+                                    datetime.datetime.now().date().strftime("%d-%m-%Y"),
+                                    "%d-%m-%Y",
+                                ):
+                                    check_out_time = employee.objects.get(
+                                        email=to_update_clockinout_request.employee_id
+                                    ).punch_timings["check_out"]
+                                    if (
+                                        datetime.datetime.strptime(
+                                            check_out_time, "%I:%M %p"
+                                        ).time()
+                                        > datetime.datetime.now().time()
+                                    ):
+                                        timesheet_record = time_sheet.objects.create(
+                                            employee_id=to_update_clockinout_request.employee_id,
+                                            client_id=user,
+                                            month=calendar.month_name[
+                                                to_update_clockinout_request.date.month
+                                            ],
+                                            year=to_update_clockinout_request.date.year,
+                                            record={
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                ): {
+                                                    "check_in": to_update_clockinout_request.punch_time,
+                                                    "check_out": "-",
+                                                    "hours_worked": "-",
+                                                    "overtime": "-",
+                                                    "status": {
+                                                        "Present": True,
+                                                        "Missing": False,
+                                                        "Absent": False,
+                                                        "Day Off": False,
+                                                        "Full Leave": False,
+                                                        "Short Duration": False,
+                                                    },
+                                                },
+                                            },
+                                        )
+                                        to_update_clockinout_request.status = (
+                                            to_update_status
+                                        )
+                                        to_update_clockinout_request.save()
+                                        notifi = notifications.objects.get(
+                                            ref_id=request_id,
+                                            notification_type="punch_request",
+                                        )
+                                        notifi.email = (
+                                            to_update_clockinout_request.employee_id
+                                        )
+                                        notifi.status = to_update_status
+                                        notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
+                                        notifi.save()
+                                        return Response(
+                                            {
+                                                "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                            },
+                                            status=status.HTTP_200_OK,
+                                        )
+                                    else:
+                                        timesheet_record = time_sheet.objects.create(
+                                            employee_id=to_update_clockinout_request.employee_id,
+                                            client_id=user,
+                                            month=calendar.month_name[
+                                                to_update_clockinout_request.date.month
+                                            ],
+                                            year=to_update_clockinout_request.date.year,
+                                            record={
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                ): {
+                                                    "check_in": to_update_clockinout_request.punch_time,
+                                                    "check_out": "-",
+                                                    "hours_worked": "-",
+                                                    "overtime": "-",
+                                                    "status": {
+                                                        "Present": True,
+                                                        "Missing": True,
+                                                        "Absent": False,
+                                                        "Day Off": False,
+                                                        "Full Leave": False,
+                                                        "Short Duration": False,
+                                                    },
+                                                },
+                                            },
+                                        )
+                                        to_update_clockinout_request.status = (
+                                            to_update_status
+                                        )
+                                        to_update_clockinout_request.save()
+                                        notifi = notifications.objects.get(
+                                            ref_id=request_id,
+                                            notification_type="punch_request",
+                                        )
+                                        notifi.email = (
+                                            to_update_clockinout_request.employee_id
+                                        )
+                                        notifi.status = to_update_status
+                                        notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
+                                        notifi.save()
+                                        return Response(
+                                            {
+                                                "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                            },
+                                            status=status.HTTP_200_OK,
+                                        )
+                                elif datetime.datetime.strptime(
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
+                                    ),
+                                    "%d-%m-%Y",
+                                ) < datetime.datetime.strptime(
+                                    datetime.datetime.now().date().strftime("%d-%m-%Y"),
+                                    "%d-%m-%Y",
+                                ):
                                     timesheet_record = time_sheet.objects.create(
                                         employee_id=to_update_clockinout_request.employee_id,
                                         client_id=user,
@@ -1552,6 +1611,228 @@ class ClockInOut_Request(APIView):
                                             },
                                         },
                                     )
+                                to_update_clockinout_request.status = to_update_status
+                                to_update_clockinout_request.save()
+                                notifi = notifications.objects.get(
+                                    ref_id=request_id,
+                                    notification_type="punch_request",
+                                )
+                                notifi.email = to_update_clockinout_request.employee_id
+                                notifi.status = to_update_status
+                                notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
+                                notifi.save()
+                                return Response(
+                                    {
+                                        "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                    },
+                                    status=status.HTTP_200_OK,
+                                )
+
+                        elif record_punch_type == "check_out":
+                            try:
+                                timesheet_record = time_sheet.objects.get(
+                                    employee_id=to_update_clockinout_request.employee_id,
+                                    client_id=user,
+                                    month=calendar.month_name[
+                                        to_update_clockinout_request.date.month
+                                    ],
+                                    year=to_update_clockinout_request.date.year,
+                                )
+                                if (
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
+                                    )
+                                    in timesheet_record.record
+                                ):
+                                    timesheet_record.record[
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        )
+                                    ][
+                                        "check_out"
+                                    ] = to_update_clockinout_request.punch_time
+                                    timesheet_record.record[
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        )
+                                    ]["status"]["Present"] = True
+                                    timesheet_record.record[
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        )
+                                    ]["status"]["Absent"] = False
+                                    if (
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ]["check_in"]
+                                        == "-"
+                                    ):
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ]["status"]["Missing"] = True
+                                        timesheet_record.save()
+                                        to_update_clockinout_request.status = (
+                                            to_update_status
+                                        )
+                                        to_update_clockinout_request.save()
+                                        notifi = notifications.objects.get(
+                                            ref_id=request_id,
+                                            notification_type="punch_request",
+                                        )
+                                        notifi.email = (
+                                            to_update_clockinout_request.employee_id
+                                        )
+                                        notifi.status = to_update_status
+                                        notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
+                                        notifi.save()
+                                        return Response(
+                                            {
+                                                "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                            },
+                                            status=status.HTTP_200_OK,
+                                        )
+
+                                    else:
+                                        check_in_time = timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ]["check_in"]
+                                        hours_worked = datetime.datetime.strptime(
+                                            to_update_clockinout_request.punch_time,
+                                            "%I:%M %p",
+                                        ) - datetime.datetime.strptime(
+                                            check_in_time, "%I:%M %p"
+                                        )
+                                        if hours_worked.total_seconds() // 3600 < 9:
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ]["overtime"] = "0h"
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ][
+                                                "hours_worked"
+                                            ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ]["status"]["Short Duration"] = True
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ]["status"]["Missing"] = False
+                                            timesheet_record.save()
+                                            to_update_clockinout_request.status = (
+                                                to_update_status
+                                            )
+                                            to_update_clockinout_request.save()
+                                            notifi = notifications.objects.get(
+                                                ref_id=request_id,
+                                                notification_type="punch_request",
+                                            )
+                                            notifi.email = (
+                                                to_update_clockinout_request.employee_id
+                                            )
+                                            notifi.status = to_update_status
+                                            notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
+                                            notifi.save()
+                                            return Response(
+                                                {
+                                                    "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                                },
+                                                status=status.HTTP_200_OK,
+                                            )
+                                        elif hours_worked.total_seconds() // 3600 >= 9:
+                                            overtime = (
+                                                hours_worked
+                                                - datetime.timedelta(hours=9)
+                                            )
+                                            overtime_min = (overtime.seconds // 60) % 60
+                                            overtime_hours = overtime.seconds // 3600
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ][
+                                                "hours_worked"
+                                            ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ]["status"]["Short Duration"] = False
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ]["status"]["Missing"] = False
+                                            if overtime_hours and overtime_min:
+                                                over_duration = (
+                                                    f"{overtime_hours}h {overtime_min}m"
+                                                )
+                                            elif overtime_hours and not overtime_min:
+                                                over_duration = f"{overtime_hours}h"
+                                            elif not overtime_hours and overtime_min:
+                                                over_duration = f"{overtime_min}m"
+                                            else:
+                                                over_duration = "0h"
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ]["overtime"] = over_duration
+                                            timesheet_record.save()
+                                            to_update_clockinout_request.status = (
+                                                to_update_status
+                                            )
+                                            to_update_clockinout_request.save()
+                                            notifi = notifications.objects.get(
+                                                ref_id=request_id,
+                                                notification_type="punch_request",
+                                            )
+                                            notifi.email = (
+                                                to_update_clockinout_request.employee_id
+                                            )
+                                            notifi.status = to_update_status
+                                            notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
+                                            notifi.save()
+                                            return Response(
+                                                {
+                                                    "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                                },
+                                                status=status.HTTP_200_OK,
+                                            )
+
+                                else:
+                                    timesheet_record.record[
+                                        to_update_clockinout_request.date.strftime(
+                                            "%d-%m-%Y"
+                                        )
+                                    ] = {
+                                        "check_in": "-",
+                                        "check_out": to_update_clockinout_request.punch_time,
+                                        "hours_worked": "-",
+                                        "overtime": "-",
+                                        "status": {
+                                            "Present": True,
+                                            "Missing": True,
+                                            "Absent": False,
+                                            "Day Off": False,
+                                            "Full Leave": False,
+                                            "Short Duration": False,
+                                        },
+                                    }
+                                    timesheet_record.save()
                                     to_update_clockinout_request.status = (
                                         to_update_status
                                     )
@@ -1559,7 +1840,6 @@ class ClockInOut_Request(APIView):
                                     notifi = notifications.objects.get(
                                         ref_id=request_id,
                                         notification_type="punch_request",
-                                        email=user,
                                     )
                                     notifi.email = (
                                         to_update_clockinout_request.employee_id
@@ -1573,13 +1853,7 @@ class ClockInOut_Request(APIView):
                                         },
                                         status=status.HTTP_200_OK,
                                     )
-                            elif datetime.datetime.strptime(
-                                to_update_clockinout_request.date.strftime("%d-%m-%Y"),
-                                "%d-%m-%Y",
-                            ) < datetime.datetime.strptime(
-                                datetime.datetime.now().date().strftime("%d-%m-%Y"),
-                                "%d-%m-%Y",
-                            ):
+                            except:
                                 timesheet_record = time_sheet.objects.create(
                                     employee_id=to_update_clockinout_request.employee_id,
                                     client_id=user,
@@ -1591,8 +1865,8 @@ class ClockInOut_Request(APIView):
                                         to_update_clockinout_request.date.strftime(
                                             "%d-%m-%Y"
                                         ): {
-                                            "check_in": to_update_clockinout_request.punch_time,
-                                            "check_out": "-",
+                                            "check_in": "-",
+                                            "check_out": to_update_clockinout_request.punch_time,
                                             "hours_worked": "-",
                                             "overtime": "-",
                                             "status": {
@@ -1606,233 +1880,11 @@ class ClockInOut_Request(APIView):
                                         },
                                     },
                                 )
-                            to_update_clockinout_request.status = to_update_status
-                            to_update_clockinout_request.save()
-                            notifi = notifications.objects.get(
-                                ref_id=request_id,
-                                notification_type="punch_request",
-                                email=user,
-                            )
-                            notifi.email = to_update_clockinout_request.employee_id
-                            notifi.status = to_update_status
-                            notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
-                            notifi.save()
-                            return Response(
-                                {
-                                    "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
-                                },
-                                status=status.HTTP_200_OK,
-                            )
-
-                    elif record_punch_type == "check_out":
-                        try:
-                            timesheet_record = time_sheet.objects.get(
-                                employee_id=to_update_clockinout_request.employee_id,
-                                client_id=user,
-                                month=calendar.month_name[
-                                    to_update_clockinout_request.date.month
-                                ],
-                                year=to_update_clockinout_request.date.year,
-                            )
-                            if (
-                                to_update_clockinout_request.date.strftime("%d-%m-%Y")
-                                in timesheet_record.record
-                            ):
-                                timesheet_record.record[
-                                    to_update_clockinout_request.date.strftime(
-                                        "%d-%m-%Y"
-                                    )
-                                ]["check_out"] = to_update_clockinout_request.punch_time
-                                timesheet_record.record[
-                                    to_update_clockinout_request.date.strftime(
-                                        "%d-%m-%Y"
-                                    )
-                                ]["status"]["Present"] = True
-                                timesheet_record.record[
-                                    to_update_clockinout_request.date.strftime(
-                                        "%d-%m-%Y"
-                                    )
-                                ]["status"]["Absent"] = False
-                                if (
-                                    timesheet_record.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ]["check_in"]
-                                    == "-"
-                                ):
-                                    timesheet_record.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ]["status"]["Missing"] = True
-                                    timesheet_record.save()
-                                    to_update_clockinout_request.status = (
-                                        to_update_status
-                                    )
-                                    to_update_clockinout_request.save()
-                                    notifi = notifications.objects.get(
-                                        ref_id=request_id,
-                                        notification_type="punch_request",
-                                        email=user,
-                                    )
-                                    notifi.email = (
-                                        to_update_clockinout_request.employee_id
-                                    )
-                                    notifi.status = to_update_status
-                                    notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
-                                    notifi.save()
-                                    return Response(
-                                        {
-                                            "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
-                                        },
-                                        status=status.HTTP_200_OK,
-                                    )
-
-                                else:
-                                    check_in_time = timesheet_record.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ]["check_in"]
-                                    hours_worked = datetime.datetime.strptime(
-                                        to_update_clockinout_request.punch_time,
-                                        "%I:%M %p",
-                                    ) - datetime.datetime.strptime(
-                                        check_in_time, "%I:%M %p"
-                                    )
-                                    if hours_worked.total_seconds() // 3600 < 9:
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["overtime"] = "0h"
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ][
-                                            "hours_worked"
-                                        ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["status"]["Short Duration"] = True
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["status"]["Missing"] = False
-                                        timesheet_record.save()
-                                        to_update_clockinout_request.status = (
-                                            to_update_status
-                                        )
-                                        to_update_clockinout_request.save()
-                                        notifi = notifications.objects.get(
-                                            ref_id=request_id,
-                                            notification_type="punch_request",
-                                            email=user,
-                                        )
-                                        notifi.email = (
-                                            to_update_clockinout_request.employee_id
-                                        )
-                                        notifi.status = to_update_status
-                                        notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
-                                        notifi.save()
-                                        return Response(
-                                            {
-                                                "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
-                                            },
-                                            status=status.HTTP_200_OK,
-                                        )
-                                    elif hours_worked.total_seconds() // 3600 >= 9:
-                                        overtime = hours_worked - datetime.timedelta(
-                                            hours=9
-                                        )
-                                        overtime_min = (overtime.seconds // 60) % 60
-                                        overtime_hours = overtime.seconds // 3600
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ][
-                                            "hours_worked"
-                                        ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["status"]["Short Duration"] = False
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["status"]["Missing"] = False
-                                        if overtime_hours and overtime_min:
-                                            over_duration = (
-                                                f"{overtime_hours}h {overtime_min}m"
-                                            )
-                                        elif overtime_hours and not overtime_min:
-                                            over_duration = f"{overtime_hours}h"
-                                        elif not overtime_hours and overtime_min:
-                                            over_duration = f"{overtime_min}m"
-                                        else:
-                                            over_duration = "0h"
-                                        timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["overtime"] = over_duration
-                                        timesheet_record.save()
-                                        to_update_clockinout_request.status = (
-                                            to_update_status
-                                        )
-                                        to_update_clockinout_request.save()
-                                        notifi = notifications.objects.get(
-                                            ref_id=request_id,
-                                            notification_type="punch_request",
-                                            email=user,
-                                        )
-                                        notifi.email = (
-                                            to_update_clockinout_request.employee_id
-                                        )
-                                        notifi.status = to_update_status
-                                        notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
-                                        notifi.save()
-                                        return Response(
-                                            {
-                                                "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
-                                            },
-                                            status=status.HTTP_200_OK,
-                                        )
-
-                            else:
-                                timesheet_record.record[
-                                    to_update_clockinout_request.date.strftime(
-                                        "%d-%m-%Y"
-                                    )
-                                ] = {
-                                    "check_in": "-",
-                                    "check_out": to_update_clockinout_request.punch_time,
-                                    "hours_worked": "-",
-                                    "overtime": "-",
-                                    "status": {
-                                        "Present": True,
-                                        "Missing": True,
-                                        "Absent": False,
-                                        "Day Off": False,
-                                        "Full Leave": False,
-                                        "Short Duration": False,
-                                    },
-                                }
-                                timesheet_record.save()
                                 to_update_clockinout_request.status = to_update_status
                                 to_update_clockinout_request.save()
                                 notifi = notifications.objects.get(
                                     ref_id=request_id,
                                     notification_type="punch_request",
-                                    email=user,
                                 )
                                 notifi.email = to_update_clockinout_request.employee_id
                                 notifi.status = to_update_status
@@ -1844,56 +1896,15 @@ class ClockInOut_Request(APIView):
                                     },
                                     status=status.HTTP_200_OK,
                                 )
-                        except:
-                            timesheet_record = time_sheet.objects.create(
-                                employee_id=to_update_clockinout_request.employee_id,
-                                client_id=user,
-                                month=calendar.month_name[
-                                    to_update_clockinout_request.date.month
-                                ],
-                                year=to_update_clockinout_request.date.year,
-                                record={
-                                    to_update_clockinout_request.date.strftime(
-                                        "%d-%m-%Y"
-                                    ): {
-                                        "check_in": "-",
-                                        "check_out": to_update_clockinout_request.punch_time,
-                                        "hours_worked": "-",
-                                        "overtime": "-",
-                                        "status": {
-                                            "Present": True,
-                                            "Missing": True,
-                                            "Absent": False,
-                                            "Day Off": False,
-                                            "Full Leave": False,
-                                            "Short Duration": False,
-                                        },
-                                    },
-                                },
-                            )
-                            to_update_clockinout_request.status = to_update_status
-                            to_update_clockinout_request.save()
-                            notifi = notifications.objects.get(
-                                ref_id=request_id,
-                                notification_type="punch_request",
-                                email=user,
-                            )
-                            notifi.email = to_update_clockinout_request.employee_id
-                            notifi.status = to_update_status
-                            notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
-                            notifi.save()
-                            return Response(
-                                {
-                                    "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
-                                },
-                                status=status.HTTP_200_OK,
-                            )
 
-                except Exception as e:
+                    except Exception as e:
+                        return Response(
+                            {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+                        )
+                else:
                     return Response(
-                        {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+                        {"message": "This request is closed"}, status=status.HTTP_200_OK
                     )
-
             except:
                 return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -1905,22 +1916,27 @@ class ClockInOut_Request(APIView):
                 )
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
-            to_update_clockinout_request.status = to_update_status
-            to_update_clockinout_request.save()
-            notifi = notifications.objects.get(
-                ref_id=request_id, notification_type="punch_request", email=user
-            )
-            notifi.email = to_update_clockinout_request.employee_id
-            notifi.status = to_update_status
-            notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
-            notifi.save()
+            if to_update_clockinout_request.status == "pending":
+                to_update_clockinout_request.status = to_update_status
+                to_update_clockinout_request.save()
+                notifi = notifications.objects.get(
+                    ref_id=request_id, notification_type="punch_request"
+                )
+                notifi.email = to_update_clockinout_request.employee_id
+                notifi.status = to_update_status
+                notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
+                notifi.save()
 
-            return Response(
-                {
-                    "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
-                },
-                status=status.HTTP_200_OK,
-            )
+                return Response(
+                    {
+                        "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                    },
+                    status=status.HTTP_200_OK,
+                )
+            else:
+                return Response(
+                    {"message": "This request is closed"}, status=status.HTTP_200_OK
+                )
         else:
             return Response(
                 {"error": "Invalid status value"}, status=status.HTTP_400_BAD_REQUEST
@@ -2230,7 +2246,10 @@ class UploadPictureView(APIView):
             try:
                 record.save()
                 return Response(
-                    {"message": "Profile picture is successfully updated", "image":record.image.url},
+                    {
+                        "message": "Profile picture is successfully updated",
+                        "image": record.image.url,
+                    },
                     status=status.HTTP_201_CREATED,
                 )
             except ValidationError as e:
