@@ -2190,7 +2190,12 @@ class Update_Emp_Info(APIView):
 
         for key in updates:
             setattr(emp_record, key, updates[key])
-        emp_record.save()
+        try:
+            emp_record.save()
+        except ValidationError as e:
+            return Response({"error":e},status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
         return Response({"message":"Personal information updated successfully"},status=status.HTTP_200_OK)
 
 
@@ -2379,30 +2384,35 @@ class Start_Hiring(APIView):
     )
     def post(self, request, *args, **kwargs):
         serializer = start_requestSerializer(data=request.data)
-        if serializer.is_valid():
-            hire_req=hiring_request.objects.create(
-                client_id=serializer.validated_data["client_id"],
-                job_title=serializer.validated_data["job_title"],
-                role_type=serializer.validated_data["role_type"],
-                gender=serializer.validated_data["gender"],
-                employment_term=serializer.validated_data["employment_term"],
-                salary_range=serializer.validated_data["salary_range"],
-                country=serializer.validated_data["country"],
-                hiring_start_date=serializer.validated_data["hiring_start_date"],
-                hiring_end_date=serializer.validated_data["hiring_end_date"],
-            )
-            notifications.objects.create(
-                email=talent_email,
-                ref_id=hire_req.id,
-                notification_type="hiring_request",
-                status="added",
-                description="A new hiring request created.",
-            )
-            return Response(
-                {"message": "One new request is successfully added to hiring", "id":hire_req.id}, status=status.HTTP_201_CREATED
-            )
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            if serializer.is_valid():
+                hire_req=hiring_request.objects.create(
+                    client_id=serializer.validated_data["client_id"],
+                    job_title=serializer.validated_data["job_title"],
+                    role_type=serializer.validated_data["role_type"],
+                    gender=serializer.validated_data["gender"],
+                    employment_term=serializer.validated_data["employment_term"],
+                    salary_range=serializer.validated_data["salary_range"],
+                    country=serializer.validated_data["country"],
+                    hiring_start_date=serializer.validated_data["hiring_start_date"],
+                    hiring_end_date=serializer.validated_data["hiring_end_date"],
+                )
+                notifications.objects.create(
+                    email=talent_email,
+                    ref_id=hire_req.id,
+                    notification_type="hiring_request",
+                    status="added",
+                    description="A new hiring request created.",
+                )
+                return Response(
+                    {"message": "One new request is successfully added to hiring", "id":hire_req.id}, status=status.HTTP_201_CREATED
+                )
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as e:
+            return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
@@ -2724,7 +2734,7 @@ class Onboarding(APIView):
                 "joining_date": openapi.Schema(
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                 ),
-                "notice_period": openapi.Schema(type=openapi.TYPE_STRING),
+                "notice_period": openapi.Schema(type=openapi.TYPE_INTEGER),
                 "salary": openapi.Schema(type=openapi.TYPE_INTEGER),
                 "benefits": openapi.Schema(type=openapi.TYPE_OBJECT),
             },
@@ -2759,32 +2769,37 @@ class Onboarding(APIView):
     )
     def post(self, request, *args, **kwargs):
         serializer = onboardingSerializer(data=request.data)
-        if serializer.is_valid():
-            onb = onboarding.objects.create(
-                client_id=serializer.validated_data["client_id"],
-                employee_name=serializer.validated_data["employee_name"],
-                gender=serializer.validated_data["gender"],
-                country=serializer.validated_data["country"],
-                job_title=serializer.validated_data["job_title"],
-                role_type=serializer.validated_data["role_type"],
-                joining_date=serializer.validated_data["joining_date"],
-                notice_period=serializer.validated_data["notice_period"],
-                salary=serializer.validated_data["salary"],
-                employment_term=serializer.validated_data["employment_term"],
-                benefits=request.data.get("benefits"),
-            )
-            notifications.objects.create(
-                email=onb.client_id,
-                ref_id=onb.id,
-                notification_type="onboarding",
-                status="added",
-                description=f"{onb.employee_name} is onboard for {onb.job_title} position",
-            )
-            return Response(
-                {"message": f"You have set {onb.employee_name} to onboarding", "id":onb.id}, status=status.HTTP_201_CREATED
-            )
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            if serializer.is_valid():
+                onb = onboarding.objects.create(
+                    client_id=serializer.validated_data["client_id"],
+                    employee_name=serializer.validated_data["employee_name"],
+                    gender=serializer.validated_data["gender"],
+                    country=serializer.validated_data["country"],
+                    job_title=serializer.validated_data["job_title"],
+                    role_type=serializer.validated_data["role_type"],
+                    joining_date=serializer.validated_data["joining_date"],
+                    notice_period=serializer.validated_data["notice_period"],
+                    salary=serializer.validated_data["salary"],
+                    employment_term=serializer.validated_data["employment_term"],
+                    benefits=request.data.get("benefits"),
+                )
+                notifications.objects.create(
+                    email=onb.client_id,
+                    ref_id=onb.id,
+                    notification_type="onboarding",
+                    status="added",
+                    description=f"{onb.employee_name} is onboard for {onb.job_title} position",
+                )
+                return Response(
+                    {"message": f"You have set {onb.employee_name} to onboarding", "id":onb.id}, status=status.HTTP_201_CREATED
+                )
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as e:
+            return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
@@ -3919,6 +3934,8 @@ class Roles_n_Permissions(APIView):
                 setattr(account, key, updates[key])
             account.save()
             return Response({"message": "Changes have been saved successfully"},status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({"error":e},status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
 
@@ -5069,6 +5086,8 @@ class ClientAddEmployee(APIView):
                     {"message": f"{emp.first_name} {emp.last_name} is added successfully", "id":out_emp.id},
                     status=status.HTTP_201_CREATED,
                 )
+            except ValidationError as e:
+                return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         else:

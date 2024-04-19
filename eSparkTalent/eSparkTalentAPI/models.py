@@ -104,6 +104,12 @@ def upload_file(name):
         new_name=date+"_"+time+"_"+name
         return new_name
 
+
+def valid_json_check(json):
+    if not isinstance(json, dict):
+        return "Only valid JSON is supported"
+
+
 class employee(models.Model):
     id = models.AutoField(primary_key=True)
     employee_id = models.CharField(max_length=15, unique=True, default="")
@@ -140,6 +146,14 @@ class employee(models.Model):
     def save(self, *args, **kwargs):
         try:
             emp=employee.objects.get(id=self.id)
+            if self.emergency_contact != emp.emergency_contact:
+                error=valid_json_check(self.emergency_contact)
+                if error:
+                    raise ValidationError(error)
+            if self.punch_timings != emp.punch_timings:
+                error=valid_json_check(self.punch_timings)
+                if error:
+                    raise ValidationError(error)
             if self.image != emp.image:
                 try:
                     file_content = self.image.file.seek(0)
@@ -155,6 +169,14 @@ class employee(models.Model):
                 except ValidationError as e:
                     raise ValidationError(e)
         except employee.DoesNotExist:
+            if self.emergency_contact or self.emergency_contact==0:
+                error=valid_json_check(self.emergency_contact)
+                if error:
+                    raise ValidationError(error)
+            if self.punch_timings or self.punch_timings==0:
+                error=valid_json_check(self.punch_timings)
+                if error:
+                    raise ValidationError(error)
             try:
                 file_content = self.image.file.seek(0)
                 valid_imgfile_type(self.image.file)
@@ -230,6 +252,14 @@ class hiring_request(models.Model):
 
     def __str__(self):
         return f"{self.client_id} - {self.id}"
+
+    def save(self, *args, **kwargs):
+        if self.salary_range or self.salary_range==0:
+            error=valid_json_check(self.salary_range)
+            if error:
+                raise ValidationError(error)
+
+        super().save(*args, **kwargs)
     
 class interview_schedule(models.Model):
     status = [
@@ -273,6 +303,14 @@ class onboarding(models.Model):
 
     def __str__(self):
         return f"{self.client_id} - {self.id}"
+
+    def save(self, *args, **kwargs):
+        if self.benefits or self.benefits==0:
+            error=valid_json_check(self.benefits)
+            if error:
+                raise ValidationError(error)
+
+        super().save(*args, **kwargs)
 
 
 class leave_balance(models.Model):
@@ -626,6 +664,14 @@ class outsource_employees(models.Model):
     def __str__(self):
         return f"{self.client_id} - {self.id}"
 
+    def save(self, *args, **kwargs):
+        if self.benefits or self.benefits==0:
+            error=valid_json_check(self.benefits)
+            if error:
+                raise ValidationError(error)
+
+        super().save(*args, **kwargs)
+
 class company_data(models.Model):
     id = models.AutoField(primary_key=True)
     company_name = models.CharField(max_length=30, default="")
@@ -721,6 +767,26 @@ class account_n_persmission(models.Model):
     def save(self, *args, **kwargs):
         try:
             a_n_p=account_n_persmission.objects.get(id=self.id)
+            if self.client_perms != a_n_p.client_perms:
+                error=valid_json_check(self.client_perms)
+                if error:
+                    raise ValidationError(error)
+            if self.employee_perms != a_n_p.employee_perms:
+                error=valid_json_check(self.employee_perms)
+                if error:
+                    raise ValidationError(error)
+            if self.leaves_perms != a_n_p.leaves_perms:
+                error=valid_json_check(self.leaves_perms)
+                if error:
+                    raise ValidationError(error)
+            if self.invoices_perms != a_n_p.invoices_perms:
+                error=valid_json_check(self.invoices_perms)
+                if error:
+                    raise ValidationError(error)
+            if self.policies_perms != a_n_p.policies_perms:
+                error=valid_json_check(self.policies_perms)
+                if error:
+                    raise ValidationError(error)
             if self.image != a_n_p.image:
                 try:
                     file_content = self.image.file.seek(0)
