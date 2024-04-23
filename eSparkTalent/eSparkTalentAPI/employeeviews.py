@@ -258,6 +258,7 @@ class Employee_Home(APIView):
                                     format=openapi.FORMAT_EMAIL,
                                 ),
                                 "image": openapi.Schema(type=openapi.TYPE_FILE),
+                                "job_title": openapi.Schema(type=openapi.TYPE_STRING),
                             },
                         ),
                         "company_image": openapi.Schema(type=openapi.TYPE_FILE),
@@ -332,6 +333,12 @@ class Employee_Home(APIView):
                 company_image = company_data.objects.all()[0].image.url
             except:
                 company_image = ""
+            try:
+                emp_job_title=outsource_employees.objects.get(employee_id=e_email, client_id=workspace).job_title
+            except:
+                emp_job_title=current_employee.job_title
+
+            employee_details['job_title']=emp_job_title
 
             payload = {
                 "employee_details": employee_details,
@@ -359,6 +366,9 @@ class Employee_Home(APIView):
                 company_image = company_data.objects.all()[0].image.url
             except:
                 company_image = ""
+
+            employee_details['job_title']=current_employee.job_title
+            
             payload = {
                 "employee_details": employee_details,
                 "company_image": company_image,
@@ -517,8 +527,8 @@ class Employee_Home(APIView):
                         "check_in"
                     ]
                     hours_worked = datetime.strptime(
-                        check_out, "%I:%M %p"
-                    ) - datetime.strptime(check_in_time, "%I:%M %p")
+                        check_out, "%I:%M:%S %p"
+                    ) - datetime.strptime(check_in_time, "%I:%M:%S %p")
 
                     if hours_worked.total_seconds() // 3600 < 9:
                         rec.record[now.date().strftime("%d-%m-%Y")][
@@ -1689,9 +1699,9 @@ class Time_Sheet(APIView):
                         check_in_time = rec["check_in"]
                         check_out_time = rec["check_out"]
 
-                        check_in_datetime = datetime.strptime(check_in_time, "%I:%M %p")
+                        check_in_datetime = datetime.strptime(check_in_time, "%I:%M:%S %p")
                         check_out_datetime = datetime.strptime(
-                            check_out_time, "%I:%M %p"
+                            check_out_time, "%I:%M:%S %p"
                         )
 
                         time_difference = check_out_datetime - check_in_datetime
@@ -1819,9 +1829,9 @@ class Time_Sheet(APIView):
                     if rec["check_in"] != "-" and rec["check_out"] != "-":
                         check_in_time = rec["check_in"]
                         check_out_time = rec["check_out"]
-                        check_in_datetime = datetime.strptime(check_in_time, "%I:%M %p")
+                        check_in_datetime = datetime.strptime(check_in_time, "%I:%M:%S %p")
                         check_out_datetime = datetime.strptime(
-                            check_out_time, "%I:%M %p"
+                            check_out_time, "%I:%M:%S %p"
                         )
                         time_difference = check_out_datetime - check_in_datetime
 

@@ -116,7 +116,7 @@ def Statistics(e_email, workspace):
             and time_sheet_record.record[today]["check_out"] == "-"
         ):
             check_in_time = datetime.strptime(
-                time_sheet_record.record[today]["check_in"], "%I:%M %p"
+                time_sheet_record.record[today]["check_in"], "%I:%M:%S %p"
             ).time()
 
             time_difference = datetime.combine(
@@ -131,10 +131,10 @@ def Statistics(e_email, workspace):
             and time_sheet_record.record[today]["check_out"] != "-"
         ):
             check_in_time = datetime.strptime(
-                time_sheet_record.record[today]["check_in"], "%I:%M %p"
+                time_sheet_record.record[today]["check_in"], "%I:%M:%S %p"
             ).time()
             check_out_time = datetime.strptime(
-                time_sheet_record.record[today]["check_out"], "%I:%M %p"
+                time_sheet_record.record[today]["check_out"], "%I:%M:%S %p"
             ).time()
 
             time_difference = datetime.combine(
@@ -150,8 +150,8 @@ def Statistics(e_email, workspace):
             ):
                 check_in_time = time_sheet_record.record[value]["check_in"]
                 check_out_time = time_sheet_record.record[value]["check_out"]
-                check_in_datetime = datetime.strptime(check_in_time, "%I:%M %p")
-                check_out_datetime = datetime.strptime(check_out_time, "%I:%M %p")
+                check_in_datetime = datetime.strptime(check_in_time, "%I:%M:%S %p")
+                check_out_datetime = datetime.strptime(check_out_time, "%I:%M:%S %p")
 
                 time_difference = check_out_datetime - check_in_datetime
                 minutes_worked += time_difference.seconds // 60
@@ -164,8 +164,8 @@ def Statistics(e_email, workspace):
                 ):
                     check_in_time = time_sheet_record.record[value]["check_in"]
                     check_out_time = time_sheet_record.record[value]["check_out"]
-                    check_in_datetime = datetime.strptime(check_in_time, "%I:%M %p")
-                    check_out_datetime = datetime.strptime(check_out_time, "%I:%M %p")
+                    check_in_datetime = datetime.strptime(check_in_time, "%I:%M:%S %p")
+                    check_out_datetime = datetime.strptime(check_out_time, "%I:%M:%S %p")
 
                     time_difference = check_out_datetime - check_in_datetime
                     w_hours_worked += time_difference.seconds / 3600
@@ -176,7 +176,7 @@ def Statistics(e_email, workspace):
                     and time_sheet_record.record[value]["check_out"] == "-"
                 ):
                     check_in_time = time_sheet_record.record[value]["check_in"]
-                    check_in_datetime = datetime.strptime(check_in_time, "%I:%M %p")
+                    check_in_datetime = datetime.strptime(check_in_time, "%I:%M:%S %p")
                     time_difference = datetime.combine(
                         datetime.today(), current_time
                     ) - datetime.combine(datetime.today(), check_in_datetime.time())
@@ -255,8 +255,8 @@ def AttendanceSummary(e_email, workspace):
             ):
                 check_in_time = time_sheet_record.record[value]["check_in"]
                 check_out_time = time_sheet_record.record[value]["check_out"]
-                check_in_datetime = datetime.strptime(check_in_time, "%I:%M %p")
-                check_out_datetime = datetime.strptime(check_out_time, "%I:%M %p")
+                check_in_datetime = datetime.strptime(check_in_time, "%I:%M:%S %p")
+                check_out_datetime = datetime.strptime(check_out_time, "%I:%M:%S %p")
                 time_difference = check_out_datetime - check_in_datetime
                 if round(time_difference.seconds / 3600) > 9:
                     overtimes += 1
@@ -269,15 +269,15 @@ def AttendanceSummary(e_email, workspace):
             ):
                 break_time = time_sheet_record.record[value]["break"]
                 resume_time = time_sheet_record.record[value]["resume"]
-                break_datetime = datetime.strptime(break_time, "%I:%M %p")
-                resume_datetime = datetime.strptime(resume_time, "%I:%M %p")
+                break_datetime = datetime.strptime(break_time, "%I:%M:%S %p")
+                resume_datetime = datetime.strptime(resume_time, "%I:%M:%S %p")
                 time_difference = resume_datetime - break_datetime
                 break_minutes += round(time_difference.seconds / 60, 2)
 
             if (
                 time_sheet_record.record[value]["check_in"] != "-"
             ) and datetime.strptime(
-                time_sheet_record.record[value]["check_in"], "%I:%M %p"
+                time_sheet_record.record[value]["check_in"], "%I:%M:%S %p"
             ) > datetime.strptime(
                 punch_timings["check_in"], "%I:%M %p"
             ):
@@ -307,8 +307,8 @@ def AttendanceSummary(e_email, workspace):
             ):
                 check_in_time = time_sheet_record.record[value]["check_in"]
                 check_out_time = time_sheet_record.record[value]["check_out"]
-                check_in_datetime = datetime.strptime(check_in_time, "%I:%M %p")
-                check_out_datetime = datetime.strptime(check_out_time, "%I:%M %p")
+                check_in_datetime = datetime.strptime(check_in_time, "%I:%M:%S %p")
+                check_out_datetime = datetime.strptime(check_out_time, "%I:%M:%S %p")
 
                 time_difference = check_out_datetime - check_in_datetime
                 minutes_worked += time_difference.seconds // 60
