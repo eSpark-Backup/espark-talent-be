@@ -397,7 +397,7 @@ class punch_request(models.Model):
     client_id = models.EmailField()
     employee_id = models.EmailField()
     punch_type = models.CharField(max_length=10, choices=punch_type)
-    punch_time = models.CharField(max_length=10)
+    punch_time = models.CharField(max_length=15)
     date = models.DateField()
     description = models.CharField(max_length=200, default="")
     status = models.CharField(max_length=10, choices=status, default="pending")

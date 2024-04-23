@@ -1313,10 +1313,10 @@ class ClockInOut_Request(APIView):
                                             )
                                         ]["check_out"]
                                         hours_worked = datetime.datetime.strptime(
-                                            check_out_time, "%I:%M %p"
+                                            check_out_time, "%I:%M:%S %p"
                                         ) - datetime.datetime.strptime(
                                             to_update_clockinout_request.punch_time,
-                                            "%I:%M %p",
+                                            "%I:%M:%S %p",
                                         )
                                         if hours_worked.total_seconds() // 3600 < 9:
                                             timesheet_record.record[
@@ -1704,9 +1704,9 @@ class ClockInOut_Request(APIView):
                                         ]["check_in"]
                                         hours_worked = datetime.datetime.strptime(
                                             to_update_clockinout_request.punch_time,
-                                            "%I:%M %p",
+                                            "%I:%M:%S %p",
                                         ) - datetime.datetime.strptime(
-                                            check_in_time, "%I:%M %p"
+                                            check_in_time, "%I:%M:%S %p"
                                         )
                                         if hours_worked.total_seconds() // 3600 < 9:
                                             timesheet_record.record[
