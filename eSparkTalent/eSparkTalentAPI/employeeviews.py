@@ -301,12 +301,17 @@ class Employee_Home(APIView):
         )
         if clients:
             for rec in clients:
-                record = {
-                    "email": rec.email,
-                    "client_name": rec.first_name + " " + rec.last_name,
-                    "company_name": rec.company_name,
-                }
-                workspaces.append(record)
+                try:
+                    is_active=end_user.objects.get(email=rec.email).is_active
+                    if is_active:
+                        record = {
+                            "email": rec.email,
+                            "client_name": rec.first_name + " " + rec.last_name,
+                            "company_name": rec.company_name,
+                        }
+                        workspaces.append(record)
+                except Exception as e:
+                    return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             leave_records = leave_balance.objects.get(employee_id=e_email)
