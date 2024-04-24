@@ -4469,10 +4469,11 @@ class Company_Contract(APIView):
                     contracts = client_contract.objects.all()
                     client_cont = []
                     for contract in contracts:
+                        clnt = client.objects.get(email=contract.client_id)
                         record = {
                             "id": contract.id,
                             "contract_name": contract.contract_name,
-                            "client_id": contract.client_id,
+                            "client_id": clnt.client_id,
                             "date": contract.date,
                             "contract_doc": contract.contract_doc.url,
                         }
@@ -4488,10 +4489,11 @@ class Company_Contract(APIView):
                     contracts = employee_contract.objects.all()
                     employee_cont = []
                     for contract in contracts:
+                        emp = employee.objects.get(email=contract.employee_id)
                         record = {
                             "id": contract.id,
                             "contract_name": contract.contract_name,
-                            "employee_id": contract.employee_id,
+                            "employee_id": emp.employee_id,
                             "date": contract.date,
                             "contract_doc": contract.contract_doc.url,
                         }
@@ -4745,11 +4747,13 @@ class Offshore_Contract(APIView):
         contracts = offshore_contracts.objects.all()
         offshore_cont = []
         for contract in contracts:
+            emp = employee.objects.get(email=contract.employee_id)
+            clnt = client.objects.get(email=contract.client_id)
             record = {
                 "id": contract.id,
                 "contract_name": contract.contract_name,
-                "client_id": contract.client_id,
-                "employee_id": contract.employee_id,
+                "client_id": clnt.client_id,
+                "employee_id": emp.employee_id,
                 "date": contract.date,
                 "contract_doc": contract.contract_doc.url,
             }
