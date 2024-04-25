@@ -36,4 +36,7 @@ urlpatterns=[
     path('hr_empattendance/', Attendance_Report.as_view()),
     path('notify/', Notifications.as_view()),
     path('down_offshore/', Download_Offshore_Contract.as_view()),
+    path('down_resume/', Download_Resume.as_view()),
+    path('down_emp_inv/', Download_Employee_Invoice.as_view()),
+    path('down_oth_inv/', Download_Other_Invoice.as_view()),
 ]
