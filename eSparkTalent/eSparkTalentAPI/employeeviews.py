@@ -2044,33 +2044,33 @@ class Punch_Request(APIView):
 
             pending = punch_request.objects.filter(
                 Q(employee_id=e_email, client_id=workspace),
-                created_at__date__gte=from_date_object,
-                created_at__date__lte=to_date_object,
+                date__gte=from_date_object,
+                date__lte=to_date_object,
                 status="pending",
             ).count()
             rejected = punch_request.objects.filter(
                 Q(employee_id=e_email, client_id=workspace),
-                created_at__date__gte=from_date_object,
-                created_at__date__lte=to_date_object,
+                date__gte=from_date_object,
+                date__lte=to_date_object,
                 status="rejected",
             ).count()
             completed = punch_request.objects.filter(
                 Q(employee_id=e_email, client_id=workspace),
-                created_at__date__gte=from_date_object,
-                created_at__date__lte=to_date_object,
+                date__gte=from_date_object,
+                date__lte=to_date_object,
                 status="completed",
             ).count()
             all = punch_request.objects.filter(
                 Q(employee_id=e_email, client_id=workspace),
-                created_at__date__gte=from_date_object,
-                created_at__date__lte=to_date_object,
+                date__gte=from_date_object,
+                date__lte=to_date_object,
             ).count()
 
             if tab == "pending" or tab == "completed" or tab == "rejected":
                 p_request = punch_request.objects.filter(
                     Q(employee_id=e_email, client_id=workspace),
-                    created_at__date__gte=from_date_object,
-                    created_at__date__lte=to_date_object,
+                    date__gte=from_date_object,
+                    date__lte=to_date_object,
                     status=tab,
                 )
                 req_record = []
@@ -2098,8 +2098,8 @@ class Punch_Request(APIView):
             elif not tab:
                 p_request = punch_request.objects.filter(
                     Q(employee_id=e_email, client_id=workspace),
-                    created_at__date__gte=from_date_object,
-                    created_at__date__lte=to_date_object,
+                    date__gte=from_date_object,
+                    date__lte=to_date_object,
                 )
                 req_record = []
                 if p_request:
