@@ -366,22 +366,23 @@ class leave_request(models.Model):
         return f"{self.client_id} - {self.employee_id} - {self.id}"
 
     def save(self, *args, **kwargs):
-        try:
-            lr = leave_request.objects.get(id=self.id)
-            if self.attachment != lr.attachment:
+        if self.attachment:
+            try:
+                lr = leave_request.objects.get(id=self.id)
+                if self.attachment != lr.attachment:
+                    try:
+                        file_content = self.attachment.file.seek(0)
+                        valid_pdffile_type(self.attachment.file)
+                        self.attachment.name = upload_file(self.attachment.name)
+                    except ValidationError as e:
+                        raise ValidationError(e)
+            except leave_request.DoesNotExist:
                 try:
                     file_content = self.attachment.file.seek(0)
                     valid_pdffile_type(self.attachment.file)
                     self.attachment.name = upload_file(self.attachment.name)
                 except ValidationError as e:
                     raise ValidationError(e)
-        except leave_request.DoesNotExist:
-            try:
-                file_content = self.attachment.file.seek(0)
-                valid_pdffile_type(self.attachment.file)
-                self.attachment.name = upload_file(self.attachment.name)
-            except ValidationError as e:
-                raise ValidationError(e)
 
         super().save(*args, **kwargs)
 
