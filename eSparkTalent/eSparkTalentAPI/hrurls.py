@@ -1,6 +1,7 @@
 from django.urls import path
 from .clientviews import LoginView, Notifications
 from .hrviews import *
+from .downloadviews import *
 
 urlpatterns=[
     path('login/',LoginView.as_view()),
@@ -34,4 +35,5 @@ urlpatterns=[
     path('hr_clientaddemp/', ClientAddEmployee.as_view()),
     path('hr_empattendance/', Attendance_Report.as_view()),
     path('notify/', Notifications.as_view()),
+    path('down_offshore/', Download_Offshore_Contract.as_view()),
 ]
