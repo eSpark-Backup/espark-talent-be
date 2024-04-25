@@ -123,7 +123,7 @@ class Check_Punches(BaseCommand):
                             month=now.strftime("%B"),
                             year=now.strftime("%Y"),
                         )
-                        if (
+                        if time_record and(
                             now.date().strftime("%d-%m-%Y")
                             in time_record[0].record.keys()
                             and time_record[0].record[now.date().strftime("%d-%m-%Y")]["check_in"] != "-"
@@ -135,7 +135,7 @@ class Check_Punches(BaseCommand):
                                 rec.record[now.date().strftime("%d-%m-%Y")]['status']['Missing'] = True
                                 rec.record[now.date().strftime("%d-%m-%Y")]['status']['Short Duration'] = False
                                 rec.save()
-                        elif (
+                        elif time_record and(
                             now.date().strftime("%d-%m-%Y")
                             in time_record[0].record.keys()
                             and time_record[0].record[now.date().strftime("%d-%m-%Y")]["check_in"] == "-"
@@ -149,4 +149,28 @@ class Check_Punches(BaseCommand):
                                 rec.record[now.date().strftime("%d-%m-%Y")]['status']['Missing'] = False
                                 rec.record[now.date().strftime("%d-%m-%Y")]['status']['Short Duration'] = False
                                 rec.save()
+                        elif not time_record:
+                            time_sheet.objects.create(
+                                employee_id=emp.employee_id,
+                                client_id=emp.client_id,
+                                month=now.strftime("%B"),
+                                year=now.strftime("%Y"),
+                                record={
+                                    now.date().strftime("%d-%m-%Y"): {
+                                        "check_in": "-",
+                                        "check_out": "-",
+                                        "hours_worked": "-",
+                                        "overtime": "-",
+                                        "status": {
+                                            "Present": False,
+                                            "Missing": False,
+                                            "Absent": True,
+                                            "Day Off": False,
+                                            "Full Leave": False,
+                                            "Short Duration": False,
+                                        },
+                                    }
+                                },
+                            )
+
             time.sleep(30 * 60)
