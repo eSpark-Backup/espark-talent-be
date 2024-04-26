@@ -130,7 +130,9 @@ class Client_Home(APIView):
         try:
             client_data = client.objects.get(email=user)
             image_path = client_data.image.url
+            c_email = client_data.email
         except client.DoesNotExist:
+            c_email = ""
             image_path = None
 
         try:
@@ -141,6 +143,7 @@ class Client_Home(APIView):
 
         data = {
             "username": user.username,
+            "c_email": c_email,
             "hiring_request_count": hiring_request_count,
             "interview_schedule_count": interview_schedule_count,
             "onboarding_count": onboarding_count,
@@ -1151,6 +1154,9 @@ class ClockInOut_Request(APIView):
                     emp_req = employee.objects.get(
                         email=to_update_clockinout_request.employee_id
                     )
+                    check_in=emp_req.punch_timings["check_in"]
+                    check_out=emp_req.punch_timings["check_out"]
+                    req_hours=datetime.datetime.strptime(check_out, "%I:%M %p")-datetime.datetime.strptime(check_in, "%I:%M %p")
                     try:
                         record_punch_type = to_update_clockinout_request.punch_type
                         if record_punch_type == "check_in":
@@ -1318,7 +1324,7 @@ class ClockInOut_Request(APIView):
                                             to_update_clockinout_request.punch_time,
                                             "%I:%M:%S %p",
                                         )
-                                        if hours_worked.total_seconds() // 3600 < 9:
+                                        if hours_worked.total_seconds() // 3600 < int(req_hours.total_seconds()//3600):
                                             timesheet_record.record[
                                                 to_update_clockinout_request.date.strftime(
                                                     "%d-%m-%Y"
@@ -1362,10 +1368,10 @@ class ClockInOut_Request(APIView):
                                                 },
                                                 status=status.HTTP_200_OK,
                                             )
-                                        elif hours_worked.total_seconds() // 3600 >= 9:
+                                        elif hours_worked.total_seconds() // 3600 >= int(req_hours.total_seconds()//3600):
                                             overtime = (
                                                 hours_worked
-                                                - datetime.timedelta(hours=9)
+                                                - datetime.timedelta(hours=int(req_hours.total_seconds()//3600))
                                             )
                                             overtime_min = (overtime.seconds // 60) % 60
                                             overtime_hours = overtime.seconds // 3600
@@ -1708,7 +1714,7 @@ class ClockInOut_Request(APIView):
                                         ) - datetime.datetime.strptime(
                                             check_in_time, "%I:%M:%S %p"
                                         )
-                                        if hours_worked.total_seconds() // 3600 < 9:
+                                        if hours_worked.total_seconds() // 3600 < int(req_hours.total_seconds()//3600):
                                             timesheet_record.record[
                                                 to_update_clockinout_request.date.strftime(
                                                     "%d-%m-%Y"
@@ -1752,10 +1758,10 @@ class ClockInOut_Request(APIView):
                                                 },
                                                 status=status.HTTP_200_OK,
                                             )
-                                        elif hours_worked.total_seconds() // 3600 >= 9:
+                                        elif hours_worked.total_seconds() // 3600 >= int(req_hours.total_seconds()//3600):
                                             overtime = (
                                                 hours_worked
-                                                - datetime.timedelta(hours=9)
+                                                - datetime.timedelta(hours=int(req_hours.total_seconds()//3600))
                                             )
                                             overtime_min = (overtime.seconds // 60) % 60
                                             overtime_hours = overtime.seconds // 3600
