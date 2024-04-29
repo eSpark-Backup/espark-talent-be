@@ -92,16 +92,25 @@ def Statistics(e_email, workspace):
         hour=0, minute=0, second=0, microsecond=0
     )
 
+    try:
+        emp=employee.objects.get(email=e_email)
+        check_in=emp.punch_timings["check_in"]
+        check_out=emp.punch_timings["check_out"]
+        req_time=datetime.strptime(check_out, "%I:%M %p")-datetime.strptime(check_in, "%I:%M %p")
+        req_hours=int(req_time.total_seconds()//3600)
+    except employee.DoesNotExist:
+        req_hours=9
+
     statistics = {
-        "today": "0/9 hrs",
-        "this_week": "0/45 hrs",
+        "today": f"0/{req_hours} hrs",
+        "this_week": f"0/{req_hours*5} hrs",
         "this_month": f"0/{total_weekdays} hrs",
-        "remaining": f"{total_weekdays*9}/{total_weekdays*9} hrs",
+        "remaining": f"{total_weekdays*req_hours}/{total_weekdays*req_hours} hrs",
         "overtime": "0 hrs",
     }
     w_hours_worked = 0
     minutes_worked = 0
-    overtime_threshold = weekdays_up_to_today * 9
+    overtime_threshold = weekdays_up_to_today * req_hours
     try:
         time_sheet_record = time_sheet.objects.get(
             employee_id=e_email,
@@ -124,7 +133,7 @@ def Statistics(e_email, workspace):
             ) - datetime.combine(datetime.today(), check_in_time)
 
             t_hours_worked = round(time_difference.total_seconds() / 3600, 2)
-            statistics["today"] = f"{t_hours_worked}/9 hrs"
+            statistics["today"] = f"{t_hours_worked}/{req_hours} hrs"
         elif (
             today in time_sheet_record.record
             and time_sheet_record.record[today]["check_in"] != "-"
@@ -142,7 +151,7 @@ def Statistics(e_email, workspace):
             ) - datetime.combine(datetime.today(), check_in_time)
 
             t_hours_worked = round(time_difference.total_seconds() / 3600, 2)
-            statistics["today"] = f"{t_hours_worked}/9 hrs"
+            statistics["today"] = f"{t_hours_worked}/{req_hours} hrs"
         for value in time_sheet_record.record:
             if (
                 time_sheet_record.record[value]["check_in"] != "-"
@@ -170,32 +179,20 @@ def Statistics(e_email, workspace):
                     time_difference = check_out_datetime - check_in_datetime
                     w_hours_worked += time_difference.seconds / 3600
 
-                elif (
-                    value == today
-                    and time_sheet_record.record[value]["check_in"] != "-"
-                    and time_sheet_record.record[value]["check_out"] == "-"
-                ):
-                    check_in_time = time_sheet_record.record[value]["check_in"]
-                    check_in_datetime = datetime.strptime(check_in_time, "%I:%M:%S %p")
-                    time_difference = datetime.combine(
-                        datetime.today(), current_time
-                    ) - datetime.combine(datetime.today(), check_in_datetime.time())
-                    w_hours_worked += time_difference.seconds / 3600
-
-        statistics["this_week"] = f"{round(w_hours_worked, 2)}/45 hrs"
+        statistics["this_week"] = f"{round(w_hours_worked, 2)}/{req_hours*5} hrs"
         m_hours_worked = round(minutes_worked / 60, 2)
-        statistics["this_month"] = f"{m_hours_worked}/{total_weekdays*9} hrs"
-        remains = round(((total_weekdays * 9) - m_hours_worked), 2)
-        statistics["remaining"] = f"{remains}/{total_weekdays * 9} hrs"
+        statistics["this_month"] = f"{m_hours_worked}/{total_weekdays*req_hours} hrs"
+        remains = round(((total_weekdays * req_hours) - m_hours_worked), 2)
+        statistics["remaining"] = f"{remains}/{total_weekdays * req_hours} hrs"
         if m_hours_worked > overtime_threshold:
             overtime = m_hours_worked - overtime_threshold
             statistics["overtime"] = f"{overtime} hrs"
     except:
         statistics = {
-            "today": "0/9 hrs",
-            "this_week": "0/45 hrs",
-            "this_month": f"0/{total_weekdays*9} hrs",
-            "remaining": f"{total_weekdays*9}/{total_weekdays*9} hrs",
+            "today": f"0/{req_hours} hrs",
+            "this_week": f"0/{req_hours*5} hrs",
+            "this_month": f"0/{total_weekdays*req_hours} hrs",
+            "remaining": f"{total_weekdays*req_hours}/{total_weekdays*req_hours} hrs",
             "overtime": "0 hrs",
         }
     return statistics
@@ -226,6 +223,14 @@ def AttendanceSummary(e_email, workspace):
     end_of_week = (start_of_week + timedelta(days=4)).replace(
         hour=0, minute=0, second=0, microsecond=0
     )
+    try:
+        emp=employee.objects.get(email=e_email)
+        check_in=emp.punch_timings["check_in"]
+        check_out=emp.punch_timings["check_out"]
+        req_time=datetime.strptime(check_out, "%I:%M %p")-datetime.strptime(check_in, "%I:%M %p")
+        req_hours=int(req_time.total_seconds()//3600)
+    except employee.DoesNotExist:
+        req_hours=9
 
     try:
         time_sheet_record = time_sheet.objects.get(
@@ -258,7 +263,7 @@ def AttendanceSummary(e_email, workspace):
                 check_in_datetime = datetime.strptime(check_in_time, "%I:%M:%S %p")
                 check_out_datetime = datetime.strptime(check_out_time, "%I:%M:%S %p")
                 time_difference = check_out_datetime - check_in_datetime
-                if round(time_difference.seconds / 3600) > 9:
+                if round(time_difference.seconds / 3600) > req_hours:
                     overtimes += 1
 
             if (
@@ -313,7 +318,7 @@ def AttendanceSummary(e_email, workspace):
                 time_difference = check_out_datetime - check_in_datetime
                 minutes_worked += time_difference.seconds // 60
 
-        workable_minutes = weekdays_up_to_today * 9 * 60
+        workable_minutes = weekdays_up_to_today * req_hours * 60
         worked_minutes = minutes_worked
         if workable_minutes > worked_minutes:
             short_minutes = workable_minutes - worked_minutes

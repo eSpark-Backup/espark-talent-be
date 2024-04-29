@@ -127,6 +127,7 @@ class Check_Punches(BaseCommand):
                             now.date().strftime("%d-%m-%Y")
                             in time_record[0].record.keys()
                             and time_record[0].record[now.date().strftime("%d-%m-%Y")]["check_in"] != "-"
+                            and time_record[0].record[now.date().strftime("%d-%m-%Y")]["check_out"] == "-"
                         ):
                             for rec in time_record:
                                 rec.record[now.date().strftime("%d-%m-%Y")]['check_out'] = "-"
@@ -139,6 +140,7 @@ class Check_Punches(BaseCommand):
                             now.date().strftime("%d-%m-%Y")
                             in time_record[0].record.keys()
                             and time_record[0].record[now.date().strftime("%d-%m-%Y")]["check_in"] == "-"
+                            and time_record[0].record[now.date().strftime("%d-%m-%Y")]["check_out"] == "-"
                         ):
                             for rec in time_record:
                                 rec.record[now.date().strftime("%d-%m-%Y")]['check_out'] = "-"
