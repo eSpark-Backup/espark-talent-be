@@ -810,7 +810,6 @@ class Employee_Invoice(APIView):
                         ),
                         "invoice_amount": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "payment_status": openapi.Schema(type=openapi.TYPE_STRING),
-                        "invoice": openapi.Schema(type=openapi.TYPE_FILE),
                     },
                 ),
             ),
@@ -1099,7 +1098,6 @@ class Other_Payment(APIView):
                         ),
                         "invoice_amount": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "payment_status": openapi.Schema(type=openapi.TYPE_STRING),
-                        "invoice": openapi.Schema(type=openapi.TYPE_FILE),
                     },
                 ),
             ),
@@ -1636,7 +1634,6 @@ class Hr_Employee(APIView):
                                     type=openapi.TYPE_STRING
                                 ),
                                 "image_path": openapi.Schema(type=openapi.TYPE_STRING),
-                                "resume_path": openapi.Schema(type=openapi.TYPE_STRING),
                                 "emergency_contact": openapi.Schema(
                                     type=openapi.TYPE_OBJECT,
                                     properties={
@@ -4442,7 +4439,6 @@ class Company_Contract(APIView):
                             "date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
-                            "contract_doc": openapi.Schema(type=openapi.TYPE_STRING),
                         },
                     ),
                 ),
@@ -4721,7 +4717,6 @@ class Offshore_Contract(APIView):
                             "date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
-                            "contract_doc": openapi.Schema(type=openapi.TYPE_STRING),
                         },
                     ),
                 ),

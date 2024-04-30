@@ -662,7 +662,6 @@ class Company_Contract(APIView):
                             type=openapi.TYPE_STRING,
                             format=openapi.FORMAT_DATE,
                         ),
-                        "contract_doc": openapi.Schema(type=openapi.TYPE_FILE),
                     },
                 ),
             ),
@@ -718,7 +717,6 @@ class Offshore_Contract(APIView):
                             type=openapi.TYPE_STRING,
                             format=openapi.FORMAT_DATE,
                         ),
-                        "contract_doc": openapi.Schema(type=openapi.TYPE_FILE),
                     },
                 ),
             ),
@@ -2369,7 +2367,6 @@ class Policies(APIView):
                         properties={
                             "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "policy_name": openapi.Schema(type=openapi.TYPE_STRING),
-                            "policy_doc": openapi.Schema(type=openapi.TYPE_FILE),
                         },
                     ),
                 ),

@@ -2531,9 +2531,6 @@ class Invoice_Payments(APIView):
                                     "payment_status": openapi.Schema(
                                         type=openapi.TYPE_STRING
                                     ),
-                                    "download": openapi.Schema(
-                                        type=openapi.TYPE_STRING
-                                    ),
                                 },
                             ),
                         ),
@@ -2558,9 +2555,6 @@ class Invoice_Payments(APIView):
                                         type=openapi.TYPE_INTEGER
                                     ),
                                     "payment_status": openapi.Schema(
-                                        type=openapi.TYPE_STRING
-                                    ),
-                                    "download": openapi.Schema(
                                         type=openapi.TYPE_STRING
                                     ),
                                 },
@@ -2738,7 +2732,6 @@ class Client_contract(APIView):
                         "date": openapi.Schema(
                             type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                         ),
-                        "contract_doc": openapi.Schema(type=openapi.TYPE_STRING),
                     },
                 ),
             ),
@@ -2792,7 +2785,6 @@ class Employee_Contract(APIView):
                         "date": openapi.Schema(
                             type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                         ),
-                        "contract_doc": openapi.Schema(type=openapi.TYPE_STRING),
                     },
                 ),
             ),
@@ -2832,7 +2824,6 @@ class Policies(APIView):
                         properties={
                             "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "policy_name": openapi.Schema(type=openapi.TYPE_STRING),
-                            "policy_doc": openapi.Schema(type=openapi.TYPE_FILE),
                         },
                     ),
                 ),
