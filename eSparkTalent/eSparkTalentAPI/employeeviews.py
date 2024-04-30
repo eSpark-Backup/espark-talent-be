@@ -16,7 +16,7 @@ from drf_yasg import openapi
 from rest_framework.parsers import MultiPartParser
 from .emp_dash_funcs import *
 from eSparkTalent.settings import talent_email
-from .files_removal import remove_bucket_file
+from .files_funcs import remove_bucket_file
 
 
 @authentication_classes([JWTAuthentication])
@@ -691,7 +691,6 @@ class Company_Contract(APIView):
                     "employee_id": employee.objects.get(email=request.user).employee_id,
                     "contract_name": contract.contract_name,
                     "date": contract.date,
-                    "contract_doc": contract.contract_doc.url,
                 }
                 records.append(record)
 
@@ -760,7 +759,6 @@ class Offshore_Contract(APIView):
                     "employee_id": employee.objects.get(email=request.user).employee_id,
                     "contract_name": contract.contract_name,
                     "date": contract.date,
-                    "contract_doc": contract.contract_doc.url,
                 }
                 records.append(record)
             return Response(records, status=status.HTTP_200_OK)
@@ -1414,7 +1412,6 @@ class Leave_Request(APIView):
                         {
                             "message": f"{result.leave_type} leave request is pending",
                             "id": result.id,
-                            "attachment": result.attachment.url,
                         },
                         status=status.HTTP_201_CREATED,
                     )
@@ -2398,7 +2395,6 @@ class Policies(APIView):
             record = {
                 "id": emp_pol.id,
                 "policy_name": emp_pol.policy_name,
-                "policy_doc": emp_pol.policy_doc.url,
             }
             policies.append(record)
         if len(policies) > 0:
