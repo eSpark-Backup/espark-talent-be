@@ -127,6 +127,7 @@ class Check_Punches(BaseCommand):
                             now.date().strftime("%d-%m-%Y")
                             in time_record[0].record.keys()
                             and time_record[0].record[now.date().strftime("%d-%m-%Y")]["check_in"] != "-"
+                            and time_record[0].record[now.date().strftime("%d-%m-%Y")]["check_out"] == "-"
                         ):
                             for rec in time_record:
                                 rec.record[now.date().strftime("%d-%m-%Y")]['check_out'] = "-"
@@ -139,6 +140,7 @@ class Check_Punches(BaseCommand):
                             now.date().strftime("%d-%m-%Y")
                             in time_record[0].record.keys()
                             and time_record[0].record[now.date().strftime("%d-%m-%Y")]["check_in"] == "-"
+                            and time_record[0].record[now.date().strftime("%d-%m-%Y")]["check_out"] == "-"
                         ):
                             for rec in time_record:
                                 rec.record[now.date().strftime("%d-%m-%Y")]['check_out'] = "-"
@@ -148,6 +150,23 @@ class Check_Punches(BaseCommand):
                                 rec.record[now.date().strftime("%d-%m-%Y")]['status']['Absent'] = True
                                 rec.record[now.date().strftime("%d-%m-%Y")]['status']['Missing'] = False
                                 rec.record[now.date().strftime("%d-%m-%Y")]['status']['Short Duration'] = False
+                                rec.save()
+                        elif time_record and(now.date().strftime("%d-%m-%Y") not in time_record[0].record.keys()):
+                            for rec in time_record:
+                                rec.record[now.date().strftime("%d-%m-%Y")] = {
+                                    "check_in": "-",
+                                    "check_out": "-",
+                                    "hours_worked": "-",
+                                    "overtime": "-",
+                                    "status": {
+                                        "Present": False,
+                                        "Missing": False,
+                                        "Absent": True,
+                                        "Day Off": False,
+                                        "Full Leave": False,
+                                        "Short Duration": False,
+                                    },
+                                }
                                 rec.save()
                         elif not time_record:
                             time_sheet.objects.create(

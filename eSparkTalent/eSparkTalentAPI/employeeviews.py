@@ -482,6 +482,8 @@ class Employee_Home(APIView):
                         return Response(
                             {"message": "Check in punched"}, status=status.HTTP_200_OK
                         )
+                    else:
+                        return Response({"message":"Check in is already punched"}, status=status.HTTP_200_OK)
             else:
                 time_sheet.objects.create(
                     month=now.strftime("%B"),
@@ -527,6 +529,14 @@ class Employee_Home(APIView):
                 ]
                 != "-"
             ):
+                try:
+                    emp=employee.objects.get(email=time_sheet.employee_id)
+                    check_in=emp.punch_timings["check_in"]
+                    check_out=emp.punch_timings["check_out"]
+                    req_time=datetime.strptime(check_out, "%I:%M %p")-datetime.strptime(check_in, "%I:%M %p")
+                    working_hours=int(req_time.total_seconds()//3600)
+                except:
+                    working_hours=9
                 for rec in months_timesheet:
                     check_in_time = rec.record[now.date().strftime("%d-%m-%Y")][
                         "check_in"
@@ -535,7 +545,7 @@ class Employee_Home(APIView):
                         check_out, "%I:%M:%S %p"
                     ) - datetime.strptime(check_in_time, "%I:%M:%S %p")
 
-                    if hours_worked.total_seconds() // 3600 < 9:
+                    if hours_worked.total_seconds() // 3600 < working_hours:
                         rec.record[now.date().strftime("%d-%m-%Y")][
                             "check_out"
                         ] = check_out
@@ -554,8 +564,8 @@ class Employee_Home(APIView):
                             {"message": "Check out punched"}, status=status.HTTP_200_OK
                         )
 
-                    elif hours_worked.total_seconds() // 3600 >= 9:
-                        overtime = hours_worked - timedelta(hours=9)
+                    elif hours_worked.total_seconds() // 3600 >= working_hours:
+                        overtime = hours_worked - timedelta(hours=working_hours)
                         overtime_min = (overtime.seconds // 60) % 60
                         overtime_hours = overtime.seconds // 3600
                         rec.record[now.date().strftime("%d-%m-%Y")][
@@ -587,7 +597,8 @@ class Employee_Home(APIView):
                         return Response(
                             {"message": "Check out punched"}, status=status.HTTP_200_OK
                         )
-
+            else:
+                return Response({"message":"Check out is already punched"}, status=status.HTTP_200_OK)
         elif breaked:
             months_timesheet = time_sheet.objects.filter(
                 month=now.strftime("%B"),
@@ -612,6 +623,8 @@ class Employee_Home(APIView):
                         return Response(
                             {"message": "Break punched"}, status=status.HTTP_200_OK
                         )
+                    else:
+                        return Response({"message":"Break is already punched"}, status=status.HTTP_200_OK)
 
         elif resumed:
             months_timesheet = time_sheet.objects.filter(
@@ -638,6 +651,8 @@ class Employee_Home(APIView):
                         return Response(
                             {"message": "Resuming punched"}, status=status.HTTP_200_OK
                         )
+                    else:
+                        return Response({"message":"Resuming is already punched"}, status=status.HTTP_200_OK)
         else:
             return Response(
                 {"error": "Invalid query parameter"}, status=status.HTTP_400_BAD_REQUEST
@@ -1690,6 +1705,14 @@ class Time_Sheet(APIView):
                         filtered_record[key] = value
 
             if len(filtered_record) > 0:
+                try:
+                    emp=employee.objects.get(email=e_email)
+                    check_in=emp.punch_timings["check_in"]
+                    check_out=emp.punch_timings["check_out"]
+                    req_time=datetime.strptime(check_out, "%I:%M %p")-datetime.strptime(check_in, "%I:%M %p")
+                    working_hours=int(req_time.total_seconds()//3600)
+                except employee.DoesNotExist:
+                    working_hours=9
                 hours_worked = 0
                 minutes_worked = 0
                 short_duration = 0
@@ -1740,7 +1763,7 @@ class Time_Sheet(APIView):
                 else:
                     worked_hours = "0h"
 
-                workable_minutes = actual_shifts * 9 * 60
+                workable_minutes = actual_shifts * working_hours * 60
                 worked_minutes = hours_worked * 60 + minutes_worked
                 if workable_minutes > worked_minutes:
                     short_minutes = workable_minutes - worked_minutes
@@ -1756,7 +1779,7 @@ class Time_Sheet(APIView):
 
                 summary = {
                     "workable_shifts": actual_shifts,
-                    "workable_hours": f"{actual_shifts*9}h",
+                    "workable_hours": f"{actual_shifts*working_hours}h",
                     "worked_hours": worked_hours,
                     "short_hours": short_hours,
                     "overtime_hours": overtime_hours,
@@ -1810,6 +1833,14 @@ class Time_Sheet(APIView):
                     year=datetime.now().year,
                     month=datetime.now().strftime("%B"),
                 )
+                try:
+                    emp=employee.objects.get(email=e_email)
+                    check_in=emp.punch_timings["check_in"]
+                    check_out=emp.punch_timings["check_out"]
+                    req_time=datetime.strptime(check_out, "%I:%M %p")-datetime.strptime(check_in, "%I:%M %p")
+                    working_hours=int(req_time.total_seconds()//3600)
+                except employee.DoesNotExist:
+                    working_hours=9
                 record = {
                     "id": ts_record.id,
                     "month": ts_record.month,
@@ -1871,7 +1902,7 @@ class Time_Sheet(APIView):
                     weekday = calendar.weekday(current_year, date_today.month, day)
                     actual_shifts += 1 if weekday < 5 else 0
 
-                workable_minutes = actual_shifts * 9 * 60
+                workable_minutes = actual_shifts * working_hours * 60
                 worked_minutes = hours_worked * 60 + minutes_worked
                 if workable_minutes > worked_minutes:
                     short_minutes = workable_minutes - worked_minutes
@@ -1887,7 +1918,7 @@ class Time_Sheet(APIView):
 
                 summary = {
                     "workable_shifts": actual_shifts,
-                    "workable_hours": f"{actual_shifts*9}h",
+                    "workable_hours": f"{actual_shifts*working_hours}h",
                     "worked_hours": worked_hours,
                     "short_hours": short_hours,
                     "overtime_hours": overtime_hours,
