@@ -534,9 +534,9 @@ class Employee_Home(APIView):
                     check_in=emp.punch_timings["check_in"]
                     check_out=emp.punch_timings["check_out"]
                     req_time=datetime.strptime(check_out, "%I:%M %p")-datetime.strptime(check_in, "%I:%M %p")
-                    req_hours=int(req_time.total_seconds()//3600)
+                    working_hours=int(req_time.total_seconds()//3600)
                 except:
-                    req_hours=9
+                    working_hours=9
                 for rec in months_timesheet:
                     check_in_time = rec.record[now.date().strftime("%d-%m-%Y")][
                         "check_in"
@@ -545,7 +545,7 @@ class Employee_Home(APIView):
                         check_out, "%I:%M:%S %p"
                     ) - datetime.strptime(check_in_time, "%I:%M:%S %p")
 
-                    if hours_worked.total_seconds() // 3600 < req_hours:
+                    if hours_worked.total_seconds() // 3600 < working_hours:
                         rec.record[now.date().strftime("%d-%m-%Y")][
                             "check_out"
                         ] = check_out
@@ -564,8 +564,8 @@ class Employee_Home(APIView):
                             {"message": "Check out punched"}, status=status.HTTP_200_OK
                         )
 
-                    elif hours_worked.total_seconds() // 3600 >= req_hours:
-                        overtime = hours_worked - timedelta(hours=req_hours)
+                    elif hours_worked.total_seconds() // 3600 >= working_hours:
+                        overtime = hours_worked - timedelta(hours=working_hours)
                         overtime_min = (overtime.seconds // 60) % 60
                         overtime_hours = overtime.seconds // 3600
                         rec.record[now.date().strftime("%d-%m-%Y")][
@@ -1710,9 +1710,9 @@ class Time_Sheet(APIView):
                     check_in=emp.punch_timings["check_in"]
                     check_out=emp.punch_timings["check_out"]
                     req_time=datetime.strptime(check_out, "%I:%M %p")-datetime.strptime(check_in, "%I:%M %p")
-                    req_hours=int(req_time.total_seconds()//3600)
+                    working_hours=int(req_time.total_seconds()//3600)
                 except employee.DoesNotExist:
-                    req_hours=9
+                    working_hours=9
                 hours_worked = 0
                 minutes_worked = 0
                 short_duration = 0
@@ -1763,7 +1763,7 @@ class Time_Sheet(APIView):
                 else:
                     worked_hours = "0h"
 
-                workable_minutes = actual_shifts * req_hours * 60
+                workable_minutes = actual_shifts * working_hours * 60
                 worked_minutes = hours_worked * 60 + minutes_worked
                 if workable_minutes > worked_minutes:
                     short_minutes = workable_minutes - worked_minutes
@@ -1779,7 +1779,7 @@ class Time_Sheet(APIView):
 
                 summary = {
                     "workable_shifts": actual_shifts,
-                    "workable_hours": f"{actual_shifts*req_hours}h",
+                    "workable_hours": f"{actual_shifts*working_hours}h",
                     "worked_hours": worked_hours,
                     "short_hours": short_hours,
                     "overtime_hours": overtime_hours,
@@ -1838,9 +1838,9 @@ class Time_Sheet(APIView):
                     check_in=emp.punch_timings["check_in"]
                     check_out=emp.punch_timings["check_out"]
                     req_time=datetime.strptime(check_out, "%I:%M %p")-datetime.strptime(check_in, "%I:%M %p")
-                    req_hours=int(req_time.total_seconds()//3600)
+                    working_hours=int(req_time.total_seconds()//3600)
                 except employee.DoesNotExist:
-                    req_hours=9
+                    working_hours=9
                 record = {
                     "id": ts_record.id,
                     "month": ts_record.month,
@@ -1902,7 +1902,7 @@ class Time_Sheet(APIView):
                     weekday = calendar.weekday(current_year, date_today.month, day)
                     actual_shifts += 1 if weekday < 5 else 0
 
-                workable_minutes = actual_shifts * req_hours * 60
+                workable_minutes = actual_shifts * working_hours * 60
                 worked_minutes = hours_worked * 60 + minutes_worked
                 if workable_minutes > worked_minutes:
                     short_minutes = workable_minutes - worked_minutes
@@ -1918,7 +1918,7 @@ class Time_Sheet(APIView):
 
                 summary = {
                     "workable_shifts": actual_shifts,
-                    "workable_hours": f"{actual_shifts*req_hours}h",
+                    "workable_hours": f"{actual_shifts*working_hours}h",
                     "worked_hours": worked_hours,
                     "short_hours": short_hours,
                     "overtime_hours": overtime_hours,
