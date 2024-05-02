@@ -21,7 +21,7 @@ from rest_framework.parsers import MultiPartParser
 from eSparkTalent.settings import talent_email
 import calendar
 from datetime import datetime, timedelta
-from .files_funcs import remove_bucket_file
+from .bucket_functions import remove_bucket_file
 import datetime
 from django.utils import timezone
 from django.db.models import Q

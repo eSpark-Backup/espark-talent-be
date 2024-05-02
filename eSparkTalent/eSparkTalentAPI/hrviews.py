@@ -21,7 +21,7 @@ import json
 from dateutil import parser
 from django.db.models import Q
 from eSparkTalent.settings import talent_email
-from .files_funcs import remove_bucket_file
+from .bucket_functions import remove_bucket_file
 from django.db.models.fields.files import FileField
 
 

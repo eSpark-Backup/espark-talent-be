@@ -16,7 +16,7 @@ from drf_yasg import openapi
 from rest_framework.parsers import MultiPartParser
 from .emp_dash_funcs import *
 from eSparkTalent.settings import talent_email
-from .files_funcs import remove_bucket_file
+from .bucket_functions import remove_bucket_file
 
 
 @authentication_classes([JWTAuthentication])

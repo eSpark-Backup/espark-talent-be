@@ -9,7 +9,7 @@ from .serializers import *
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.parsers import MultiPartParser
-from .files_funcs import download_file_from_bucket
+from .bucket_functions import download_file_from_bucket
 from django.http import HttpResponse
 import os
 
@@ -119,7 +119,7 @@ class Download_Resume(APIView):
                 )
                 http_response[
                     "Content-Disposition"
-                ] = f'attachment; filename="resume{os.path.splitext(emp.resume.name)[-1]}"'
+                ] = f'attachment; filename="resume{os.path.splitext(emp.resume.name)[1]}"'
 
                 os.remove(download.name)
                 return http_response
