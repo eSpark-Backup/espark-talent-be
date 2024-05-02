@@ -21,7 +21,7 @@ import json
 from dateutil import parser
 from django.db.models import Q
 from eSparkTalent.settings import talent_email
-from .files_removal import remove_bucket_file
+from .bucket_functions import remove_bucket_file
 from django.db.models.fields.files import FileField
 
 
@@ -314,7 +314,6 @@ class Add_Employee(APIView):
                             "message": f"{emp.first_name} {emp.last_name} is added successfully",
                             "id": emp.id,
                             "image": emp.image.url,
-                            "resume": emp.resume.url,
                         },
                         status=status.HTTP_201_CREATED,
                     )
@@ -688,7 +687,6 @@ class Employee_Invoice(APIView):
                         {
                             "message": "One new invoice is added",
                             "id": emp_inv.id,
-                            "invoice": emp_inv.invoice.url,
                         },
                         status=status.HTTP_201_CREATED,
                     )
@@ -812,7 +810,6 @@ class Employee_Invoice(APIView):
                         ),
                         "invoice_amount": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "payment_status": openapi.Schema(type=openapi.TYPE_STRING),
-                        "invoice": openapi.Schema(type=openapi.TYPE_FILE),
                     },
                 ),
             ),
@@ -840,7 +837,6 @@ class Employee_Invoice(APIView):
                         "due_date": inv.due_date,
                         "invoice_amount": inv.invoice_amount,
                         "payment_status": inv.payment_status,
-                        "invoice": inv.invoice.url,
                     }
                     records.append(record)
                 return Response(records, status=status.HTTP_200_OK)
@@ -991,7 +987,6 @@ class Other_Payment(APIView):
                     {
                         "message": "One new invoice is added",
                         "id": oth_pay.id,
-                        "invoice": oth_pay.invoice.url,
                     },
                     status=status.HTTP_201_CREATED,
                 )
@@ -1103,7 +1098,6 @@ class Other_Payment(APIView):
                         ),
                         "invoice_amount": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "payment_status": openapi.Schema(type=openapi.TYPE_STRING),
-                        "invoice": openapi.Schema(type=openapi.TYPE_FILE),
                     },
                 ),
             ),
@@ -1130,7 +1124,6 @@ class Other_Payment(APIView):
                         "due_date": inv.due_date,
                         "invoice_amount": inv.invoice_amount,
                         "payment_status": inv.payment_status,
-                        "invoice": inv.invoice.url,
                     }
                     records.append(record)
                 return Response(records, status=status.HTTP_200_OK)
@@ -1641,7 +1634,6 @@ class Hr_Employee(APIView):
                                     type=openapi.TYPE_STRING
                                 ),
                                 "image_path": openapi.Schema(type=openapi.TYPE_STRING),
-                                "resume_path": openapi.Schema(type=openapi.TYPE_STRING),
                                 "emergency_contact": openapi.Schema(
                                     type=openapi.TYPE_OBJECT,
                                     properties={
@@ -1802,7 +1794,6 @@ class Hr_Employee(APIView):
                     "email": emp_record.email,
                     "marital_status": emp_record.marital_status,
                     "image_path": emp_record.image.url,
-                    "resume_path": emp_record.resume.url,
                     "emergency_contact": emp_record.emergency_contact,
                     "joining_date": emp_record.joining_date,
                     "job_title": emp_record.job_title,
@@ -4154,7 +4145,6 @@ class Policies(APIView):
                     {
                         "message": "New policy has been added successfully",
                         "id": pol.id,
-                        "policy_doc": pol.policy_doc.url,
                     },
                     status=status.HTTP_201_CREATED,
                 )
@@ -4360,7 +4350,6 @@ class Company_Contract(APIView):
                             {
                                 "message": "One new contract has been added to company contracts",
                                 "id": cl_contract.id,
-                                "contract_doc": cl_contract.contract_doc.url,
                             },
                             status=status.HTTP_201_CREATED,
                         )
@@ -4398,7 +4387,6 @@ class Company_Contract(APIView):
                             {
                                 "message": "One new contract has been added to company contracts",
                                 "id": emp_contract.id,
-                                "contract_doc": emp_contract.contract_doc.url,
                             },
                             status=status.HTTP_201_CREATED,
                         )
@@ -4451,7 +4439,6 @@ class Company_Contract(APIView):
                             "date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
-                            "contract_doc": openapi.Schema(type=openapi.TYPE_STRING),
                         },
                     ),
                 ),
@@ -4475,7 +4462,6 @@ class Company_Contract(APIView):
                             "contract_name": contract.contract_name,
                             "client_id": clnt.client_id,
                             "date": contract.date,
-                            "contract_doc": contract.contract_doc.url,
                         }
                         client_cont.append(record)
                     if not client_cont:
@@ -4495,7 +4481,6 @@ class Company_Contract(APIView):
                             "contract_name": contract.contract_name,
                             "employee_id": emp.employee_id,
                             "date": contract.date,
-                            "contract_doc": contract.contract_doc.url,
                         }
                         employee_cont.append(record)
                     if not employee_cont:
@@ -4687,7 +4672,6 @@ class Offshore_Contract(APIView):
                         "id": off_cont.id,
                         "client_email": off_cont.client_id,
                         "employee_email": off_cont.employee_id,
-                        "contract_doc": off_cont.contract_doc.url,
                     },
                     status=status.HTTP_201_CREATED,
                 )
@@ -4733,7 +4717,6 @@ class Offshore_Contract(APIView):
                             "date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
-                            "contract_doc": openapi.Schema(type=openapi.TYPE_STRING),
                         },
                     ),
                 ),
@@ -4755,7 +4738,6 @@ class Offshore_Contract(APIView):
                 "client_id": clnt.client_id,
                 "employee_id": emp.employee_id,
                 "date": contract.date,
-                "contract_doc": contract.contract_doc.url,
             }
             offshore_cont.append(record)
         if not offshore_cont:
