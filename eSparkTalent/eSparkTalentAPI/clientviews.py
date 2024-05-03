@@ -25,6 +25,7 @@ from .bucket_functions import remove_bucket_file
 import datetime
 from django.utils import timezone
 from django.db.models import Q
+from string import capwords
 
 
 class LoginView(APIView):
@@ -2881,6 +2882,9 @@ class Notifications(APIView):
                             "date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
+                            "time": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME
+                            ),
                         },
                     ),
                 ),
@@ -2926,23 +2930,26 @@ class Notifications(APIView):
             ).order_by("-created_at")
             for data in notifications_data:
                 record = {
-                    "type": data.notification_type,
+                    "type": capwords(data.notification_type.replace('_',' ')),
                     "description": data.description,
                     "date": data.updated_at.date(),
+                    "time": data.updated_at.strftime("%H:%M:%S"),
                 }
                 noti_array.append(record)
             if emp_contract:
                 record = {
-                    "type": "company_contracts",
+                    "type": "Company Contracts",
                     "description": f"{emp_contract.count()} new contract has been added to company contracts.",
                     "date": emp_contract[0].created_at.date(),
+                    "time": emp_contract[0].updated_at.strftime("%H:%M:%S"),
                 }
                 noti_array.append(record)
             if off_contract:
                 record = {
-                    "type": "client_contracts",
+                    "type": "Client Contracts",
                     "description": f"{off_contract.count()} new contract has been added to client contracts.",
                     "date": off_contract[0].created_at.date(),
+                    "time": off_contract[0].created_at.strftime("%H:%M:%S"),
                 }
                 noti_array.append(record)
             if policies:
@@ -2951,12 +2958,14 @@ class Notifications(APIView):
                         "type": "Policy",
                         "description": f"1 new policy have been added.",
                         "date": policies[0].created_at.date(),
+                        "time": policies[0].created_at.strftime("%H:%M:%S"),
                     }
                 else:
                     record = {
                         "type": "Policy",
                         "description": f"{policies.count()} new policies have been added.",
                         "date": policies[0].created_at.date(),
+                        "time": policies[0].created_at.strftime("%H:%M:%S"),
                     }
                 noti_array.append(record)
 
@@ -2999,37 +3008,50 @@ class Notifications(APIView):
             ).order_by("-created_at")
             for data in notifications_data:
                 record = {
-                    "type": data.notification_type,
+                    "type": capwords(data.notification_type.replace('_',' ')),
                     "description": data.description,
                     "date": data.updated_at.date(),
+                    "time": data.updated_at.strftime("%H:%M:%S"),
                 }
                 noti_array.append(record)
             if clt_contract:
                 record = {
-                    "type": "company_contracts",
+                    "type": "Company Contracts",
                     "description": f"{clt_contract.count()} new contract has been added to company contracts.",
                     "date": clt_contract[0].created_at.date(),
+                    "time": clt_contract[0].created_at.strftime("%H:%M:%S"),
                 }
                 noti_array.append(record)
             if off_contract:
                 record = {
-                    "type": "employee_contracts",
+                    "type": "Employee Contracts",
                     "description": f"{off_contract.count()} new contract has been added to employee contracts.",
                     "date": off_contract[0].created_at.date(),
+                    "time": off_contract[0].created_at.strftime("%H:%M:%S"),
                 }
                 noti_array.append(record)
             if policies:
-                record = {
-                    "type": "Policy",
-                    "description": f"{policies.count()} new policies have been added.",
-                    "date": policies[0].created_at.date(),
-                }
+                if policies.count() == 1:
+                    record = {
+                        "type": "Policy",
+                        "description": f"1 new policy have been added.",
+                        "date": policies[0].created_at.date(),
+                        "time": policies[0].created_at.strftime("%H:%M:%S"),
+                    }
+                else:
+                    record = {
+                        "type": "Policy",
+                        "description": f"{policies.count()} new policies have been added.",
+                        "date": policies[0].created_at.date(),
+                        "time": policies[0].created_at.strftime("%H:%M:%S"),
+                    }
                 noti_array.append(record)
             if int_sch:
                 record = {
-                    "type": "interview_schedule",
+                    "type": "Interview Schedule",
                     "description": f"You have {int_sch.count()} new interview scheduled.",
                     "date": int_sch[0].created_at.date(),
+                    "time": int_sch[0].created_at.strftime("%H:%M:%S"),
                 }
                 noti_array.append(record)
 
@@ -3040,9 +3062,10 @@ class Notifications(APIView):
                 else:
                     description = f"{onboard_count} new employees are added"
                 record = {
-                    "type": "onboarding",
+                    "type": "Onboarding",
                     "description": description,
                     "date": onboard[0].created_at.date(),
+                    "time": onboard[0].created_at.strftime("%H:%M:%S"),
                 }
                 noti_array.append(record)
 
@@ -3052,9 +3075,10 @@ class Notifications(APIView):
                 else:
                     description = f"{invoice.count()} new invoices are added"
                 record = {
-                    "type": "invoice",
+                    "type": "Invoice",
                     "description": description,
                     "date": invoice[0].created_at.date(),
+                    "time": invoice[0].created_at.strftime("%H:%M:%S"),
                 }
                 noti_array.append(record)
 
@@ -3090,9 +3114,10 @@ class Notifications(APIView):
                 else:
                     description = f"You got {hire_req.count()} new hiring requests"
                 record = {
-                    "type": "hiring_request",
+                    "type": "Hiring Request",
                     "description": description,
                     "date": hire_req[0].created_at.date(),
+                    "time": hire_req[0].created_at.strftime("%H:%M:%S"),
                 }
                 noti_array.append(record)
             if short_int:
@@ -3101,9 +3126,10 @@ class Notifications(APIView):
                 else:
                     description = f"{short_int.count()} interviewees are shortlisted"
                 record = {
-                    "type": "interview_schedule",
+                    "type": "Interview Schedule",
                     "description": description,
                     "date": short_int[0].updated_at.date(),
+                    "time": short_int[0].updated_at.strftime("%H:%M:%S"),
                 }
                 noti_array.append(record)
             if rej_int:
@@ -3112,9 +3138,10 @@ class Notifications(APIView):
                 else:
                     description = f"{rej_int.count()} interviewees are rejected"
                 record = {
-                    "type": "interview_schedule",
+                    "type": "Interview Schedule",
                     "description": description,
                     "date": rej_int[0].updated_at.date(),
+                    "time": rej_int[0].updated_at.strftime("%H:%M:%S"),
                 }
                 noti_array.append(record)
             if process_inv:
@@ -3123,9 +3150,10 @@ class Notifications(APIView):
                 else:
                     description = f"{process_inv.count()} new invoices are processing"
                 record = {
-                    "type": "invoice",
+                    "type": "Invoice",
                     "description": description,
                     "date": process_inv[0].updated_at.date(),
+                    "time": process_inv[0].updated_at.strftime("%H:%M:%S"),
                 }
                 noti_array.append(record)
             if paid_inv:
@@ -3134,9 +3162,10 @@ class Notifications(APIView):
                 else:
                     description = f"{paid_inv.count()} new invoices are paid"
                 record = {
-                    "type": "invoice",
+                    "type": "Invoice",
                     "description": description,
                     "date": paid_inv[0].updated_at.date(),
+                    "time": paid_inv[0].updated_at.strftime("%H:%M:%S"),
                 }
                 noti_array.append(record)
         if len(noti_array) > 0:
