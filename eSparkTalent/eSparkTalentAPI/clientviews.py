@@ -787,6 +787,14 @@ class Leave_Request(APIView):
                 outsource = outsource_employees.objects.get(
                     employee_id=data.employee_id, client_id=user
                 )
+
+                try:
+                    check_in = employee_data.get("punch_timings")["check_in"]
+                    check_out = employee_data.get("punch_timings")["check_out"]
+                except:
+                    check_in = "11:00 AM"
+                    check_out = "08:00 PM"
+
                 employee_name = f"{employee_data.get('first_name', '')} {employee_data.get('last_name', '')}"
                 record = {
                     "id": data.id,
@@ -797,6 +805,8 @@ class Leave_Request(APIView):
                     "leave_type": data.leave_type,
                     "start_date": data.start_date,
                     "end_date": data.end_date,
+                    "check_in": check_in,
+                    "check_out": check_out,
                     "count": data.count,
                     "reason": data.reason,
                     "requested_at": data.created_at,
