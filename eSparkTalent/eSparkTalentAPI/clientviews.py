@@ -746,6 +746,12 @@ class Leave_Request(APIView):
                             "end_date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
+                            "check_in": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME
+                            ),
+                            "check_out": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME
+                            ),
                             "count": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "reason": openapi.Schema(type=openapi.TYPE_STRING),
                             "requested_at": openapi.Schema(
@@ -787,6 +793,14 @@ class Leave_Request(APIView):
                 outsource = outsource_employees.objects.get(
                     employee_id=data.employee_id, client_id=user
                 )
+
+                try:
+                    check_in = employee_data.get("punch_timings")["check_in"]
+                    check_out = employee_data.get("punch_timings")["check_out"]
+                except:
+                    check_in = ""
+                    check_out = ""
+
                 employee_name = f"{employee_data.get('first_name', '')} {employee_data.get('last_name', '')}"
                 record = {
                     "id": data.id,
@@ -797,6 +811,8 @@ class Leave_Request(APIView):
                     "leave_type": data.leave_type,
                     "start_date": data.start_date,
                     "end_date": data.end_date,
+                    "check_in": check_in,
+                    "check_out": check_out,
                     "count": data.count,
                     "reason": data.reason,
                     "requested_at": data.created_at,
