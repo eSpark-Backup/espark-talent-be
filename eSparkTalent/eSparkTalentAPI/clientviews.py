@@ -746,6 +746,12 @@ class Leave_Request(APIView):
                             "end_date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
+                            "check_in": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME
+                            ),
+                            "check_out": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME
+                            ),
                             "count": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "reason": openapi.Schema(type=openapi.TYPE_STRING),
                             "requested_at": openapi.Schema(
@@ -792,8 +798,8 @@ class Leave_Request(APIView):
                     check_in = employee_data.get("punch_timings")["check_in"]
                     check_out = employee_data.get("punch_timings")["check_out"]
                 except:
-                    check_in = "11:00 AM"
-                    check_out = "08:00 PM"
+                    check_in = ""
+                    check_out = ""
 
                 employee_name = f"{employee_data.get('first_name', '')} {employee_data.get('last_name', '')}"
                 record = {
