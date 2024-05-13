@@ -141,14 +141,15 @@ def Statistics(e_email, workspace):
         ):
             check_in_time = datetime.strptime(
                 time_sheet_record.record[today]["check_in"], "%I:%M:%S %p"
-            ).time()
+            )
             check_out_time = datetime.strptime(
                 time_sheet_record.record[today]["check_out"], "%I:%M:%S %p"
-            ).time()
+            )
 
-            time_difference = datetime.combine(
-                datetime.today(), check_out_time
-            ) - datetime.combine(datetime.today(), check_in_time)
+            if check_out_time<check_in_time:
+                check_out_time=check_out_time+timedelta(days=1)
+
+            time_difference = check_out_time-check_in_time
 
             t_hours_worked = round(time_difference.total_seconds() / 3600, 2)
             statistics["today"] = f"{t_hours_worked}/{working_hours} hrs"

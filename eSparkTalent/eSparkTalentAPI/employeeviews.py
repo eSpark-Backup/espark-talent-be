@@ -538,65 +538,122 @@ class Employee_Home(APIView):
                 except:
                     working_hours=9
                 for rec in months_timesheet:
-                    check_in_time = rec.record[now.date().strftime("%d-%m-%Y")][
+                    check_in_time = datetime.strptime(rec.record[now.date().strftime("%d-%m-%Y")][
                         "check_in"
-                    ]
-                    hours_worked = datetime.strptime(
+                    ], "%I:%M:%S %p")
+                    check_out_time = datetime.strptime(
                         check_out, "%I:%M:%S %p"
-                    ) - datetime.strptime(check_in_time, "%I:%M:%S %p")
+                    )
+                    if check_out_time<check_in_time:
+                        check_in_time = check_in_time
+                        check_out_time = check_out_time + timedelta(days=1)
+                        hours_worked=check_out_time-check_in_time
+                        if hours_worked.total_seconds() // 3600 < working_hours:
+                            rec.record[now.date().strftime("%d-%m-%Y")][
+                                "check_out"
+                            ] = check_out
+                            rec.record[now.date().strftime("%d-%m-%Y")]["overtime"] = "0h"
+                            rec.record[now.date().strftime("%d-%m-%Y")][
+                                "hours_worked"
+                            ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
+                            rec.record[now.date().strftime("%d-%m-%Y")]["status"][
+                                "Short Duration"
+                            ] = True
+                            rec.record[now.date().strftime("%d-%m-%Y")]["status"][
+                                "Missing"
+                            ] = False
+                            rec.save()
+                            return Response(
+                                {"message": "Check out punched"}, status=status.HTTP_200_OK
+                            )
 
-                    if hours_worked.total_seconds() // 3600 < working_hours:
-                        rec.record[now.date().strftime("%d-%m-%Y")][
-                            "check_out"
-                        ] = check_out
-                        rec.record[now.date().strftime("%d-%m-%Y")]["overtime"] = "0h"
-                        rec.record[now.date().strftime("%d-%m-%Y")][
-                            "hours_worked"
-                        ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
-                        rec.record[now.date().strftime("%d-%m-%Y")]["status"][
-                            "Short Duration"
-                        ] = True
-                        rec.record[now.date().strftime("%d-%m-%Y")]["status"][
-                            "Missing"
-                        ] = False
-                        rec.save()
-                        return Response(
-                            {"message": "Check out punched"}, status=status.HTTP_200_OK
-                        )
+                        elif hours_worked.total_seconds() // 3600 >= working_hours:
+                            overtime = hours_worked - timedelta(hours=working_hours)
+                            overtime_min = (overtime.seconds // 60) % 60
+                            overtime_hours = overtime.seconds // 3600
+                            rec.record[now.date().strftime("%d-%m-%Y")][
+                                "check_out"
+                            ] = check_out
+                            rec.record[now.date().strftime("%d-%m-%Y")][
+                                "hours_worked"
+                            ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
+                            rec.record[now.date().strftime("%d-%m-%Y")]["status"][
+                                "Short Duration"
+                            ] = False
+                            rec.record[now.date().strftime("%d-%m-%Y")]["status"][
+                                "Missing"
+                            ] = False
+                            if overtime_hours and overtime_min:
+                                over_duration = f"{overtime_hours}h {overtime_min}m"
+                            elif overtime_hours and not overtime_min:
+                                over_duration = f"{overtime_hours}h"
+                            elif not overtime_hours and overtime_min:
+                                over_duration = f"{overtime_min}m"
+                            else:
+                                over_duration = "0h"
 
-                    elif hours_worked.total_seconds() // 3600 >= working_hours:
-                        overtime = hours_worked - timedelta(hours=working_hours)
-                        overtime_min = (overtime.seconds // 60) % 60
-                        overtime_hours = overtime.seconds // 3600
-                        rec.record[now.date().strftime("%d-%m-%Y")][
-                            "check_out"
-                        ] = check_out
-                        rec.record[now.date().strftime("%d-%m-%Y")][
-                            "hours_worked"
-                        ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
-                        rec.record[now.date().strftime("%d-%m-%Y")]["status"][
-                            "Short Duration"
-                        ] = False
-                        rec.record[now.date().strftime("%d-%m-%Y")]["status"][
-                            "Missing"
-                        ] = False
-                        if overtime_hours and overtime_min:
-                            over_duration = f"{overtime_hours}h {overtime_min}m"
-                        elif overtime_hours and not overtime_min:
-                            over_duration = f"{overtime_hours}h"
-                        elif not overtime_hours and overtime_min:
-                            over_duration = f"{overtime_min}m"
-                        else:
-                            over_duration = "0h"
+                            rec.record[now.date().strftime("%d-%m-%Y")][
+                                "overtime"
+                            ] = over_duration
 
-                        rec.record[now.date().strftime("%d-%m-%Y")][
-                            "overtime"
-                        ] = over_duration
+                            rec.save()
+                            return Response(
+                                {"message": "Check out punched"}, status=status.HTTP_200_OK
+                            )
+                    else:
+                        hours_worked=check_out_time-check_in_time
+                        if hours_worked.total_seconds() // 3600 < working_hours:
+                            rec.record[now.date().strftime("%d-%m-%Y")][
+                                "check_out"
+                            ] = check_out
+                            rec.record[now.date().strftime("%d-%m-%Y")]["overtime"] = "0h"
+                            rec.record[now.date().strftime("%d-%m-%Y")][
+                                "hours_worked"
+                            ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
+                            rec.record[now.date().strftime("%d-%m-%Y")]["status"][
+                                "Short Duration"
+                            ] = True
+                            rec.record[now.date().strftime("%d-%m-%Y")]["status"][
+                                "Missing"
+                            ] = False
+                            rec.save()
+                            return Response(
+                                {"message": "Check out punched"}, status=status.HTTP_200_OK
+                            )
 
-                        rec.save()
-                        return Response(
-                            {"message": "Check out punched"}, status=status.HTTP_200_OK
-                        )
+                        elif hours_worked.total_seconds() // 3600 >= working_hours:
+                            overtime = hours_worked - timedelta(hours=working_hours)
+                            overtime_min = (overtime.seconds // 60) % 60
+                            overtime_hours = overtime.seconds // 3600
+                            rec.record[now.date().strftime("%d-%m-%Y")][
+                                "check_out"
+                            ] = check_out
+                            rec.record[now.date().strftime("%d-%m-%Y")][
+                                "hours_worked"
+                            ] = f"{hours_worked.seconds//3600}h {(hours_worked.seconds //60) %60}m"
+                            rec.record[now.date().strftime("%d-%m-%Y")]["status"][
+                                "Short Duration"
+                            ] = False
+                            rec.record[now.date().strftime("%d-%m-%Y")]["status"][
+                                "Missing"
+                            ] = False
+                            if overtime_hours and overtime_min:
+                                over_duration = f"{overtime_hours}h {overtime_min}m"
+                            elif overtime_hours and not overtime_min:
+                                over_duration = f"{overtime_hours}h"
+                            elif not overtime_hours and overtime_min:
+                                over_duration = f"{overtime_min}m"
+                            else:
+                                over_duration = "0h"
+
+                            rec.record[now.date().strftime("%d-%m-%Y")][
+                                "overtime"
+                            ] = over_duration
+
+                            rec.save()
+                            return Response(
+                                {"message": "Check out punched"}, status=status.HTTP_200_OK
+                            )
             else:
                 return Response({"message":"Check out is already punched"}, status=status.HTTP_200_OK)
         elif breaked:
