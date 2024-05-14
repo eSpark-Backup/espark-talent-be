@@ -1330,17 +1330,21 @@ class ClockInOut_Request(APIView):
                                                 )
 
                                     else:
-                                        check_out_time = timesheet_record.record[
+                                        check_out_time = datetime.datetime.strptime(timesheet_record.record[
                                             to_update_clockinout_request.date.strftime(
                                                 "%d-%m-%Y"
                                             )
-                                        ]["check_out"]
-                                        hours_worked = datetime.datetime.strptime(
-                                            check_out_time, "%I:%M:%S %p"
-                                        ) - datetime.datetime.strptime(
+                                        ]["check_out"], "%I:%M:%S %p")
+                                        check_in_time =  datetime.datetime.strptime(
                                             to_update_clockinout_request.punch_time,
                                             "%I:%M:%S %p",
                                         )
+
+                                        if check_out_time<check_in_time:
+                                            check_out_time= check_out_time+timedelta(days=1)
+
+                                        hours_worked=check_out_time-check_in_time
+
                                         if hours_worked.total_seconds() // 3600 < int(working_hours.total_seconds()//3600):
                                             timesheet_record.record[
                                                 to_update_clockinout_request.date.strftime(
@@ -1720,17 +1724,20 @@ class ClockInOut_Request(APIView):
                                         )
 
                                     else:
-                                        check_in_time = timesheet_record.record[
+                                        check_in_time = datetime.datetime.strptime(timesheet_record.record[
                                             to_update_clockinout_request.date.strftime(
                                                 "%d-%m-%Y"
                                             )
-                                        ]["check_in"]
-                                        hours_worked = datetime.datetime.strptime(
+                                        ]["check_in"], "%I:%M:%S %p")
+                                        check_out_time = datetime.datetime.strptime(
                                             to_update_clockinout_request.punch_time,
                                             "%I:%M:%S %p",
-                                        ) - datetime.datetime.strptime(
-                                            check_in_time, "%I:%M:%S %p"
                                         )
+
+                                        if check_out_time<check_in_time:
+                                            check_out_time=check_out_time+timedelta(days=1)
+
+                                        hours_worked = check_out_time-check_in_time
                                         if hours_worked.total_seconds() // 3600 < int(working_hours.total_seconds()//3600):
                                             timesheet_record.record[
                                                 to_update_clockinout_request.date.strftime(

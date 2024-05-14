@@ -545,7 +545,6 @@ class Employee_Home(APIView):
                         check_out, "%I:%M:%S %p"
                     )
                     if check_out_time<check_in_time:
-                        check_in_time = check_in_time
                         check_out_time = check_out_time + timedelta(days=1)
 
                     hours_worked=check_out_time-check_in_time
