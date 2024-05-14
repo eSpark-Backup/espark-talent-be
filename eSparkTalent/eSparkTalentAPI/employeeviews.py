@@ -538,12 +538,16 @@ class Employee_Home(APIView):
                 except:
                     working_hours=9
                 for rec in months_timesheet:
-                    check_in_time = rec.record[now.date().strftime("%d-%m-%Y")][
+                    check_in_time = datetime.strptime(rec.record[now.date().strftime("%d-%m-%Y")][
                         "check_in"
-                    ]
-                    hours_worked = datetime.strptime(
+                    ], "%I:%M:%S %p")
+                    check_out_time = datetime.strptime(
                         check_out, "%I:%M:%S %p"
-                    ) - datetime.strptime(check_in_time, "%I:%M:%S %p")
+                    )
+                    if check_out_time<check_in_time:
+                        check_out_time = check_out_time + timedelta(days=1)
+
+                    hours_worked=check_out_time-check_in_time
 
                     if hours_worked.total_seconds() // 3600 < working_hours:
                         rec.record[now.date().strftime("%d-%m-%Y")][
