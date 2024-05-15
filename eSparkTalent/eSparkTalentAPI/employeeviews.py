@@ -314,7 +314,31 @@ class Employee_Home(APIView):
                     return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            annual_pending = leave_request.objects.filter(
+                employee_id=e_email, client_id=workspace, leave_type="annual", status="pending",
+            ).count()
+            casual_pending = leave_request.objects.filter(
+                employee_id=e_email, client_id=workspace, leave_type="casual", status="pending",
+            ).count()
+            sick_pending = leave_request.objects.filter(
+                employee_id=e_email, client_id=workspace, leave_type="sick", status="pending",
+            ).count()
+            paid_pending = leave_request.objects.filter(
+                employee_id=e_email, client_id=workspace, leave_type="paid", status="pending",
+            ).count()
+            unpaid_pending = leave_request.objects.filter(
+                employee_id=e_email, client_id=workspace, leave_type="unpaid", status="pending",
+            ).count()
+            hajj_pending = leave_request.objects.filter(
+                employee_id=e_email, client_id=workspace, leave_type="hajj", status="pending",
+            ).count()
             leave_records = leave_balance.objects.get(employee_id=e_email)
+            leave_records.casual_leaves["pending"]=casual_pending
+            leave_records.annual_leaves["pending"]=annual_pending
+            leave_records.sick_leaves["pending"]=sick_pending
+            leave_records.paid_leaves["pending"]=paid_pending
+            leave_records.unpaid_leaves["pending"]=unpaid_pending
+            leave_records.hajj_leaves["pending"]=hajj_pending
             leave_summary = {
                 "id": leave_records.id,
                 "casual_leaves": leave_records.casual_leaves,
