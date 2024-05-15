@@ -94,9 +94,12 @@ def Statistics(e_email, workspace):
 
     try:
         emp=employee.objects.get(email=e_email)
-        check_in=emp.punch_timings["check_in"]
-        check_out=emp.punch_timings["check_out"]
-        req_time=datetime.strptime(check_out, "%I:%M %p")-datetime.strptime(check_in, "%I:%M %p")
+        check_in=datetime.strptime(emp.punch_timings["check_in"], "%I:%M %p")
+        check_out=datetime.strptime(emp.punch_timings["check_out"], "%I:%M %p")
+        if check_out<check_in:
+            check_out=check_out+timedelta(days=1)
+
+        req_time=check_out - check_in
         working_hours=int(req_time.total_seconds()//3600)
     except employee.DoesNotExist:
         working_hours=9
@@ -226,9 +229,12 @@ def AttendanceSummary(e_email, workspace):
     )
     try:
         emp=employee.objects.get(email=e_email)
-        check_in=emp.punch_timings["check_in"]
-        check_out=emp.punch_timings["check_out"]
-        req_time=datetime.strptime(check_out, "%I:%M %p")-datetime.strptime(check_in, "%I:%M %p")
+        check_in=datetime.strptime(emp.punch_timings["check_in"], "%I:%M:%S %p")
+        check_out=datetime.strptime(emp.punch_timings["check_out"], "%I:%M:%S %p")
+        if check_out<check_in:
+            check_out=check_out+timedelta(days=1)
+
+        req_time=check_out - check_in
         working_hours=int(req_time.total_seconds()//3600)
     except employee.DoesNotExist:
         working_hours=9
