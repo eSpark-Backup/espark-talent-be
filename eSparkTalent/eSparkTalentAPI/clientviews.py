@@ -2931,13 +2931,13 @@ class Notifications(APIView):
         user = end_user.objects.get(email=user_email)
         noti_array = []
         if user.role == "employee":
+            current_time = timezone.now()
+            one_week_ago = current_time - timedelta(days=5)
             notifications_data = (
-                notifications.objects.filter(email=user_email)
+                notifications.objects.filter(email=user_email,updated_at__gte=one_week_ago)
                 .exclude(notification_type="employee_contract")
                 .exclude(notification_type="offshore_contracts")
             )
-            current_time = timezone.now()
-            one_week_ago = current_time - timedelta(days=5)
             emp_contract = notifications.objects.filter(
                 email=user_email,
                 notification_type="employee_contract",
@@ -2993,8 +2993,10 @@ class Notifications(APIView):
                 noti_array.append(record)
 
         elif user.role == "client":
+            current_time = timezone.now()
+            one_week_ago = current_time - timedelta(days=5)
             notifications_data = (
-                notifications.objects.filter(email=user_email)
+                notifications.objects.filter(email=user_email,updated_at__gte=one_week_ago)
                 .exclude(notification_type="client_contract")
                 .exclude(notification_type="offshore_contracts")
                 .exclude(notification_type="interview_schedule")
@@ -3106,30 +3108,36 @@ class Notifications(APIView):
                 noti_array.append(record)
 
         else:
+            current_time = timezone.now()
+            one_week_ago = current_time - timedelta(days=5)
             hire_req = notifications.objects.filter(
-                email=talent_email, notification_type="hiring_request", status="added"
+                email=talent_email, notification_type="hiring_request", status="added", created_at__gte=one_week_ago
             ).order_by("-created_at")
             short_int = notifications.objects.filter(
                 email=talent_email,
                 notification_type="interview_schedule",
                 status="short_list",
+                updated_at__gte=one_week_ago
             ).order_by("-updated_at")
             rej_int = notifications.objects.filter(
                 email=talent_email,
                 notification_type="interview_schedule",
                 status="rejected",
+                updated_at__gte=one_week_ago
             ).order_by("-updated_at")
             process_inv = notifications.objects.filter(
                 Q(notification_type="employee_invoice")
                 | Q(notification_type="other_payment"),
                 email=talent_email,
                 status="processing",
+                updated_at__gte=one_week_ago
             ).order_by("-updated_at")
             paid_inv = notifications.objects.filter(
                 Q(notification_type="employee_invoice")
                 | Q(notification_type="other_payment"),
                 email=talent_email,
                 status="paid",
+                updated_at__gte=one_week_ago
             ).order_by("-updated_at")
             if hire_req:
                 if hire_req.count() == 1:
