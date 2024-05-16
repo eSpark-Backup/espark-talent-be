@@ -756,7 +756,7 @@ class policy(models.Model):
 class account_n_persmission(models.Model):
     id = models.AutoField(primary_key=True)
     account_name = models.CharField(max_length=30, default="")
-    email = models.EmailField(default="")
+    email = models.EmailField(unique=True, default="")
     password = models.BinaryField(default=b"")
     image = models.ImageField(
         upload_to="accounts/profiles",

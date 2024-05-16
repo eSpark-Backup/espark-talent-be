@@ -807,7 +807,7 @@ class Leave_Request(APIView):
                     "employee_id": employee_data.get("employee_id"),
                     "employee_name": employee_name,
                     "country": outsource.country,
-                    "department": employee_data.get("department"),
+                    "department": outsource.job_title,
                     "leave_type": data.leave_type,
                     "start_date": data.start_date,
                     "end_date": data.end_date,

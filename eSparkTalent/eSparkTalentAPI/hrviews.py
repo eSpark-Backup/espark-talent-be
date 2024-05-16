@@ -228,6 +228,15 @@ class Add_Employee(APIView):
             serializer = EmployeeSerializer(data=posted_data)
             if serializer.is_valid():
                 try:
+                    end_user.objects.create_user(
+                        username=serializer.validated_data["first_name"]
+                        + " "
+                        + serializer.validated_data["last_name"],
+                        role="employee",
+                        email=serializer.validated_data["email"],
+                        password=password,
+                    )
+
                     emp = employee.objects.create(
                         employee_id=serializer.validated_data["employee_id"],
                         first_name=serializer.validated_data["first_name"],
@@ -250,14 +259,6 @@ class Add_Employee(APIView):
                         punch_timings=serializer.validated_data["punch_timings"],
                     )
 
-                    end_user.objects.create_user(
-                        username=serializer.validated_data["first_name"]
-                        + " "
-                        + serializer.validated_data["last_name"],
-                        role="employee",
-                        email=serializer.validated_data["email"],
-                        password=password,
-                    )
 
                     leave_balance.objects.create(
                         employee_id=serializer.validated_data["email"],
@@ -437,6 +438,13 @@ class Add_Client(APIView):
             serializer = ClientSerializer(data=posted_data)
             if serializer.is_valid():
                 try:
+                    end_user.objects.create_user(
+                        username=serializer.validated_data["company_name"],
+                        role="client",
+                        email=serializer.validated_data["email"],
+                        password=password,
+                    )
+
                     clnt = client.objects.create(
                         client_id=serializer.validated_data["client_id"],
                         first_name=serializer.validated_data["first_name"],
@@ -448,12 +456,6 @@ class Add_Client(APIView):
                         country=serializer.validated_data["country"],
                         address=serializer.validated_data["address"],
                         image=serializer.validated_data["image"],
-                    )
-                    end_user.objects.create_user(
-                        username=serializer.validated_data["company_name"],
-                        role="client",
-                        email=serializer.validated_data["email"],
-                        password=password,
                     )
                     return Response(
                         {
@@ -3657,6 +3659,13 @@ class Accounts(APIView):
                         pad(message_bytes, AES.block_size)
                     )
                     try:
+                        end_user.objects.create_user(
+                            username=serializer.validated_data["account_name"],
+                            role=serializer.validated_data["account_name"],
+                            email=serializer.validated_data["email"],
+                            password=password,
+                        )
+                        
                         acc_n_perm = account_n_persmission.objects.create(
                             account_name=serializer.validated_data["account_name"],
                             email=serializer.validated_data["email"],
@@ -3694,12 +3703,6 @@ class Accounts(APIView):
                             },
                         )
 
-                        end_user.objects.create_user(
-                            username=serializer.validated_data["account_name"],
-                            role=serializer.validated_data["account_name"],
-                            email=serializer.validated_data["email"],
-                            password=password,
-                        )
 
                         return Response(
                             {
