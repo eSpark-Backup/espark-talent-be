@@ -1171,9 +1171,11 @@ class ClockInOut_Request(APIView):
                     emp_req = employee.objects.get(
                         email=to_update_clockinout_request.employee_id
                     )
-                    check_in=emp_req.punch_timings["check_in"]
-                    check_out=emp_req.punch_timings["check_out"]
-                    working_hours=datetime.datetime.strptime(check_out, "%I:%M %p")-datetime.datetime.strptime(check_in, "%I:%M %p")
+                    check_in = emp_req.punch_timings["check_in"]
+                    check_out = emp_req.punch_timings["check_out"]
+                    working_hours = datetime.datetime.strptime(
+                        check_out, "%I:%M %p"
+                    ) - datetime.datetime.strptime(check_in, "%I:%M %p")
                     try:
                         record_punch_type = to_update_clockinout_request.punch_type
                         if record_punch_type == "check_in":
@@ -1330,22 +1332,29 @@ class ClockInOut_Request(APIView):
                                                 )
 
                                     else:
-                                        check_out_time = datetime.datetime.strptime(timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["check_out"], "%I:%M:%S %p")
-                                        check_in_time =  datetime.datetime.strptime(
+                                        check_out_time = datetime.datetime.strptime(
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ]["check_out"],
+                                            "%I:%M:%S %p",
+                                        )
+                                        check_in_time = datetime.datetime.strptime(
                                             to_update_clockinout_request.punch_time,
                                             "%I:%M:%S %p",
                                         )
 
-                                        if check_out_time<check_in_time:
-                                            check_out_time= check_out_time+timedelta(days=1)
+                                        if check_out_time < check_in_time:
+                                            check_out_time = check_out_time + timedelta(
+                                                days=1
+                                            )
 
-                                        hours_worked=check_out_time-check_in_time
+                                        hours_worked = check_out_time - check_in_time
 
-                                        if hours_worked.total_seconds() // 3600 < int(working_hours.total_seconds()//3600):
+                                        if hours_worked.total_seconds() // 3600 < int(
+                                            working_hours.total_seconds() // 3600
+                                        ):
                                             timesheet_record.record[
                                                 to_update_clockinout_request.date.strftime(
                                                     "%d-%m-%Y"
@@ -1389,10 +1398,20 @@ class ClockInOut_Request(APIView):
                                                 },
                                                 status=status.HTTP_200_OK,
                                             )
-                                        elif hours_worked.total_seconds() // 3600 >= int(working_hours.total_seconds()//3600):
+                                        elif (
+                                            hours_worked.total_seconds() // 3600
+                                            >= int(
+                                                working_hours.total_seconds() // 3600
+                                            )
+                                        ):
                                             overtime = (
                                                 hours_worked
-                                                - datetime.timedelta(hours=int(working_hours.total_seconds()//3600))
+                                                - datetime.timedelta(
+                                                    hours=int(
+                                                        working_hours.total_seconds()
+                                                        // 3600
+                                                    )
+                                                )
                                             )
                                             overtime_min = (overtime.seconds // 60) % 60
                                             overtime_hours = overtime.seconds // 3600
@@ -1724,21 +1743,28 @@ class ClockInOut_Request(APIView):
                                         )
 
                                     else:
-                                        check_in_time = datetime.datetime.strptime(timesheet_record.record[
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            )
-                                        ]["check_in"], "%I:%M:%S %p")
+                                        check_in_time = datetime.datetime.strptime(
+                                            timesheet_record.record[
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                )
+                                            ]["check_in"],
+                                            "%I:%M:%S %p",
+                                        )
                                         check_out_time = datetime.datetime.strptime(
                                             to_update_clockinout_request.punch_time,
                                             "%I:%M:%S %p",
                                         )
 
-                                        if check_out_time<check_in_time:
-                                            check_out_time=check_out_time+timedelta(days=1)
+                                        if check_out_time < check_in_time:
+                                            check_out_time = check_out_time + timedelta(
+                                                days=1
+                                            )
 
-                                        hours_worked = check_out_time-check_in_time
-                                        if hours_worked.total_seconds() // 3600 < int(working_hours.total_seconds()//3600):
+                                        hours_worked = check_out_time - check_in_time
+                                        if hours_worked.total_seconds() // 3600 < int(
+                                            working_hours.total_seconds() // 3600
+                                        ):
                                             timesheet_record.record[
                                                 to_update_clockinout_request.date.strftime(
                                                     "%d-%m-%Y"
@@ -1782,10 +1808,20 @@ class ClockInOut_Request(APIView):
                                                 },
                                                 status=status.HTTP_200_OK,
                                             )
-                                        elif hours_worked.total_seconds() // 3600 >= int(working_hours.total_seconds()//3600):
+                                        elif (
+                                            hours_worked.total_seconds() // 3600
+                                            >= int(
+                                                working_hours.total_seconds() // 3600
+                                            )
+                                        ):
                                             overtime = (
                                                 hours_worked
-                                                - datetime.timedelta(hours=int(working_hours.total_seconds()//3600))
+                                                - datetime.timedelta(
+                                                    hours=int(
+                                                        working_hours.total_seconds()
+                                                        // 3600
+                                                    )
+                                                )
                                             )
                                             overtime_min = (overtime.seconds // 60) % 60
                                             overtime_hours = overtime.seconds // 3600
@@ -2392,18 +2428,6 @@ class Time_Tracking(APIView):
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
-                        "employees": openapi.Schema(
-                            type=openapi.TYPE_ARRAY,
-                            items=openapi.Schema(
-                                type=openapi.TYPE_OBJECT,
-                                properties={
-                                    "employee_id": openapi.Schema(
-                                        type=openapi.TYPE_STRING
-                                    ),
-                                    "name": openapi.Schema(type=openapi.TYPE_STRING),
-                                },
-                            ),
-                        ),
                         "time_sheet": openapi.Schema(
                             type=openapi.TYPE_ARRAY,
                             items=openapi.Schema(
@@ -2457,22 +2481,14 @@ class Time_Tracking(APIView):
             206: openapi.Response(description="Partial Content"),
             401: openapi.Response("UnAuthorize"),
         },
-        operation_id=".",
+        operation_id="2",
     )
     def get(self, request, *args, **kwargs):
         user = request.user
         year = request.query_params.get("year")
         month = request.query_params.get("month")
         employee_id = request.query_params.get("emp_id")
-        available_employees = outsource_employees.objects.filter(
-            client_id=user, status="active"
-        )
-        serialized_available_employees = TimeSheetEmployeeSerializer(
-            available_employees, many=True
-        ).data
-        for record in serialized_available_employees:
-            emp_record = employee.objects.get(email=record["employee_id"])
-            record["name"] = emp_record.first_name + " " + emp_record.last_name
+
         if month and year and employee_id:
             time_sheet_data = time_sheet.objects.filter(
                 month=month, year=year, employee_id=employee_id, client_id=user
@@ -2493,22 +2509,81 @@ class Time_Tracking(APIView):
                 if serialized_time_sheet_data:
                     return Response(
                         {
-                            "employees": serialized_available_employees,
                             "time_sheet": time_sheet_records,
                         },
                         status=status.HTTP_200_OK,
                     )
             else:
                 return Response(
-                    {"employees": serialized_available_employees, "time_sheet": {}},
-                    status=status.HTTP_206_PARTIAL_CONTENT,
+                    status=status.HTTP_204_NO_CONTENT,
                 )
 
         else:
             return Response(
-                {"employees": serialized_available_employees, "time_sheet": {}},
-                status=status.HTTP_206_PARTIAL_CONTENT,
+                status=status.HTTP_400_BAD_REQUEST,
             )
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Available_Employees(APIView):
+    @swagger_auto_schema(
+        tags=["Team : Time Tracking"],
+        operation_summary="Get available employees",
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "employees": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "employee_id": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "name": openapi.Schema(type=openapi.TYPE_STRING),
+                                },
+                            ),
+                        ),
+                    },
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+            401: openapi.Response("UnAuthorize"),
+        },
+        operation_id="1",
+    )
+    def get(self, request, *args, **kwargs):
+        user = request.user
+
+        available_employees = outsource_employees.objects.filter(
+            client_id=user, status="active"
+        )
+        serialized_available_employees = TimeSheetEmployeeSerializer(
+            available_employees, many=True
+        ).data
+        for record in serialized_available_employees:
+            emp_record = employee.objects.get(email=record["employee_id"])
+            record["name"] = emp_record.first_name + " " + emp_record.last_name
+
+        if serialized_available_employees:
+            return Response(
+                {"employees": serialized_available_employees},
+                status=status.HTTP_200_OK,
+            )
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @authentication_classes([JWTAuthentication])
@@ -2934,7 +3009,9 @@ class Notifications(APIView):
             current_time = timezone.now()
             one_week_ago = current_time - timedelta(days=5)
             notifications_data = (
-                notifications.objects.filter(email=user_email,updated_at__gte=one_week_ago)
+                notifications.objects.filter(
+                    email=user_email, updated_at__gte=one_week_ago
+                )
                 .exclude(notification_type="employee_contract")
                 .exclude(notification_type="offshore_contracts")
             )
@@ -2953,7 +3030,7 @@ class Notifications(APIView):
             ).order_by("-created_at")
             for data in notifications_data:
                 record = {
-                    "type": capwords(data.notification_type.replace('_',' ')),
+                    "type": capwords(data.notification_type.replace("_", " ")),
                     "description": data.description,
                     "date": data.updated_at.date(),
                     "time": data.updated_at.strftime("%H:%M:%S"),
@@ -2996,7 +3073,9 @@ class Notifications(APIView):
             current_time = timezone.now()
             one_week_ago = current_time - timedelta(days=5)
             notifications_data = (
-                notifications.objects.filter(email=user_email,updated_at__gte=one_week_ago)
+                notifications.objects.filter(
+                    email=user_email, updated_at__gte=one_week_ago
+                )
                 .exclude(notification_type="client_contract")
                 .exclude(notification_type="offshore_contracts")
                 .exclude(notification_type="interview_schedule")
@@ -3033,7 +3112,7 @@ class Notifications(APIView):
             ).order_by("-created_at")
             for data in notifications_data:
                 record = {
-                    "type": capwords(data.notification_type.replace('_',' ')),
+                    "type": capwords(data.notification_type.replace("_", " ")),
                     "description": data.description,
                     "date": data.updated_at.date(),
                     "time": data.updated_at.strftime("%H:%M:%S"),
@@ -3111,33 +3190,36 @@ class Notifications(APIView):
             current_time = timezone.now()
             one_week_ago = current_time - timedelta(days=5)
             hire_req = notifications.objects.filter(
-                email=talent_email, notification_type="hiring_request", status="added", created_at__gte=one_week_ago
+                email=talent_email,
+                notification_type="hiring_request",
+                status="added",
+                created_at__gte=one_week_ago,
             ).order_by("-created_at")
             short_int = notifications.objects.filter(
                 email=talent_email,
                 notification_type="interview_schedule",
                 status="short_list",
-                updated_at__gte=one_week_ago
+                updated_at__gte=one_week_ago,
             ).order_by("-updated_at")
             rej_int = notifications.objects.filter(
                 email=talent_email,
                 notification_type="interview_schedule",
                 status="rejected",
-                updated_at__gte=one_week_ago
+                updated_at__gte=one_week_ago,
             ).order_by("-updated_at")
             process_inv = notifications.objects.filter(
                 Q(notification_type="employee_invoice")
                 | Q(notification_type="other_payment"),
                 email=talent_email,
                 status="processing",
-                updated_at__gte=one_week_ago
+                updated_at__gte=one_week_ago,
             ).order_by("-updated_at")
             paid_inv = notifications.objects.filter(
                 Q(notification_type="employee_invoice")
                 | Q(notification_type="other_payment"),
                 email=talent_email,
                 status="paid",
-                updated_at__gte=one_week_ago
+                updated_at__gte=one_week_ago,
             ).order_by("-updated_at")
             if hire_req:
                 if hire_req.count() == 1:

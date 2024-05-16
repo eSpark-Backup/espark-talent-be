@@ -22,4 +22,5 @@ urlpatterns=[
     path('c_empcontract/', Employee_Contract.as_view()),
     path('c_policy/', Policies.as_view()),
     path('notify/', Notifications.as_view()),
+    path('c_availemp/', Available_Employees.as_view()),
 ]
