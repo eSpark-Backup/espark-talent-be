@@ -26,6 +26,8 @@ import datetime
 from django.utils import timezone
 from django.db.models import Q
 from string import capwords
+import os
+from django.conf import settings
 
 
 class LoginView(APIView):
@@ -2233,7 +2235,7 @@ class Download_Attendance_Report(APIView):
             except time_sheet.DoesNotExist:
                 return Response({"error": "No record found"}, status=status.HTTP_204_NO_CONTENT)
             current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-            filename = f"AttendanceReport{current_datetime}.pdf"
+            filename = f"AttendanceReport_{current_datetime}.pdf"
             table_headers = [
                 "Date",
                 "Day",
@@ -2245,13 +2247,14 @@ class Download_Attendance_Report(APIView):
             ]
             FileHeading = "Attendance Report"
             table_data = [table_headers]
+            images_folder = os.path.join(settings.BASE_DIR, 'images')
             status_images = {
-                "P": "C:/Users/Maaz DOGYY/Documents/GitHub/esparkTalent-Backend-Development/eSparkTalent/static/P.jpg",
-                "M": "C:/Users/Maaz DOGYY/Documents/GitHub/esparkTalent-Backend-Development/eSparkTalent/static/M.jpg",
-                "A": "C:/Users/Maaz DOGYY/Documents/GitHub/esparkTalent-Backend-Development/eSparkTalent/static/A.jpg",
-                "S": "C:/Users/Maaz DOGYY/Documents/GitHub/esparkTalent-Backend-Development/eSparkTalent/static/S.jpg",
-                "D": "C:/Users/Maaz DOGYY/Documents/GitHub/esparkTalent-Backend-Development/eSparkTalent/static/D.jpg",
-                "L": "C:/Users/Maaz DOGYY/Documents/GitHub/esparkTalent-Backend-Development/eSparkTalent/static/L.jpg",
+                "P": os.path.join(images_folder, "P.jpg"),
+                "M": os.path.join(images_folder, "M.jpg"),
+                "A": os.path.join(images_folder, "A.jpg"),
+                "S": os.path.join(images_folder, "S.jpg"),
+                "D": os.path.join(images_folder, "D.jpg"),
+                "L": os.path.join(images_folder, "L.jpg"),
             }
             status_flags = ["Present", "Missing", "Absent", "Short Duration", "Day Off", "Full Leave"]
             status_map = {"Present": "P", "Missing": "M", "Absent": "A", "Short Duration": "S", "Day Off": "D", "Full Leave": "L"}
