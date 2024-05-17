@@ -13,6 +13,7 @@ urlpatterns=[
     path('c_lb/',Leave_Balance.as_view()),
     path('c_clockinout/',ClockInOut_Request.as_view()),
     path('c_downreport/',Download_Report.as_view()),
+    path('c_downattendreport/',Download_Attendance_Report.as_view()),
     path('c_upduser/', UpdateCompanyNameView.as_view()),
     path('c_updpic/', UploadPictureView.as_view()),
     path('c_updpass/', UpdatePasswordView.as_view()),

@@ -12,7 +12,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.http import Http404, HttpResponse
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Image
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from django.core.files.storage import default_storage
@@ -26,6 +26,8 @@ import datetime
 from django.utils import timezone
 from django.db.models import Q
 from string import capwords
+import os
+from django.conf import settings
 
 
 class LoginView(APIView):
@@ -2216,6 +2218,191 @@ class Download_Report(APIView):
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Download_Attendance_Report(APIView):
+    @swagger_auto_schema(
+        tags=["Team : Time Tracking"],
+        manual_parameters=[
+            openapi.Parameter(
+                "e_email",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
+                "month",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                "year",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response("Successful Download"),
+            204: openapi.Response("No content"),
+            401: openapi.Response("UnAuthorize"),
+        },
+        operation_summary="Endpoint to download attendance report.",
+        operation_id="6",
+    )
+   
+    def get(self, request, *args, **kwargs):
+        e_email=request.query_params.get("e_email")
+        month=request.query_params.get("month")
+        year=request.query_params.get("year")
+        try:
+            try:
+                rec = time_sheet.objects.get(client_id=request.user, employee_id=e_email, month=month, year=year)
+                emp=employee.objects.get(email=rec.employee_id)
+            except time_sheet.DoesNotExist:
+                return Response({"error": "No record found"}, status=status.HTTP_204_NO_CONTENT)
+            current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+            filename = f"AttendanceReport_{current_datetime}.pdf"
+            table_headers = [
+                "Date",
+                "Day",
+                "Check-in",
+                "Check-out",
+                "Hours worked",
+                "Overtime",
+                "Status",
+            ]
+            FileHeading = "Attendance Report"
+            table_data = [table_headers]
+            images_folder = os.path.join(settings.BASE_DIR, 'images')
+            status_images = {
+                "P": os.path.join(images_folder, "P.jpg"),
+                "M": os.path.join(images_folder, "M.jpg"),
+                "A": os.path.join(images_folder, "A.jpg"),
+                "S": os.path.join(images_folder, "S.jpg"),
+                "D": os.path.join(images_folder, "D.jpg"),
+                "L": os.path.join(images_folder, "L.jpg"),
+            }
+            status_flags = ["Present", "Missing", "Absent", "Short Duration", "Day Off", "Full Leave"]
+            status_map = {"Present": "P", "Missing": "M", "Absent": "A", "Short Duration": "S", "Day Off": "D", "Full Leave": "L"}
+            for key in rec.record:
+                date_obj = datetime.datetime.strptime(key, "%d-%m-%Y")
+                day = date_obj.strftime("%A")
+                status_symbols = ""
+                status_images_list = []
+                
+                for status_flag in status_flags:
+                    if rec.record[key]["status"].get(status_flag):
+                        symbol = status_map[status_flag]
+                        status_images_list.append(status_images[symbol])
+                status_image_objects = [Image(img_path, width=17, height=17) for img_path in status_images_list]
+
+                status_image_table = Table([status_image_objects], colWidths=[22] * len(status_image_objects))
+                row_data = [
+                    str(key),
+                    str(day),
+                    str(rec.record[key]["check_in"]),
+                    str(rec.record[key]["check_out"]),
+                    str(rec.record[key]["hours_worked"]),
+                    str(rec.record[key]["overtime"]),
+                    status_image_table,
+                ]
+                table_data.append(row_data)
+            col_widths_attend = [80, 80, 80, 80, 80, 80, 80]
+
+            status_table_data = [[]]
+            for stat, pic in status_map.items():
+                status_table_data[0].append(Image(status_images[pic], width=15, height=15))
+                status_table_data[0].append(stat)
+            status_table_data[0].append("")
+            col_width_stat_table=[21.5,45,21.5,45,21.5,40,21.5,80,21.5,50,21.5,60,120]
+
+            pdf_table_status=Table(status_table_data, colWidths=col_width_stat_table)
+
+            response = HttpResponse(content_type="application/pdf")
+            response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+            pdf_buffer = HttpResponse(content_type="application/pdf")
+            pdf = SimpleDocTemplate(pdf_buffer, pagesize=letter)
+
+            pdf_table_attend = Table(table_data, colWidths=col_widths_attend)
+            style_attend = TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("BOTTOMPADDING", (0, 0), (-1, 0), 9),
+                    ("TOPPADDING", (0, 0), (-1, 0), 9),
+                    ("BOTTOMPADDING", (0, 1), (-2, -1), 9),
+                    ("BACKGROUND", (0, 1), (-1, -1), colors.white),
+                    ("GRID", (0, 0), (-1, -1), 1, colors.black),
+                ]
+            )
+
+            pdf_table_attend.setStyle(style_attend)
+
+            name_id=[f"Employee Name: {emp.first_name} {emp.last_name}", f"Employee ID: {emp.employee_id}"]
+            design_comp=[f"Email: {emp.email}", f"Designation : {emp.job_title}"]
+            month_year=[f"Month: {rec.month}", f"Year: {rec.year}"]
+            desc_table=[name_id, design_comp, month_year]
+            col_width_desc=[320,240]
+            
+            pdf_table_desc= Table(desc_table, colWidths=col_width_desc)
+
+            style_desc= TableStyle(
+                [
+                    ("BACKGROUND", (0,0), (-1,-1), colors.white),
+                    ("GRID", (0, 0), (-1, -1),1, colors.white),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
+                    ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
+                ]
+            )
+
+            style_stat= TableStyle(
+                [
+                    ("BACKGROUND", (0,0), (-1,-1), colors.white),
+                    ("GRID", (0, 0), (-1, -1),1, colors.white),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
+                    ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
+                    ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ]
+            )
+
+            pdf_table_desc.setStyle(style_desc)
+            pdf_table_status.setStyle(style_stat)
+
+            styles = getSampleStyleSheet()
+            elements = []
+            heading = FileHeading
+
+            elements.append(Paragraph(heading, styles["Title"]))
+            elements.append(Paragraph("<br/>", styles["Normal"]))
+
+            elements.append(pdf_table_desc)
+            elements.append(Paragraph("<br/>", styles["Normal"]))
+
+            elements.append(pdf_table_status)
+            elements.append(Paragraph("<br/>", styles["Normal"]))
+
+            elements.append(pdf_table_attend)
+            elements.append(Paragraph("<br/>", styles["Normal"]))
+
+            pdf.build(elements)
+
+            response.write(pdf_buffer.getvalue())
+            return response
+        except Exception as e:
+            return Response({"error": str(e)},status=status.HTTP_400_BAD_REQUEST)
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
