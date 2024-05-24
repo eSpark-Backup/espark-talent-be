@@ -293,7 +293,7 @@ class Employee_Home(APIView):
         clients = client.objects.filter(email__in=out_sourced_to)
         company = company_data.objects.all()
         if company:
-            talent_company = company[1].company_name
+            talent_company = company[0].company_name
         else:
             talent_company = "eSpark"
         workspaces = []
