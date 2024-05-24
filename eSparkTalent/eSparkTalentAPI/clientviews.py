@@ -2441,6 +2441,9 @@ class UpdateCompanyNameView(APIView):
                 record = client.objects.get(email=user)
                 record.company_name = new_company_name
                 record.save()
+                user_record = end_user.objects.get(email=user)
+                user_record.username = new_company_name
+                user_record.save()
                 return Response(
                     {"message": "Company name is successfully updated"},
                     status=status.HTTP_200_OK,

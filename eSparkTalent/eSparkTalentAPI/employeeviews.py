@@ -291,12 +291,17 @@ class Employee_Home(APIView):
             for w_space in outsource_employees.objects.filter(employee_id=e_email)
         ]
         clients = client.objects.filter(email__in=out_sourced_to)
+        company = company_data.objects.all()
+        if company:
+            talent_company = company[1].company_name
+        else:
+            talent_company = "eSpark"
         workspaces = []
         workspaces.append(
             {
                 "email": talent_email,
                 "client_name": "eSpark Talent",
-                "company_name": "eSpark",
+                "company_name": talent_company,
             }
         )
         if clients:
