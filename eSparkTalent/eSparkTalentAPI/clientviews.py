@@ -868,7 +868,6 @@ class Leave_Request(APIView):
 
             if to_update_leave_request and to_update_leave_request.status == "pending":
                 to_update_leave_request.status = to_update_status
-                to_update_leave_request.save()
                 emp_rec = employee.objects.get(
                     email=to_update_leave_request.employee_id
                 )
@@ -878,6 +877,47 @@ class Leave_Request(APIView):
                         leave_balances_instance = leave_balance.objects.get(
                             employee_id=to_update_leave_request.employee_id
                         )
+                        now = datetime.datetime.now().date()
+                        start_date = to_update_leave_request.start_date
+                        end_date = to_update_leave_request.end_date
+
+                        start_month = start_date.strftime("%B")
+                        end_month = end_date.strftime("%B")
+
+                        start_year = start_date.strftime("%Y")
+                        end_year = end_date.strftime("%Y")
+
+                        time_sheet_record=time_sheet.objects.filter(
+                            Q(employee_id= to_update_leave_request.employee_id, client_id= to_update_leave_request.client_id),
+                            Q(
+                                month__gte=start_month,
+                                year__gte=start_year,
+                            )
+                            & Q(
+                                month__lte=end_month,
+                                year__lte=end_year,
+                            ),
+                        )
+                        if now >= start_date:
+                            for timesheet in time_sheet_record:
+                                for key in timesheet.record:
+                                    if datetime.datetime.strptime(key, "%d-%m-%Y") >= datetime.datetime.strptime(start_date.strftime("%d-%m-%Y"), "%d-%m-%Y") and datetime.datetime.strptime(key, "%d-%m-%Y") <= datetime.datetime.strptime(end_date.strftime("%d-%m-%Y"), "%d-%m-%Y"):
+                                        if timesheet.record[key]["status"]["Day Off"] == False:
+                                            timesheet.record[key]={
+                                                "check_in": "-",
+                                                "check_out": "-",
+                                                "hours_worked": "-",
+                                                "overtime": "-",
+                                                "status": {
+                                                    "Present": False,
+                                                    "Missing": False,
+                                                    "Absent": False,
+                                                    "Day Off": False,
+                                                    "Full Leave": True,
+                                                    "Short Duration": False,
+                                                },
+                                            }
+                                timesheet.save()
                         if to_update_leave_request.leave_type == "casual":
                             leave_balances_instance.casual_leaves["balance"] = int(
                                 leave_balances_instance.casual_leaves["balance"]
@@ -906,7 +946,6 @@ class Leave_Request(APIView):
                             leave_balances_instance.hajj_leaves["availed"] = int(
                                 leave_balances_instance.hajj_leaves["availed"]
                             ) + int(to_update_leave_request.count)
-
                         elif to_update_leave_request.leave_type == "paid":
                             leave_balances_instance.paid_leaves["balance"] = int(
                                 leave_balances_instance.paid_leaves["balance"]
@@ -914,7 +953,6 @@ class Leave_Request(APIView):
                             leave_balances_instance.paid_leaves["availed"] = int(
                                 leave_balances_instance.paid_leaves["availed"]
                             ) + int(to_update_leave_request.count)
-
                         elif to_update_leave_request.leave_type == "unpaid":
                             leave_balances_instance.unpaid_leaves["balance"] = int(
                                 leave_balances_instance.unpaid_leaves["balance"]
@@ -924,6 +962,7 @@ class Leave_Request(APIView):
                             ) + int(to_update_leave_request.count)
 
                         leave_balances_instance.save()
+                        to_update_leave_request.save()
                         message = f"{emp_rec.first_name} {emp_rec.last_name} {to_update_leave_request.leave_type} leave request is accepted"
 
                     except leave_balance.DoesNotExist:
@@ -935,6 +974,7 @@ class Leave_Request(APIView):
                         )
                 else:
                     message = f"{emp_rec.first_name} {emp_rec.last_name} {to_update_leave_request.leave_type} leave request is {to_update_status}"
+                    to_update_leave_request.save()
                 notifi = notifications.objects.get(
                     ref_id=request_id, notification_type="leave_request"
                 )
