@@ -1720,7 +1720,7 @@ class Time_Sheet(APIView):
                     year__gte=from_year,
                 )
                 & Q(
-                    month__gte=month_mapping[to_month],
+                    month__lte=month_mapping[to_month],
                     year__lte=to_year,
                 ),
             )

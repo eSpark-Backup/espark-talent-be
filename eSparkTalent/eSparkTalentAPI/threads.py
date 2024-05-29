@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from .models import *
 from datetime import datetime
 import time
+from django.db.models import Q
 class Check_Punches(BaseCommand):
 
     def check_punch(self, *args, **kwargs):
@@ -66,6 +67,15 @@ class Check_Punches(BaseCommand):
                                 },
                             )
                     elif now >= datetime.strptime(p_time["check_in"], "%I:%M %p").replace(year=now.year, month=now.month, day=now.day) and now < datetime.strptime(p_time["check_out"], "%I:%M %p").replace(year=now.year, month=now.month, day=now.day):
+                        leave_records = leave_request.objects.filter(
+                            Q(employee_id = emp.employee_id, client_id = emp.client_id, status = "completed"),
+                            Q(
+                                start_date__lte = now
+                            )
+                            & Q(
+                                end_date__gte = now                                
+                            )
+                        )
                         time_record = time_sheet.objects.filter(
                             employee_id=emp.employee_id,
                             client_id=emp.client_id,
@@ -75,6 +85,26 @@ class Check_Punches(BaseCommand):
                         if time_record:
                             for rec in time_record:
                                 if (
+                                    now.date().strftime("%d-%m-%Y")
+                                    not in rec.record.keys() and leave_records
+                                ):
+                                    rec.record[now.date().strftime("%d-%m-%Y")] = {
+                                        "check_in": "-",
+                                        "check_out": "-",
+                                        "hours_worked": "-",
+                                        "overtime": "-",
+                                        "status": {
+                                            "Present": False,
+                                            "Missing": False,
+                                            "Absent": False,
+                                            "Day Off": False,
+                                            "Full Leave": True,
+                                            "Short Duration": False,
+                                        },
+                                    }
+                                    rec.save()
+                                
+                                elif (
                                     now.date().strftime("%d-%m-%Y")
                                     not in rec.record.keys()
                                 ):
@@ -94,7 +124,8 @@ class Check_Punches(BaseCommand):
                                     }
                                     rec.save()
                         elif not time_record:
-                            time_sheet.objects.create(
+                            if leave_records:
+                                time_sheet.objects.create(
                                 employee_id=emp.employee_id,
                                 client_id=emp.client_id,
                                 month=now.strftime("%B"),
@@ -107,15 +138,38 @@ class Check_Punches(BaseCommand):
                                         "overtime": "-",
                                         "status": {
                                             "Present": False,
-                                            "Missing": True,
+                                            "Missing": False,
                                             "Absent": False,
                                             "Day Off": False,
-                                            "Full Leave": False,
+                                            "Full Leave": True,
                                             "Short Duration": False,
                                         },
                                     }
                                 },
                             )
+                            else:
+                                time_sheet.objects.create(
+                                    employee_id=emp.employee_id,
+                                    client_id=emp.client_id,
+                                    month=now.strftime("%B"),
+                                    year=now.strftime("%Y"),
+                                    record={
+                                        now.date().strftime("%d-%m-%Y"): {
+                                            "check_in": "-",
+                                            "check_out": "-",
+                                            "hours_worked": "-",
+                                            "overtime": "-",
+                                            "status": {
+                                                "Present": False,
+                                                "Missing": True,
+                                                "Absent": False,
+                                                "Day Off": False,
+                                                "Full Leave": False,
+                                                "Short Duration": False,
+                                            },
+                                        }
+                                    },
+                                )
                     elif now >= datetime.strptime(p_time["check_out"], "%I:%M %p").replace(year=now.year, month=now.month, day=now.day):
                         time_record = time_sheet.objects.filter(
                             employee_id=emp.employee_id,
@@ -128,6 +182,7 @@ class Check_Punches(BaseCommand):
                             in time_record[0].record.keys()
                             and time_record[0].record[now.date().strftime("%d-%m-%Y")]["check_in"] != "-"
                             and time_record[0].record[now.date().strftime("%d-%m-%Y")]["check_out"] == "-"
+                            and time_record[0].record[now.date().strftime("%d-%m-%Y")]["status"]["Full Leave"] != True
                         ):
                             for rec in time_record:
                                 rec.record[now.date().strftime("%d-%m-%Y")]['check_out'] = "-"
@@ -141,6 +196,7 @@ class Check_Punches(BaseCommand):
                             in time_record[0].record.keys()
                             and time_record[0].record[now.date().strftime("%d-%m-%Y")]["check_in"] == "-"
                             and time_record[0].record[now.date().strftime("%d-%m-%Y")]["check_out"] == "-"
+                            and time_record[0].record[now.date().strftime("%d-%m-%Y")]["status"]["Full Leave"] != True
                         ):
                             for rec in time_record:
                                 rec.record[now.date().strftime("%d-%m-%Y")]['check_out'] = "-"
