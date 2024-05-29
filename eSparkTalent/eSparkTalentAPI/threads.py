@@ -171,15 +171,6 @@ class Check_Punches(BaseCommand):
                                     },
                                 )
                     elif now >= datetime.strptime(p_time["check_out"], "%I:%M %p").replace(year=now.year, month=now.month, day=now.day):
-                        leave_records = leave_request.objects.filter(
-                            Q(employee_id = emp.employee_id, client_id = emp.client_id, status = "completed"),
-                            Q(
-                                start_date__lte = now
-                            )
-                            & Q(
-                                end_date__gte = now                                
-                            )
-                        )
                         time_record = time_sheet.objects.filter(
                             employee_id=emp.employee_id,
                             client_id=emp.client_id,
