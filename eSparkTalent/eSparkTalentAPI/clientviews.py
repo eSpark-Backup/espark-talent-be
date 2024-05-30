@@ -919,7 +919,10 @@ class Leave_Request(APIView):
                                             }
                                 timesheet.save()
                         leave_records=leave_request.objects.filter(
-                            Q(employee_id = to_update_leave_request.employee_id, client_id = to_update_leave_request.client_id, leave_type = to_update_leave_request.leave_type),
+                            Q(employee_id = to_update_leave_request.employee_id,
+                                client_id = to_update_leave_request.client_id,
+                                leave_type = to_update_leave_request.leave_type,
+                                status = "completed"),
                             Q(
                                 start_date__lte = to_update_leave_request.end_date
                             ) &
@@ -935,18 +938,10 @@ class Leave_Request(APIView):
                             for leave in leave_records:
                                 leaves_diff = leave.end_date - leave.start_date
                                 leaves_days = [leave.start_date + timedelta(days=i) for i in range(leaves_diff.days+1)]
-                                if leave.status == "pending" and leave.count!=0:
+                                if leave.count!=0:
                                     count_minus=0
-                                    for i in leaves_days:
-                                        if i in current_leaves_days:
-                                            count_minus += 1
-                                            current_leaves_days.remove(i)
-                                    leave.count -= count_minus
-                                    leave.save()
-                                elif leave.status == "completed" and leave.count!=0:
-                                    count_minus=0
-                                    for i in leaves_days:
-                                        if i in current_leaves_days:
+                                    for i in current_leaves_days:
+                                        if i in leaves_days:
                                             count_minus += 1
                                             current_leaves_days.remove(i)
                                     to_update_leave_request.count -= count_minus
