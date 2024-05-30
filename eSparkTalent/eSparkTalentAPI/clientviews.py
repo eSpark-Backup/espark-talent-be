@@ -918,6 +918,38 @@ class Leave_Request(APIView):
                                                 },
                                             }
                                 timesheet.save()
+                        leave_records=leave_request.objects.filter(
+                            Q(employee_id = to_update_leave_request.employee_id, client_id = to_update_leave_request.client_id, leave_type = to_update_leave_request.leave_type),
+                            Q(
+                                start_date__lte = to_update_leave_request.end_date
+                            ) &
+                            Q(
+                                end_date__gte = to_update_leave_request.start_date
+                            )
+                        ).exclude(id=to_update_leave_request.id)
+
+                        current_leaves_diff = to_update_leave_request.end_date - to_update_leave_request.start_date
+                        current_leaves_days = [to_update_leave_request.start_date + timedelta(days=i) for i in range(current_leaves_diff.days + 1)]
+
+                        if leave_records:
+                            for leave in leave_records:
+                                leaves_diff = leave.end_date - leave.start_date
+                                leaves_days = [leave.start_date + timedelta(days=i) for i in range(leaves_diff.days+1)]
+                                if leave.status == "pending" and leave.count!=0:
+                                    count_minus=0
+                                    for i in leaves_days:
+                                        if i in current_leaves_days:
+                                            count_minus += 1
+                                            current_leaves_days.remove(i)
+                                    leave.count -= count_minus
+                                    leave.save()
+                                elif leave.status == "completed" and leave.count!=0:
+                                    count_minus=0
+                                    for i in leaves_days:
+                                        if i in current_leaves_days:
+                                            count_minus += 1
+                                            current_leaves_days.remove(i)
+                                    to_update_leave_request.count -= count_minus
                         if to_update_leave_request.leave_type == "casual":
                             leave_balances_instance.casual_leaves["balance"] = int(
                                 leave_balances_instance.casual_leaves["balance"]
