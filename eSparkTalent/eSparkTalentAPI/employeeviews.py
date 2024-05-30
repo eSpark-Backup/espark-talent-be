@@ -1429,7 +1429,7 @@ class Leave_Request(APIView):
         operation_id="1",
     )
     def post(self, request, *args, **kwargs):
-        e_email = request.user
+        e_email = request.user.email
         serializer = LeaveRequestSerializer(data=request.data)
         if serializer.is_valid():
             try:
@@ -1444,6 +1444,40 @@ class Leave_Request(APIView):
                     attachment=request.data.get("attachment"),
                     status="pending",
                 )
+
+                leave_records=leave_request.objects.filter(
+                    Q(employee_id = result.employee_id, client_id = result.client_id, leave_type = result.leave_type),
+                    Q(
+                        start_date__lte = result.end_date
+                    ) &
+                    Q(
+                        end_date__gte = result.start_date
+                    )
+                ).exclude(id=result.id)
+
+                current_leaves_diff = result.end_date - result.start_date
+                current_leaves_days = [result.start_date + timedelta(days=i) for i in range(current_leaves_diff.days + 1)]
+
+                if leave_records:
+                    for leave in leave_records:
+                        leaves_diff = leave.end_date - leave.start_date
+                        leaves_days = [leave.start_date + timedelta(days=i) for i in range(leaves_diff.days+1)]
+                        if leave.status == "pending" and leave.count!=0:
+                            count_minus=0
+                            for i in leaves_days:
+                                if i in current_leaves_days:
+                                    count_minus += 1
+                                    current_leaves_days.remove(i)
+                            result.count -= count_minus
+                            result.save()
+                        elif leave.status == "completed" and leave.count!=0:
+                            count_minus=0
+                            for i in leaves_days:
+                                if i in current_leaves_days:
+                                    count_minus += 1
+                                    current_leaves_days.remove(i)
+                            result.count -= count_minus
+                            result.save()
 
                 emp_data = end_user.objects.get(email=result.employee_id)
                 notifications.objects.create(
