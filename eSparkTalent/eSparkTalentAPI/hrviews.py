@@ -5450,14 +5450,17 @@ class Attendance_Report(APIView):
                 for key, value in filtered_records.items():
                     if key == talent_email:
                         company_name = "eSpark Talent"
+                        company_email = talent_email
                         location = "Karachi"
                     else:
                         try:
                             clnt = client.objects.get(email=key)
                             company_name = clnt.company_name
+                            company_email= clnt.email
                             location = clnt.address
                         except client.DoesNotExist:
                             company_name = "-"
+                            company_email= "-"
                             location = "-"
 
                     outsrc_emp = outsource_employees.objects.get(
@@ -5469,6 +5472,7 @@ class Attendance_Report(APIView):
                         "employee_id": emp.employee_id,
                         "employee_name": emp.first_name + " " + emp.last_name,
                         "company": company_name,
+                        "company_email": company_email,
                         "location": location,
                         "role_type": outsrc_emp.role_type,
                         "job_title": outsrc_emp.job_title,
@@ -5511,14 +5515,17 @@ class Attendance_Report(APIView):
                     emp = employee.objects.get(email=e_email)
                     if ts_record.client_id == talent_email:
                         company_name = "eSpark Talent"
+                        company_email = talent_email
                         location = "Karachi"
                     else:
                         try:
                             clnt = client.objects.get(email=ts_record.client_id)
                             company_name = clnt.company_name
+                            company_email = clnt.email
                             location = clnt.address
                         except client.DoesNotExist:
                             company_name = "-"
+                            company_email = "-"
                             location = "-"
 
                     outsrc_emp = outsource_employees.objects.get(
@@ -5529,6 +5536,7 @@ class Attendance_Report(APIView):
                         "employee_id": emp.employee_id,
                         "employee_name": emp.first_name + " " + emp.last_name,
                         "company": company_name,
+                        "company_email": company_email,
                         "location": location,
                         "role_type": outsrc_emp.role_type,
                         "job_title": outsrc_emp.job_title,
