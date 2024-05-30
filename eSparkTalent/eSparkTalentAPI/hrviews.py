@@ -5372,6 +5372,10 @@ class Attendance_Report(APIView):
                                             "company": openapi.Schema(
                                                 type=openapi.TYPE_STRING
                                             ),
+                                            "company_email": openapi.Schema(
+                                                type=openapi.TYPE_STRING,
+                                                format=openapi.FORMAT_EMAIL
+                                            ),
                                             "location": openapi.Schema(
                                                 type=openapi.TYPE_STRING
                                             ),
