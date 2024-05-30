@@ -1429,7 +1429,7 @@ class Leave_Request(APIView):
         operation_id="1",
     )
     def post(self, request, *args, **kwargs):
-        e_email = request.user
+        e_email = request.user.email
         serializer = LeaveRequestSerializer(data=request.data)
         if serializer.is_valid():
             try:
