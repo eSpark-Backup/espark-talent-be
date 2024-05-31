@@ -2219,6 +2219,14 @@ class Update_Emp_Info(APIView):
     def patch(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
         updates = request.data
+        if "employee_name" in updates:
+            name = updates["employee_name"]
+            first_space_index = name.find(" ")
+
+            updates["first_name"] = name[:first_space_index]
+            updates["last_name"] = name[first_space_index + 1:]
+            del updates["employee_name"]
+            
         try:
             emp_record = employee.objects.get(id=record_id)
         except Exception as e:
