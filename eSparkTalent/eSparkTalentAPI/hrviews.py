@@ -3482,7 +3482,7 @@ class Company_Settings(APIView):
             try:
                 comp_data = comp_datas[0]
                 for key in updates:
-                    if updates["image"]:
+                    if updates.get("image"):
                         removed = remove_bucket_file(comp_data.image.name)
                         if removed:
                             return Response(
