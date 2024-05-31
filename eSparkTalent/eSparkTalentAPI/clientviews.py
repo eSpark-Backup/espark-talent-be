@@ -894,7 +894,7 @@ class Leave_Request(APIView):
                                 year__gte=start_year,
                             )
                             & Q(
-                                month__lte=end_month,
+                                month__gte=end_month,
                                 year__lte=end_year,
                             ),
                         )
