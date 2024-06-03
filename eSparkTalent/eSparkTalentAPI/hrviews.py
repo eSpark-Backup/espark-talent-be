@@ -19,10 +19,11 @@ from Crypto.Util.Padding import pad, unpad
 from django.db import transaction
 import json
 from dateutil import parser
-from django.db.models import Q
+from django.db.models import Q, IntegerField, Case, When, Value
 from eSparkTalent.settings import talent_email
 from .bucket_functions import remove_bucket_file
 from django.db.models.fields.files import FileField
+from calendar import month_name
 
 
 @authentication_classes([JWTAuthentication])
@@ -5430,15 +5431,20 @@ class Attendance_Report(APIView):
                     time_sheet.months, start=1
                 )
             }
-
-            time_sheet_records = time_sheet.objects.filter(
+            annotated_time_sheets = time_sheet.objects.annotate(
+                month_num=Case(
+                    *(When(month=month_name[i], then=Value(i)) for i in range(1, 13)),
+                    output_field=IntegerField(),
+                )
+            )
+            time_sheet_records = annotated_time_sheets.filter(
                 Q(employee_id=e_email),
                 Q(
-                    month__gte=month_mapping[from_month],
+                    month_num__gte=month_mapping[from_month],
                     year__gte=from_year,
                 )
                 & Q(
-                    month__gte=month_mapping[to_month],
+                    month_num__lte=month_mapping[to_month],
                     year__lte=to_year,
                 ),
             )

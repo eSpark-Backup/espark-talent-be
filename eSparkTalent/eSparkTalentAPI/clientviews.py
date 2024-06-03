@@ -24,7 +24,7 @@ from datetime import datetime, timedelta
 from .bucket_functions import remove_bucket_file
 import datetime
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Q, IntegerField, Case, When, Value
 from string import capwords
 import os
 from django.conf import settings
@@ -887,14 +887,27 @@ class Leave_Request(APIView):
                         start_year = start_date.strftime("%Y")
                         end_year = end_date.strftime("%Y")
 
-                        time_sheet_record=time_sheet.objects.filter(
+                        month_mapping = {
+                            month_name: month_number
+                            for month_number, (month_name, _) in enumerate(
+                                time_sheet.months, start=1
+                            )
+                        }
+                        annotated_time_sheets = time_sheet.objects.annotate(
+                            month_num=Case(
+                                *(When(month=calendar.month_name[i], then=Value(i)) for i in range(1, 13)),
+                                output_field=IntegerField(),
+                            )
+                        )
+
+                        time_sheet_record=annotated_time_sheets.filter(
                             Q(employee_id= to_update_leave_request.employee_id, client_id= to_update_leave_request.client_id),
                             Q(
-                                month__gte=start_month,
+                                month_num__gte=month_mapping[start_month],
                                 year__gte=start_year,
                             )
                             & Q(
-                                month__gte=end_month,
+                                month_num__lte=month_mapping[end_month],
                                 year__lte=end_year,
                             ),
                         )
