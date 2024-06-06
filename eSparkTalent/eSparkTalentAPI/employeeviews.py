@@ -18,6 +18,8 @@ from .emp_dash_funcs import *
 from eSparkTalent.settings import talent_email
 from .bucket_functions import remove_bucket_file
 from calendar import month_name
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 
 @authentication_classes([JWTAuthentication])
@@ -1447,29 +1449,37 @@ class Leave_Request(APIView):
                 )
 
                 emp_data = end_user.objects.get(email=result.employee_id)
-                notifications.objects.create(
+                notifi = notifications.objects.create(
                     ref_id=result.id,
                     email=result.client_id,
                     notification_type="leave_request",
                     status="added",
-                    description=f"{emp_data.username} {result.leave_type} leave request is pending",
+                    description=f"{emp_data.username} {result.leave_type} leave request is pending.",
                 )
-                if result.attachment:
-                    return Response(
-                        {
-                            "message": f"{result.leave_type} leave request is pending",
-                            "id": result.id,
-                        },
-                        status=status.HTTP_201_CREATED,
-                    )
-                else:
-                    return Response(
-                        {
-                            "message": f"{result.leave_type} leave request is pending",
-                            "id": result.id,
-                        },
-                        status=status.HTTP_201_CREATED,
-                    )
+
+                record = {
+                    "type": "Leave Request",
+                    "description": f"{notifi.description}",
+                    "date": f"{notifi.created_at.date()}",
+                    "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                }
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    "client",
+                    {
+                        "type": "notification.send",
+                        "email": f"{result.client_id}",
+                        "message": record,
+                    }
+                )
+ 
+                return Response(
+                    {
+                        "message": f"{result.leave_type} leave request is pending",
+                        "id": result.id,
+                    },
+                    status=status.HTTP_201_CREATED,
+                )
             except ValidationError as e:
                 return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
@@ -2369,12 +2379,28 @@ class Punch_Request(APIView):
                 )
 
                 emp_data = end_user.objects.get(email=result.employee_id)
-                notifications.objects.create(
+                notifi = notifications.objects.create(
                     ref_id=result.id,
                     email=result.client_id,
                     notification_type="punch_request",
                     status="added",
-                    description=f"{emp_data.username} {result.punch_type} request is pending",
+                    description=f"{emp_data.username} {result.punch_type} request is pending.",
+                )
+                
+                record = {
+                    "type": "Punch Request",
+                    "description": f"{notifi.description}",
+                    "date": f"{notifi.created_at.date()}",
+                    "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                }
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    "client",
+                    {
+                        "type": "notification.send",
+                        "email": f"{result.client_id}",
+                        "message": record,
+                    }
                 )
 
                 return Response(

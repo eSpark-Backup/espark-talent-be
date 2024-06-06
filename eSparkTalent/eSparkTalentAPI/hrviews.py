@@ -24,6 +24,8 @@ from eSparkTalent.settings import talent_email
 from .bucket_functions import remove_bucket_file
 from django.db.models.fields.files import FileField
 from calendar import month_name
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 
 @authentication_classes([JWTAuthentication])
@@ -679,12 +681,27 @@ class Employee_Invoice(APIView):
                         payment_status=serializer.validated_data["payment_status"],
                         invoice=serializer.validated_data["invoice"],
                     )
-                    notifications.objects.create(
+                    notifi = notifications.objects.create(
                         email=emp_inv.client_id,
                         ref_id=emp_inv.id,
                         notification_type="employee_invoice",
                         status="added",
                         description=f"Invoice is added for {employee_data.first_name} {employee_data.last_name}",
+                    )
+                    record = {
+                        "type": "Invoice",
+                        "description": "1 new invoice has been added.",
+                        "date": f"{notifi.created_at.date()}",
+                        "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                    }
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        "client",
+                        {
+                            "type": "notification.send",
+                            "email": f"{emp_inv.client_id}",
+                            "message": record,
+                        },
                     )
                     return Response(
                         {
@@ -760,6 +777,21 @@ class Employee_Invoice(APIView):
                 notif.email = to_update_emp_inv.client_id
                 notif.description = f"Invoice is {to_update_status} for {employee_data.first_name} {employee_data.last_name}"
                 notif.save()
+                record = {
+                    "type": "Invoice",
+                    "description": f"1 new invoice has been {to_update_status}.",
+                    "date": f"{notif.created_at.date()}",
+                    "time": f"{notif.created_at.strftime('%H:%M:%S')}",
+                }
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    "client",
+                    {
+                        "type": "notification.send",
+                        "email": f"{to_update_emp_inv.client_id}",
+                        "message": record,
+                    },
+                )
                 return Response(
                     {"message": f"One new invoice is {to_update_status}"},
                     status=status.HTTP_200_OK,
@@ -979,12 +1011,27 @@ class Other_Payment(APIView):
                     payment_status=serializer.validated_data["payment_status"],
                     invoice=serializer.validated_data["invoice"],
                 )
-                notifications.objects.create(
+                notifi = notifications.objects.create(
                     email=oth_pay.client_id,
                     ref_id=oth_pay.id,
                     notification_type="other_payment",
                     status="added",
                     description=f"Invoice is added for {oth_pay.invoice_reference}",
+                )
+                record = {
+                    "type": "Invoice",
+                    "description": "1 new invoice has been added.",
+                    "date": f"{notifi.created_at.date()}",
+                    "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                }
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    "client",
+                    {
+                        "type": "notification.send",
+                        "email": f"{oth_pay.client_id}",
+                        "message": record,
+                    },
                 )
                 return Response(
                     {
@@ -1050,6 +1097,21 @@ class Other_Payment(APIView):
             notif.email = to_update_otherpay.client_id
             notif.description = f"Invoice is {to_update_status} for {to_update_otherpay.invoice_reference}"
             notif.save()
+            record = {
+                "type": "Invoice",
+                "description": f"1 new invoice has been {to_update_status}.",
+                "date": f"{notif.created_at.date()}",
+                "time": f"{notif.created_at.strftime('%H:%M:%S')}",
+            }
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                "client",
+                {
+                    "type": "notification.send",
+                    "email": f"{to_update_otherpay.client_id}",
+                    "message": record,
+                },
+            )
             return Response(
                 {"message": f"One new invoice is {to_update_status}"},
                 status=status.HTTP_200_OK,
@@ -2648,12 +2710,27 @@ class Interview_Schedule(APIView):
                 interview_date_time=serializer.validated_data["interview_date_time"],
                 country=serializer.validated_data["country"],
             )
-            notifications.objects.create(
+            notifi = notifications.objects.create(
                 email=int_sch.client_id,
                 ref_id=int_sch.id,
                 notification_type="interview_schedule",
                 status="added",
                 description=f"Interview of {int_sch.employee_name} is scheduled for {int_sch.job_title} position",
+            )
+            record = {
+                "type": "Interview Schedule",
+                "description": "You have 1 new interview scheduled.",
+                "date": f"{notifi.created_at.date()}",
+                "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+            }
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                "client",
+                {
+                    "type": "notification.send",
+                    "email": f"{int_sch.client_id}",
+                    "message": record,
+                },
             )
             return Response(
                 {"message": "Interview is successfully set", "id": int_sch.id},
@@ -2850,12 +2927,27 @@ class Onboarding(APIView):
                     employment_term=serializer.validated_data["employment_term"],
                     benefits=request.data.get("benefits"),
                 )
-                notifications.objects.create(
+                notifi = notifications.objects.create(
                     email=onb.client_id,
                     ref_id=onb.id,
                     notification_type="onboarding",
                     status="added",
                     description=f"{onb.employee_name} is onboard for {onb.job_title} position",
+                )
+                record = {
+                    "type": "Onboarding",
+                    "description": "1 new employee is onboard.",
+                    "date": f"{notifi.created_at.date()}",
+                    "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                }
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    "client",
+                    {
+                        "type": "notification.send",
+                        "email": f"{onb.client_id}",
+                        "message": record,
+                    },
                 )
                 return Response(
                     {
@@ -4269,6 +4361,30 @@ class Policies_Edit(APIView):
                 for key in policy_id_json:
                     setattr(policy_instance, key, policy_id_json[key])
                 policy_instance.save()
+                record = {
+                        "type": "Policy",
+                        "description": f"1 new policy has been added.",
+                        "date": f"{policy_instance.created_at.date()}",
+                        "time": f"{policy_instance.created_at.strftime('%H:%M:%S')}",
+                    }
+                if policy_instance.employee == True:
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        "employee",
+                        {
+                            "type": "group.notification.send",
+                            "message": record,
+                        },
+                    )
+                if policy_instance.client == True:
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        "client",
+                        {
+                            "type": "group.notification.send",
+                            "message": record,
+                        },
+                    )
             return Response(
                 {"message": "Changes have been saved successfully"},
                 status=status.HTTP_200_OK,
@@ -4351,12 +4467,27 @@ class Company_Contract(APIView):
                             date=serializer.validated_data["date"],
                             contract_doc=serializer.validated_data["contract_doc"],
                         )
-                        notifications.objects.create(
+                        notifi = notifications.objects.create(
                             email=cl_contract.client_id,
                             ref_id=cl_contract.id,
                             notification_type="client_contract",
                             status="added",
                             description=f"{cl_contract.contract_name} contract is added",
+                        )
+                        record = {
+                                "type": "Company Contracts",
+                                "description": "1 new contract has been added to company contracts.",
+                                "date": f"{notifi.created_at.date()}",
+                                "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                            }
+                        channel_layer = get_channel_layer()
+                        async_to_sync(channel_layer.group_send)(
+                            "client",
+                            {
+                                "type": "notification.send",
+                                "email": f"{cl_contract.client_id}",
+                                "message": record,
+                            },
                         )
                         return Response(
                             {
@@ -4388,12 +4519,27 @@ class Company_Contract(APIView):
                             date=serializer.validated_data["date"],
                             contract_doc=serializer.validated_data["contract_doc"],
                         )
-                        notifications.objects.create(
+                        notifi = notifications.objects.create(
                             email=emp_contract.employee_id,
                             ref_id=emp_contract.id,
                             notification_type="employee_contract",
                             status="added",
                             description=f"{emp_contract.contract_name} contract is added",
+                        )
+                        record = {
+                                "type": "Company Contracts",
+                                "description": "1 new contract has been added to company contracts.",
+                                "date": f"{notifi.created_at.date()}",
+                                "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                            }
+                        channel_layer = get_channel_layer()
+                        async_to_sync(channel_layer.group_send)(
+                            "employee",
+                            {
+                                "type": "notification.send",
+                                "email": f"{emp_contract.employee_id}",
+                                "message": record,
+                            },
                         )
                         return Response(
                             {
@@ -4664,19 +4810,48 @@ class Offshore_Contract(APIView):
                     date=serializer.validated_data["date"],
                     contract_doc=serializer.validated_data["contract_doc"],
                 )
-                notifications.objects.create(
+                c_notifi = notifications.objects.create(
                     email=off_cont.client_id,
                     ref_id=off_cont.id,
                     notification_type="offshore_contracts",
                     status="added",
                     description=f"{off_cont.contract_name} contract is added",
                 )
-                notifications.objects.create(
+                e_notifi = notifications.objects.create(
                     email=off_cont.employee_id,
                     ref_id=off_cont.id,
                     notification_type="offshore_contracts",
                     status="added",
                     description=f"{off_cont.contract_name} contract is added",
+                )
+                record = {
+                        "type": "Client Contracts",
+                        "description": f"1 new contract has been added to client contracts.",
+                        "date": f"{e_notifi.created_at.date()}",
+                        "time": f"{e_notifi.created_at.strftime('%H:%M:%S')}",
+                    }
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    "employee",
+                    {
+                        "type": "notification.send",
+                        "email": f"{off_cont.employee_id}",
+                        "message": record,
+                    },
+                )
+                record = {
+                        "type": "Employee contracts",
+                        "description": f"1 new contract has been added to employee contracts.",
+                        "time": f"{c_notifi.created_at.strftime('%H:%M:%S')}",
+                        "date": f"{c_notifi.created_at.date()}",
+                    }
+                async_to_sync(channel_layer.group_send)(
+                    "client",
+                    {
+                        "type": "notification.send",
+                        "email": f"{off_cont.client_id}",
+                        "message": record,
+                    },
                 )
                 return Response(
                     {
@@ -5034,9 +5209,24 @@ class ClientEmployees(APIView):
                     )
                     notif.status = "removed"
                     notif.description = (
-                        f"{emp.first_name} {emp.last_name} is removed from your team"
+                        f"{emp.first_name} {emp.last_name} is removed from your team."
                     )
                     notif.save()
+                    record = {
+                        "type": "Outsource Employees",
+                        "description": notif.description,
+                        "date": f"{notif.created_at.date()}",
+                        "time": f"{notif.created_at.strftime('%H:%M:%S')}",
+                    }
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        "client",
+                        {
+                            "type": "notification.send",
+                            "email": f"{c_emp.client_id}",
+                            "message": record,
+                        },
+                    )
                 c_emp.save()
                 return Response(
                     {
@@ -5197,7 +5387,7 @@ class ClientAddEmployee(APIView):
         operation_summary="Endpoint to add outsource employee for specified client",
         operation_id="2",
     )
-    def post(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs): 
         c_email = request.query_params.get("c_email")
         id = request.data.get("id")
         job_title = request.data.get("job_title")
@@ -5227,6 +5417,32 @@ class ClientAddEmployee(APIView):
                     salary=salary,
                     benefits=benefits,
                 )
+                notifi = notifications.objects.create(
+                    ref_id = out_emp.id,
+                    email = out_emp.client_id,
+                    notification_type="outsource_employees",
+                    status="added",
+                    description=f"{emp.first_name} {emp.last_name} is added to your team.",
+                )
+                record = {
+                        "type": "Outsource Employees",
+                        "description": f"{notifi.description}",
+                        "date": f"{notifi.created_at.date()}",
+                        "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                    }
+                print(record)
+
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    "client",
+                    {
+                        "type": "notification.send",
+                        "email": f"{out_emp.client_id}",
+                        "message": record,
+                    },
+                )
+
+                print(record)
                 return Response(
                     {
                         "message": f"{emp.first_name} {emp.last_name} is added successfully",

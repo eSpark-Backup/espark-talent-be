@@ -28,6 +28,8 @@ from django.db.models import Q, IntegerField, Case, When, Value
 from string import capwords
 import os
 from django.conf import settings
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 
 class LoginView(APIView):
@@ -1022,6 +1024,21 @@ class Leave_Request(APIView):
                 notifi.status = to_update_status
                 notifi.description = f"leave request has been {to_update_status}"
                 notifi.save()
+                record = {
+                        "type": "Leave Request",
+                        "description": f"leave request has been {to_update_status}.",
+                        "date": f"{notifi.created_at.date()}",
+                        "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                    }
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    "employee",
+                    {
+                        "type": "notification.send",
+                        "email": f"{to_update_leave_request.employee_id}",
+                        "message": record,
+                    },
+                )
 
                 return Response({"message": message}, status=status.HTTP_200_OK)
 
@@ -1332,6 +1349,21 @@ class ClockInOut_Request(APIView):
                                             notifi.status = to_update_status
                                             notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                             notifi.save()
+                                            record = {
+                                                    "type": "Punch Request",
+                                                    "description": f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}",
+                                                    "date": f"{notifi.created_at.date()}",
+                                                    "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                                                }
+                                            channel_layer = get_channel_layer()
+                                            async_to_sync(channel_layer.group_send)(
+                                                "employee",
+                                                {
+                                                    "type": "notification.send",
+                                                    "email": f"{to_update_clockinout_request.employee_id}",
+                                                    "message": record,
+                                                },
+                                            )
                                             return Response(
                                                 {
                                                     "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
@@ -1379,6 +1411,21 @@ class ClockInOut_Request(APIView):
                                                 notifi.status = to_update_status
                                                 notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                                 notifi.save()
+                                                record = {
+                                                        "type": "Punch Request",
+                                                        "description": f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}",
+                                                        "date": f"{notifi.created_at.date()}",
+                                                        "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                                                    }
+                                                channel_layer = get_channel_layer()
+                                                async_to_sync(channel_layer.group_send)(
+                                                    "employee",
+                                                    {
+                                                        "type": "notification.send",
+                                                        "email": f"{to_update_clockinout_request.employee_id}",
+                                                        "message": record,
+                                                    },
+                                                )
                                                 return Response(
                                                     {
                                                         "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
@@ -1406,6 +1453,21 @@ class ClockInOut_Request(APIView):
                                                 notifi.status = to_update_status
                                                 notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                                 notifi.save()
+                                                record = {
+                                                        "type": "Punch Request",
+                                                        "description": f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}",
+                                                        "date": f"{notifi.created_at.date()}",
+                                                        "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                                                    }
+                                                channel_layer = get_channel_layer()
+                                                async_to_sync(channel_layer.group_send)(
+                                                    "employee",
+                                                    {
+                                                        "type": "notification.send",
+                                                        "email": f"{to_update_clockinout_request.employee_id}",
+                                                        "message": record,
+                                                    },
+                                                )
                                                 return Response(
                                                     {
                                                         "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
@@ -1474,6 +1536,21 @@ class ClockInOut_Request(APIView):
                                             notifi.status = to_update_status
                                             notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                             notifi.save()
+                                            record = {
+                                                    "type": "Punch Request",
+                                                    "description": f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}",
+                                                    "date": f"{notifi.created_at.date()}",
+                                                    "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                                                }
+                                            channel_layer = get_channel_layer()
+                                            async_to_sync(channel_layer.group_send)(
+                                                "employee",
+                                                {
+                                                    "type": "notification.send",
+                                                    "email": f"{to_update_clockinout_request.employee_id}",
+                                                    "message": record,
+                                                },
+                                            )
                                             return Response(
                                                 {
                                                     "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
@@ -1544,6 +1621,21 @@ class ClockInOut_Request(APIView):
                                             notifi.status = to_update_status
                                             notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                             notifi.save()
+                                            record = {
+                                                    "type": "Punch Request",
+                                                    "description": f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}",
+                                                    "date": f"{notifi.created_at.date()}",
+                                                    "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                                                }
+                                            channel_layer = get_channel_layer()
+                                            async_to_sync(channel_layer.group_send)(
+                                                "employee",
+                                                {
+                                                    "type": "notification.send",
+                                                    "email": f"{to_update_clockinout_request.employee_id}",
+                                                    "message": record,
+                                                },
+                                            )
                                             return Response(
                                                 {
                                                     "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
@@ -1585,6 +1677,21 @@ class ClockInOut_Request(APIView):
                                     notifi.status = to_update_status
                                     notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                     notifi.save()
+                                    record = {
+                                            "type": "Punch Request",
+                                            "description": f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}",
+                                            "date": f"{notifi.created_at.date()}",
+                                            "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                                        }
+                                    channel_layer = get_channel_layer()
+                                    async_to_sync(channel_layer.group_send)(
+                                        "employee",
+                                        {
+                                            "type": "notification.send",
+                                            "email": f"{to_update_clockinout_request.employee_id}",
+                                            "message": record,
+                                        },
+                                    )
                                     return Response(
                                         {
                                             "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
@@ -1651,6 +1758,21 @@ class ClockInOut_Request(APIView):
                                         notifi.status = to_update_status
                                         notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                         notifi.save()
+                                        record = {
+                                                "type": "Punch Request",
+                                                "description": f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}",
+                                                "date": f"{notifi.created_at.date()}",
+                                                "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                                            }
+                                        channel_layer = get_channel_layer()
+                                        async_to_sync(channel_layer.group_send)(
+                                            "employee",
+                                            {
+                                                "type": "notification.send",
+                                                "email": f"{to_update_clockinout_request.employee_id}",
+                                                "message": record,
+                                            },
+                                        )
                                         return Response(
                                             {
                                                 "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
@@ -1698,6 +1820,21 @@ class ClockInOut_Request(APIView):
                                         notifi.status = to_update_status
                                         notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                         notifi.save()
+                                        record = {
+                                                "type": "Punch Request",
+                                                "description": f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}",
+                                                "date": f"{notifi.created_at.date()}",
+                                                "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                                            }
+                                        channel_layer = get_channel_layer()
+                                        async_to_sync(channel_layer.group_send)(
+                                            "employee",
+                                            {
+                                                "type": "notification.send",
+                                                "email": f"{to_update_clockinout_request.employee_id}",
+                                                "message": record,
+                                            },
+                                        )
                                         return Response(
                                             {
                                                 "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
@@ -1749,6 +1886,21 @@ class ClockInOut_Request(APIView):
                                 notifi.status = to_update_status
                                 notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                 notifi.save()
+                                record = {
+                                        "type": "Punch Request",
+                                        "description": f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}",
+                                        "date": f"{notifi.created_at.date()}",
+                                        "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                                    }
+                                channel_layer = get_channel_layer()
+                                async_to_sync(channel_layer.group_send)(
+                                    "employee",
+                                    {
+                                        "type": "notification.send",
+                                        "email": f"{to_update_clockinout_request.employee_id}",
+                                        "message": record,
+                                    },
+                                )
                                 return Response(
                                     {
                                         "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
@@ -1817,6 +1969,21 @@ class ClockInOut_Request(APIView):
                                         notifi.status = to_update_status
                                         notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                         notifi.save()
+                                        record = {
+                                                "type": "Punch Request",
+                                                "description": f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}",
+                                                "date": f"{notifi.created_at.date()}",
+                                                "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                                            }
+                                        channel_layer = get_channel_layer()
+                                        async_to_sync(channel_layer.group_send)(
+                                            "employee",
+                                            {
+                                                "type": "notification.send",
+                                                "email": f"{to_update_clockinout_request.employee_id}",
+                                                "message": record,
+                                            },
+                                        )
                                         return Response(
                                             {
                                                 "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
@@ -1884,6 +2051,21 @@ class ClockInOut_Request(APIView):
                                             notifi.status = to_update_status
                                             notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                             notifi.save()
+                                            record = {
+                                                    "type": "Punch Request",
+                                                    "description": f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}",
+                                                    "date": f"{notifi.created_at.date()}",
+                                                    "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                                                }
+                                            channel_layer = get_channel_layer()
+                                            async_to_sync(channel_layer.group_send)(
+                                                "employee",
+                                                {
+                                                    "type": "notification.send",
+                                                    "email": f"{to_update_clockinout_request.employee_id}",
+                                                    "message": record,
+                                                },
+                                            )
                                             return Response(
                                                 {
                                                     "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
@@ -1954,6 +2136,21 @@ class ClockInOut_Request(APIView):
                                             notifi.status = to_update_status
                                             notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                             notifi.save()
+                                            record = {
+                                                    "type": "Punch Request",
+                                                    "description": f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}",
+                                                    "date": f"{notifi.created_at.date()}",
+                                                    "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                                                }
+                                            channel_layer = get_channel_layer()
+                                            async_to_sync(channel_layer.group_send)(
+                                                "employee",
+                                                {
+                                                    "type": "notification.send",
+                                                    "email": f"{to_update_clockinout_request.employee_id}",
+                                                    "message": record,
+                                                },
+                                            )
                                             return Response(
                                                 {
                                                     "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
@@ -1995,6 +2192,21 @@ class ClockInOut_Request(APIView):
                                     notifi.status = to_update_status
                                     notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                     notifi.save()
+                                    record = {
+                                            "type": "Punch Request",
+                                            "description": f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}",
+                                            "date": f"{notifi.created_at.date()}",
+                                            "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                                        }
+                                    channel_layer = get_channel_layer()
+                                    async_to_sync(channel_layer.group_send)(
+                                        "employee",
+                                        {
+                                            "type": "notification.send",
+                                            "email": f"{to_update_clockinout_request.employee_id}",
+                                            "message": record,
+                                        },
+                                    )
                                     return Response(
                                         {
                                             "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
@@ -2038,6 +2250,21 @@ class ClockInOut_Request(APIView):
                                 notifi.status = to_update_status
                                 notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                                 notifi.save()
+                                record = {
+                                        "type": "Punch Request",
+                                        "description": f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}",
+                                        "date": f"{notifi.created_at.date()}",
+                                        "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                                    }
+                                channel_layer = get_channel_layer()
+                                async_to_sync(channel_layer.group_send)(
+                                    "employee",
+                                    {
+                                        "type": "notification.send",
+                                        "email": f"{to_update_clockinout_request.employee_id}",
+                                        "message": record,
+                                    },
+                                )
                                 return Response(
                                     {
                                         "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
@@ -2074,6 +2301,21 @@ class ClockInOut_Request(APIView):
                 notifi.status = to_update_status
                 notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
                 notifi.save()
+                record = {
+                        "type": "Punch Request",
+                        "description": f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}",
+                        "date": f"{notifi.created_at.date()}",
+                        "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                    }
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    "employee",
+                    {
+                        "type": "notification.send",
+                        "email": f"{to_update_clockinout_request.employee_id}",
+                        "message": record,
+                    },
+                )
 
                 return Response(
                     {
@@ -3432,9 +3674,9 @@ class Notifications(APIView):
             if onboard:
                 onboard_count = onboard.count()
                 if onboard_count == 1:
-                    description = "1 new employee is added"
+                    description = "1 new employee is onboard"
                 else:
-                    description = f"{onboard_count} new employees are added"
+                    description = f"{onboard_count} new employees are onboard"
                 record = {
                     "type": "Onboarding",
                     "description": description,
