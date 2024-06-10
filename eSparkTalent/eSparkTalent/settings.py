@@ -14,6 +14,10 @@ from pathlib import Path
 from datetime import timedelta
 import os
 from storages.backends.s3boto3 import S3Boto3Storage
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,7 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-p8^igd_)yycxzi^#2lr#78i7ep+a-v(ik-+44=yoi7s_qd6h2b"
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -144,10 +148,10 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-AWS_ACCESS_KEY_ID = '005af8ef4030c480000000003'
-AWS_SECRET_ACCESS_KEY = 'K005j2byFjHq8B2mUD6BMYpp5ReEOKU'
-AWS_STORAGE_BUCKET_NAME = 'Talent-Dashboard'
-AWS_S3_ENDPOINT_URL = 'https://s3.us-east-005.backblazeb2.com'
-MEDIA_URL = 'https://s3.us-east-005.backblazeb2.com/Talent-Dashboard/'
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL')
+MEDIA_URL = os.getenv('MEDIA_URL')
 
-talent_email="talent@esparkconsultants.com"
+talent_email=os.getenv('TALENT_EMAIL')
