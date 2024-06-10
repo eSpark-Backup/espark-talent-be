@@ -760,6 +760,7 @@ class Leave_Request(APIView):
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
                             "status": openapi.Schema(type=openapi.TYPE_STRING),
+                            "employee_image": openapi.Schema(type=openapi.TYPE_FILE),
                         },
                     ),
                 ),
@@ -804,6 +805,7 @@ class Leave_Request(APIView):
                     check_out = ""
 
                 employee_name = f"{employee_data.get('first_name', '')} {employee_data.get('last_name', '')}"
+                employee_image = employee_data.get("image")
                 record = {
                     "id": data.id,
                     "employee_id": employee_data.get("employee_id"),
@@ -819,6 +821,7 @@ class Leave_Request(APIView):
                     "reason": data.reason,
                     "requested_at": data.created_at,
                     "status": data.status,
+                    "employee_image": employee_image,
                 }
                 records.append(record)
             return Response(records, status=status.HTTP_200_OK)
@@ -895,13 +898,19 @@ class Leave_Request(APIView):
                         }
                         annotated_time_sheets = time_sheet.objects.annotate(
                             month_num=Case(
-                                *(When(month=calendar.month_name[i], then=Value(i)) for i in range(1, 13)),
+                                *(
+                                    When(month=calendar.month_name[i], then=Value(i))
+                                    for i in range(1, 13)
+                                ),
                                 output_field=IntegerField(),
                             )
                         )
 
-                        time_sheet_record=annotated_time_sheets.filter(
-                            Q(employee_id= to_update_leave_request.employee_id, client_id= to_update_leave_request.client_id),
+                        time_sheet_record = annotated_time_sheets.filter(
+                            Q(
+                                employee_id=to_update_leave_request.employee_id,
+                                client_id=to_update_leave_request.client_id,
+                            ),
                             Q(
                                 month_num__gte=month_mapping[start_month],
                                 year__gte=start_year,
@@ -914,9 +923,20 @@ class Leave_Request(APIView):
                         if now >= start_date:
                             for timesheet in time_sheet_record:
                                 for key in timesheet.record:
-                                    if datetime.datetime.strptime(key, "%d-%m-%Y") >= datetime.datetime.strptime(start_date.strftime("%d-%m-%Y"), "%d-%m-%Y") and datetime.datetime.strptime(key, "%d-%m-%Y") <= datetime.datetime.strptime(end_date.strftime("%d-%m-%Y"), "%d-%m-%Y"):
-                                        if timesheet.record[key]["status"]["Day Off"] == False:
-                                            timesheet.record[key]={
+                                    if datetime.datetime.strptime(
+                                        key, "%d-%m-%Y"
+                                    ) >= datetime.datetime.strptime(
+                                        start_date.strftime("%d-%m-%Y"), "%d-%m-%Y"
+                                    ) and datetime.datetime.strptime(
+                                        key, "%d-%m-%Y"
+                                    ) <= datetime.datetime.strptime(
+                                        end_date.strftime("%d-%m-%Y"), "%d-%m-%Y"
+                                    ):
+                                        if (
+                                            timesheet.record[key]["status"]["Day Off"]
+                                            == False
+                                        ):
+                                            timesheet.record[key] = {
                                                 "check_in": "-",
                                                 "check_out": "-",
                                                 "hours_worked": "-",
@@ -931,28 +951,35 @@ class Leave_Request(APIView):
                                                 },
                                             }
                                 timesheet.save()
-                        leave_records=leave_request.objects.filter(
-                            Q(employee_id = to_update_leave_request.employee_id,
-                                client_id = to_update_leave_request.client_id,
-                                leave_type = to_update_leave_request.leave_type,
-                                status = "completed"),
+                        leave_records = leave_request.objects.filter(
                             Q(
-                                start_date__lte = to_update_leave_request.end_date
-                            ) &
-                            Q(
-                                end_date__gte = to_update_leave_request.start_date
-                            )
+                                employee_id=to_update_leave_request.employee_id,
+                                client_id=to_update_leave_request.client_id,
+                                leave_type=to_update_leave_request.leave_type,
+                                status="completed",
+                            ),
+                            Q(start_date__lte=to_update_leave_request.end_date)
+                            & Q(end_date__gte=to_update_leave_request.start_date),
                         ).exclude(id=to_update_leave_request.id)
 
-                        current_leaves_diff = to_update_leave_request.end_date - to_update_leave_request.start_date
-                        current_leaves_days = [to_update_leave_request.start_date + timedelta(days=i) for i in range(current_leaves_diff.days + 1)]
+                        current_leaves_diff = (
+                            to_update_leave_request.end_date
+                            - to_update_leave_request.start_date
+                        )
+                        current_leaves_days = [
+                            to_update_leave_request.start_date + timedelta(days=i)
+                            for i in range(current_leaves_diff.days + 1)
+                        ]
 
                         if leave_records:
                             for leave in leave_records:
                                 leaves_diff = leave.end_date - leave.start_date
-                                leaves_days = [leave.start_date + timedelta(days=i) for i in range(leaves_diff.days+1)]
-                                if leave.count!=0:
-                                    count_minus=0
+                                leaves_days = [
+                                    leave.start_date + timedelta(days=i)
+                                    for i in range(leaves_diff.days + 1)
+                                ]
+                                if leave.count != 0:
+                                    count_minus = 0
                                     for i in current_leaves_days:
                                         if i in leaves_days:
                                             count_minus += 1
@@ -2339,17 +2366,20 @@ class Download_Attendance_Report(APIView):
         operation_summary="Endpoint to download attendance report.",
         operation_id="6",
     )
-   
     def get(self, request, *args, **kwargs):
-        e_email=request.query_params.get("e_email")
-        month=request.query_params.get("month")
-        year=request.query_params.get("year")
+        e_email = request.query_params.get("e_email")
+        month = request.query_params.get("month")
+        year = request.query_params.get("year")
         try:
             try:
-                rec = time_sheet.objects.get(client_id=request.user, employee_id=e_email, month=month, year=year)
-                emp=employee.objects.get(email=rec.employee_id)
+                rec = time_sheet.objects.get(
+                    client_id=request.user, employee_id=e_email, month=month, year=year
+                )
+                emp = employee.objects.get(email=rec.employee_id)
             except time_sheet.DoesNotExist:
-                return Response({"error": "No record found"}, status=status.HTTP_204_NO_CONTENT)
+                return Response(
+                    {"error": "No record found"}, status=status.HTTP_204_NO_CONTENT
+                )
             current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
             filename = f"AttendanceReport_{current_datetime}.pdf"
             table_headers = [
@@ -2363,7 +2393,7 @@ class Download_Attendance_Report(APIView):
             ]
             FileHeading = "Attendance Report"
             table_data = [table_headers]
-            images_folder = os.path.join(settings.BASE_DIR, 'images')
+            images_folder = os.path.join(settings.BASE_DIR, "images")
             status_images = {
                 "P": os.path.join(images_folder, "P.jpg"),
                 "M": os.path.join(images_folder, "M.jpg"),
@@ -2372,21 +2402,40 @@ class Download_Attendance_Report(APIView):
                 "D": os.path.join(images_folder, "D.jpg"),
                 "L": os.path.join(images_folder, "L.jpg"),
             }
-            status_flags = ["Present", "Missing", "Absent", "Short Duration", "Day Off", "Full Leave"]
-            status_map = {"Present": "P", "Missing": "M", "Absent": "A", "Short Duration": "S", "Day Off": "D", "Full Leave": "L"}
+            status_flags = [
+                "Present",
+                "Missing",
+                "Absent",
+                "Short Duration",
+                "Day Off",
+                "Full Leave",
+            ]
+            status_map = {
+                "Present": "P",
+                "Missing": "M",
+                "Absent": "A",
+                "Short Duration": "S",
+                "Day Off": "D",
+                "Full Leave": "L",
+            }
             for key in rec.record:
                 date_obj = datetime.datetime.strptime(key, "%d-%m-%Y")
                 day = date_obj.strftime("%A")
                 status_symbols = ""
                 status_images_list = []
-                
+
                 for status_flag in status_flags:
                     if rec.record[key]["status"].get(status_flag):
                         symbol = status_map[status_flag]
                         status_images_list.append(status_images[symbol])
-                status_image_objects = [Image(img_path, width=17, height=17) for img_path in status_images_list]
+                status_image_objects = [
+                    Image(img_path, width=17, height=17)
+                    for img_path in status_images_list
+                ]
 
-                status_image_table = Table([status_image_objects], colWidths=[22] * len(status_image_objects))
+                status_image_table = Table(
+                    [status_image_objects], colWidths=[22] * len(status_image_objects)
+                )
                 row_data = [
                     str(key),
                     str(day),
@@ -2401,12 +2450,28 @@ class Download_Attendance_Report(APIView):
 
             status_table_data = [[]]
             for stat, pic in status_map.items():
-                status_table_data[0].append(Image(status_images[pic], width=15, height=15))
+                status_table_data[0].append(
+                    Image(status_images[pic], width=15, height=15)
+                )
                 status_table_data[0].append(stat)
             status_table_data[0].append("")
-            col_width_stat_table=[21.5,45,21.5,45,21.5,40,21.5,80,21.5,50,21.5,60,120]
+            col_width_stat_table = [
+                21.5,
+                45,
+                21.5,
+                45,
+                21.5,
+                40,
+                21.5,
+                80,
+                21.5,
+                50,
+                21.5,
+                60,
+                120,
+            ]
 
-            pdf_table_status=Table(status_table_data, colWidths=col_width_stat_table)
+            pdf_table_status = Table(status_table_data, colWidths=col_width_stat_table)
 
             response = HttpResponse(content_type="application/pdf")
             response["Content-Disposition"] = f'attachment; filename="{filename}"'
@@ -2431,27 +2496,30 @@ class Download_Attendance_Report(APIView):
 
             pdf_table_attend.setStyle(style_attend)
 
-            name_id=[f"Employee Name: {emp.first_name} {emp.last_name}", f"Employee ID: {emp.employee_id}"]
-            design_comp=[f"Email: {emp.email}", f"Designation : {emp.job_title}"]
-            month_year=[f"Month: {rec.month}", f"Year: {rec.year}"]
-            desc_table=[name_id, design_comp, month_year]
-            col_width_desc=[320,240]
-            
-            pdf_table_desc= Table(desc_table, colWidths=col_width_desc)
+            name_id = [
+                f"Employee Name: {emp.first_name} {emp.last_name}",
+                f"Employee ID: {emp.employee_id}",
+            ]
+            design_comp = [f"Email: {emp.email}", f"Designation : {emp.job_title}"]
+            month_year = [f"Month: {rec.month}", f"Year: {rec.year}"]
+            desc_table = [name_id, design_comp, month_year]
+            col_width_desc = [320, 240]
 
-            style_desc= TableStyle(
+            pdf_table_desc = Table(desc_table, colWidths=col_width_desc)
+
+            style_desc = TableStyle(
                 [
-                    ("BACKGROUND", (0,0), (-1,-1), colors.white),
-                    ("GRID", (0, 0), (-1, -1),1, colors.white),
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+                    ("GRID", (0, 0), (-1, -1), 1, colors.white),
                     ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
                     ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
                 ]
             )
 
-            style_stat= TableStyle(
+            style_stat = TableStyle(
                 [
-                    ("BACKGROUND", (0,0), (-1,-1), colors.white),
-                    ("GRID", (0, 0), (-1, -1),1, colors.white),
+                    ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+                    ("GRID", (0, 0), (-1, -1), 1, colors.white),
                     ("BOTTOMPADDING", (0, 0), (-1, -1), 9),
                     ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"),
                     ("ALIGN", (0, 0), (-1, -1), "LEFT"),
@@ -2482,7 +2550,8 @@ class Download_Attendance_Report(APIView):
             response.write(pdf_buffer.getvalue())
             return response
         except Exception as e:
-            return Response({"error": str(e)},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])

@@ -308,7 +308,7 @@ class Employee_Home(APIView):
         if clients:
             for rec in clients:
                 try:
-                    is_active=end_user.objects.get(email=rec.email).is_active
+                    is_active = end_user.objects.get(email=rec.email).is_active
                     if is_active:
                         record = {
                             "email": rec.email,
@@ -317,34 +317,54 @@ class Employee_Home(APIView):
                         }
                         workspaces.append(record)
                 except Exception as e:
-                    return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response(
+                        {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST
+                    )
 
         try:
             annual_pending = leave_request.objects.filter(
-                employee_id=e_email, client_id=workspace, leave_type="annual", status="pending",
+                employee_id=e_email,
+                client_id=workspace,
+                leave_type="annual",
+                status="pending",
             ).count()
             casual_pending = leave_request.objects.filter(
-                employee_id=e_email, client_id=workspace, leave_type="casual", status="pending",
+                employee_id=e_email,
+                client_id=workspace,
+                leave_type="casual",
+                status="pending",
             ).count()
             sick_pending = leave_request.objects.filter(
-                employee_id=e_email, client_id=workspace, leave_type="sick", status="pending",
+                employee_id=e_email,
+                client_id=workspace,
+                leave_type="sick",
+                status="pending",
             ).count()
             paid_pending = leave_request.objects.filter(
-                employee_id=e_email, client_id=workspace, leave_type="paid", status="pending",
+                employee_id=e_email,
+                client_id=workspace,
+                leave_type="paid",
+                status="pending",
             ).count()
             unpaid_pending = leave_request.objects.filter(
-                employee_id=e_email, client_id=workspace, leave_type="unpaid", status="pending",
+                employee_id=e_email,
+                client_id=workspace,
+                leave_type="unpaid",
+                status="pending",
             ).count()
             hajj_pending = leave_request.objects.filter(
-                employee_id=e_email, client_id=workspace, leave_type="hajj", status="pending",
+                employee_id=e_email,
+                client_id=workspace,
+                leave_type="hajj",
+                status="pending",
             ).count()
             leave_records = leave_balance.objects.get(employee_id=e_email)
-            leave_records.casual_leaves["pending"]=casual_pending
-            leave_records.annual_leaves["pending"]=annual_pending
-            leave_records.sick_leaves["pending"]=sick_pending
-            leave_records.paid_leaves["pending"]=paid_pending
-            leave_records.unpaid_leaves["pending"]=unpaid_pending
-            leave_records.hajj_leaves["pending"]=hajj_pending
+            leave_records.casual_leaves["pending"] = casual_pending
+            leave_records.annual_leaves["pending"] = annual_pending
+            leave_records.sick_leaves["pending"] = sick_pending
+            leave_records.paid_leaves["pending"] = paid_pending
+            leave_records.unpaid_leaves["pending"] = unpaid_pending
+            leave_records.hajj_leaves["pending"] = hajj_pending
             leave_summary = {
                 "id": leave_records.id,
                 "casual_leaves": leave_records.casual_leaves,
@@ -369,11 +389,13 @@ class Employee_Home(APIView):
             except:
                 company_image = ""
             try:
-                emp_job_title=outsource_employees.objects.get(employee_id=e_email, client_id=workspace).job_title
+                emp_job_title = outsource_employees.objects.get(
+                    employee_id=e_email, client_id=workspace
+                ).job_title
             except:
-                emp_job_title=current_employee.job_title
+                emp_job_title = current_employee.job_title
 
-            employee_details['job_title']=emp_job_title
+            employee_details["job_title"] = emp_job_title
 
             payload = {
                 "employee_details": employee_details,
@@ -402,8 +424,8 @@ class Employee_Home(APIView):
             except:
                 company_image = ""
 
-            employee_details['job_title']=current_employee.job_title
-            
+            employee_details["job_title"] = current_employee.job_title
+
             payload = {
                 "employee_details": employee_details,
                 "company_image": company_image,
@@ -513,7 +535,10 @@ class Employee_Home(APIView):
                             {"message": "Check in punched"}, status=status.HTTP_200_OK
                         )
                     else:
-                        return Response({"message":"Check in is already punched"}, status=status.HTTP_200_OK)
+                        return Response(
+                            {"message": "Check in is already punched"},
+                            status=status.HTTP_200_OK,
+                        )
             else:
                 time_sheet.objects.create(
                     month=now.strftime("%B"),
@@ -560,24 +585,25 @@ class Employee_Home(APIView):
                 != "-"
             ):
                 try:
-                    emp=employee.objects.get(email=time_sheet.employee_id)
-                    check_in=emp.punch_timings["check_in"]
-                    check_out=emp.punch_timings["check_out"]
-                    req_time=datetime.strptime(check_out, "%I:%M %p")-datetime.strptime(check_in, "%I:%M %p")
-                    working_hours=int(req_time.total_seconds()//3600)
+                    emp = employee.objects.get(email=time_sheet.employee_id)
+                    check_in = emp.punch_timings["check_in"]
+                    check_out = emp.punch_timings["check_out"]
+                    req_time = datetime.strptime(
+                        check_out, "%I:%M %p"
+                    ) - datetime.strptime(check_in, "%I:%M %p")
+                    working_hours = int(req_time.total_seconds() // 3600)
                 except:
-                    working_hours=9
+                    working_hours = 9
                 for rec in months_timesheet:
-                    check_in_time = datetime.strptime(rec.record[now.date().strftime("%d-%m-%Y")][
-                        "check_in"
-                    ], "%I:%M:%S %p")
-                    check_out_time = datetime.strptime(
-                        check_out, "%I:%M:%S %p"
+                    check_in_time = datetime.strptime(
+                        rec.record[now.date().strftime("%d-%m-%Y")]["check_in"],
+                        "%I:%M:%S %p",
                     )
-                    if check_out_time<check_in_time:
+                    check_out_time = datetime.strptime(check_out, "%I:%M:%S %p")
+                    if check_out_time < check_in_time:
                         check_out_time = check_out_time + timedelta(days=1)
 
-                    hours_worked=check_out_time-check_in_time
+                    hours_worked = check_out_time - check_in_time
 
                     if hours_worked.total_seconds() // 3600 < working_hours:
                         rec.record[now.date().strftime("%d-%m-%Y")][
@@ -632,7 +658,10 @@ class Employee_Home(APIView):
                             {"message": "Check out punched"}, status=status.HTTP_200_OK
                         )
             else:
-                return Response({"message":"Check out is already punched"}, status=status.HTTP_200_OK)
+                return Response(
+                    {"message": "Check out is already punched"},
+                    status=status.HTTP_200_OK,
+                )
         elif breaked:
             months_timesheet = time_sheet.objects.filter(
                 month=now.strftime("%B"),
@@ -658,7 +687,10 @@ class Employee_Home(APIView):
                             {"message": "Break punched"}, status=status.HTTP_200_OK
                         )
                     else:
-                        return Response({"message":"Break is already punched"}, status=status.HTTP_200_OK)
+                        return Response(
+                            {"message": "Break is already punched"},
+                            status=status.HTTP_200_OK,
+                        )
 
         elif resumed:
             months_timesheet = time_sheet.objects.filter(
@@ -686,7 +718,10 @@ class Employee_Home(APIView):
                             {"message": "Resuming punched"}, status=status.HTTP_200_OK
                         )
                     else:
-                        return Response({"message":"Resuming is already punched"}, status=status.HTTP_200_OK)
+                        return Response(
+                            {"message": "Resuming is already punched"},
+                            status=status.HTTP_200_OK,
+                        )
         else:
             return Response(
                 {"error": "Invalid query parameter"}, status=status.HTTP_400_BAD_REQUEST
@@ -1740,16 +1775,20 @@ class Time_Sheet(APIView):
 
             if len(filtered_record) > 0:
                 try:
-                    emp=employee.objects.get(email=e_email)
-                    check_in=datetime.strptime(emp.punch_timings["check_in"], "%I:%M %p")
-                    check_out=datetime.strptime(emp.punch_timings["check_out"], "%I:%M %p")
-                    if check_out<check_in:
-                        check_out=check_out+timedelta(days=1)
+                    emp = employee.objects.get(email=e_email)
+                    check_in = datetime.strptime(
+                        emp.punch_timings["check_in"], "%I:%M %p"
+                    )
+                    check_out = datetime.strptime(
+                        emp.punch_timings["check_out"], "%I:%M %p"
+                    )
+                    if check_out < check_in:
+                        check_out = check_out + timedelta(days=1)
 
-                    req_time=check_out - check_in
-                    working_hours=int(req_time.total_seconds()//3600)
+                    req_time = check_out - check_in
+                    working_hours = int(req_time.total_seconds() // 3600)
                 except employee.DoesNotExist:
-                    working_hours=9
+                    working_hours = 9
                 hours_worked = 0
                 minutes_worked = 0
                 short_duration = 0
@@ -1764,12 +1803,14 @@ class Time_Sheet(APIView):
                         check_in_time = rec["check_in"]
                         check_out_time = rec["check_out"]
 
-                        check_in_datetime = datetime.strptime(check_in_time, "%I:%M:%S %p")
+                        check_in_datetime = datetime.strptime(
+                            check_in_time, "%I:%M:%S %p"
+                        )
                         check_out_datetime = datetime.strptime(
                             check_out_time, "%I:%M:%S %p"
                         )
-                        if check_out_datetime<check_in_datetime:
-                            check_out_datetime=check_out_datetime+timedelta(days=1)
+                        if check_out_datetime < check_in_datetime:
+                            check_out_datetime = check_out_datetime + timedelta(days=1)
 
                         time_difference = check_out_datetime - check_in_datetime
 
@@ -1873,16 +1914,20 @@ class Time_Sheet(APIView):
                     month=datetime.now().strftime("%B"),
                 )
                 try:
-                    emp=employee.objects.get(email=e_email)
-                    check_in=datetime.strptime(emp.punch_timings["check_in"], "%I:%M %p")
-                    check_out=datetime.strptime(emp.punch_timings["check_out"], "%I:%M %p")
-                    if check_out<check_in:
-                        check_out=check_out+timedelta(days=1)
+                    emp = employee.objects.get(email=e_email)
+                    check_in = datetime.strptime(
+                        emp.punch_timings["check_in"], "%I:%M %p"
+                    )
+                    check_out = datetime.strptime(
+                        emp.punch_timings["check_out"], "%I:%M %p"
+                    )
+                    if check_out < check_in:
+                        check_out = check_out + timedelta(days=1)
 
-                    req_time=check_out - check_in
-                    working_hours=int(req_time.total_seconds()//3600)
+                    req_time = check_out - check_in
+                    working_hours = int(req_time.total_seconds() // 3600)
                 except employee.DoesNotExist:
-                    working_hours=9
+                    working_hours = 9
                 record = {
                     "id": ts_record.id,
                     "month": ts_record.month,
@@ -1907,13 +1952,15 @@ class Time_Sheet(APIView):
                     if rec["check_in"] != "-" and rec["check_out"] != "-":
                         check_in_time = rec["check_in"]
                         check_out_time = rec["check_out"]
-                        check_in_datetime = datetime.strptime(check_in_time, "%I:%M:%S %p")
+                        check_in_datetime = datetime.strptime(
+                            check_in_time, "%I:%M:%S %p"
+                        )
                         check_out_datetime = datetime.strptime(
                             check_out_time, "%I:%M:%S %p"
                         )
 
-                        if check_out_datetime<check_in_datetime:
-                            check_out_datetime=check_out_datetime+timedelta(days=1)
+                        if check_out_datetime < check_in_datetime:
+                            check_out_datetime = check_out_datetime + timedelta(days=1)
                         time_difference = check_out_datetime - check_in_datetime
 
                         hours_worked += time_difference.seconds // 3600

@@ -24,6 +24,7 @@ from eSparkTalent.settings import talent_email
 from .bucket_functions import remove_bucket_file
 from django.db.models.fields.files import FileField
 from calendar import month_name
+from django.db.utils import IntegrityError
 
 
 @authentication_classes([JWTAuthentication])
@@ -260,7 +261,6 @@ class Add_Employee(APIView):
                         punch_timings=serializer.validated_data["punch_timings"],
                     )
 
-
                     leave_balance.objects.create(
                         employee_id=serializer.validated_data["email"],
                         casual_leaves={
@@ -321,11 +321,17 @@ class Add_Employee(APIView):
                     )
                 except ValidationError as e:
                     return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
-                except Exception as e:
-                    return Response(
-                        {"error": str(e)},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+                except IntegrityError as e:
+                    if "UNIQUE constraint failed" in str(e):
+                        return Response(
+                            {"error": "Account already exists with this email"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    else:
+                        return Response(
+                            {"error": str(e)},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -468,11 +474,17 @@ class Add_Client(APIView):
                     )
                 except ValidationError as e:
                     return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
-                except Exception as e:
-                    return Response(
-                        {"error": str(e)},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+                except IntegrityError as e:
+                    if "UNIQUE constraint failed" in str(e):
+                        return Response(
+                            {"error": "Account already exists with this email"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    else:
+                        return Response(
+                            {"error": str(e)},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -2225,9 +2237,9 @@ class Update_Emp_Info(APIView):
             first_space_index = name.find(" ")
 
             updates["first_name"] = name[:first_space_index]
-            updates["last_name"] = name[first_space_index + 1:]
+            updates["last_name"] = name[first_space_index + 1 :]
             del updates["employee_name"]
-            
+
         try:
             emp_record = employee.objects.get(id=record_id)
         except Exception as e:
@@ -3674,7 +3686,7 @@ class Accounts(APIView):
                             email=serializer.validated_data["email"],
                             password=password,
                         )
-                        
+
                         acc_n_perm = account_n_persmission.objects.create(
                             account_name=serializer.validated_data["account_name"],
                             email=serializer.validated_data["email"],
@@ -3711,7 +3723,6 @@ class Accounts(APIView):
                                 "download": False,
                             },
                         )
-
 
                         return Response(
                             {
@@ -5383,7 +5394,7 @@ class Attendance_Report(APIView):
                                             ),
                                             "company_email": openapi.Schema(
                                                 type=openapi.TYPE_STRING,
-                                                format=openapi.FORMAT_EMAIL
+                                                format=openapi.FORMAT_EMAIL,
                                             ),
                                             "location": openapi.Schema(
                                                 type=openapi.TYPE_STRING
@@ -5431,6 +5442,7 @@ class Attendance_Report(APIView):
                     time_sheet.months, start=1
                 )
             }
+
             annotated_time_sheets = time_sheet.objects.annotate(
                 month_num=Case(
                     *(When(month=month_name[i], then=Value(i)) for i in range(1, 13)),
@@ -5463,6 +5475,7 @@ class Attendance_Report(APIView):
                         if from_date_object <= date <= to_date_object:
                             rec[key] = value
                     filtered_records[record.client_id] = rec
+
             if len(filtered_records) > 0:
                 records = []
                 for key, value in filtered_records.items():
@@ -5474,11 +5487,11 @@ class Attendance_Report(APIView):
                         try:
                             clnt = client.objects.get(email=key)
                             company_name = clnt.company_name
-                            company_email= clnt.email
+                            company_email = clnt.email
                             location = clnt.address
                         except client.DoesNotExist:
                             company_name = "-"
-                            company_email= "-"
+                            company_email = "-"
                             location = "-"
 
                     outsrc_emp = outsource_employees.objects.get(
@@ -5504,6 +5517,9 @@ class Attendance_Report(APIView):
                         "employee_details": employee_details,
                     }
                     records.append({company_name: record})
+
+                # Sort records by company name or any other criteria
+                records = sorted(records, key=lambda x: list(x.keys())[0])
 
                 return Response(records, status=status.HTTP_200_OK)
             else:
@@ -5568,6 +5584,10 @@ class Attendance_Report(APIView):
                         }
                     }
                     records.append(record)
+
+                # Sort records by company name or any other criteria
+                records = sorted(records, key=lambda x: list(x.keys())[0])
+
                 return Response(records, status=status.HTTP_200_OK)
             else:
                 return Response(status=status.HTTP_204_NO_CONTENT)

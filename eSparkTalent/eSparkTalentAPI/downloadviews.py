@@ -361,8 +361,8 @@ class Download_Company_Contract(APIView):
     )
     def get(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
-        tab=request.query_params.get("tab")
-        if request.user.role=="employee":
+        tab = request.query_params.get("tab")
+        if request.user.role == "employee":
             try:
                 emp_cont = employee_contract.objects.get(id=record_id)
                 download = download_file_from_bucket(emp_cont.contract_doc.name)
@@ -392,8 +392,8 @@ class Download_Company_Contract(APIView):
                 )
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-   
-        elif request.user.role=="client":
+
+        elif request.user.role == "client":
             try:
                 clnt_cont = client_contract.objects.get(id=record_id)
                 download = download_file_from_bucket(clnt_cont.contract_doc.name)
@@ -424,7 +424,7 @@ class Download_Company_Contract(APIView):
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        elif tab and tab=="employee":
+        elif tab and tab == "employee":
             try:
                 emp_cont = employee_contract.objects.get(id=record_id)
                 download = download_file_from_bucket(emp_cont.contract_doc.name)
@@ -455,7 +455,7 @@ class Download_Company_Contract(APIView):
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        elif tab and tab=="client":
+        elif tab and tab == "client":
             try:
                 clnt_cont = client_contract.objects.get(id=record_id)
                 download = download_file_from_bucket(clnt_cont.contract_doc.name)
@@ -487,4 +487,7 @@ class Download_Company_Contract(APIView):
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         else:
-            return Response({"error":"Invalid query parameters"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid query parameters"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )

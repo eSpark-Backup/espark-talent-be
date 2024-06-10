@@ -8,6 +8,7 @@ from b2sdk.v2 import B2Api
 from django.db.models.fields.files import FileField
 import tempfile
 
+
 def remove_bucket_file(file_name):
     old_file = file_name
     b2_api = B2Api()
@@ -19,16 +20,13 @@ def remove_bucket_file(file_name):
     bucket = b2_api.get_bucket_by_name(AWS_STORAGE_BUCKET_NAME)
     if old_file:
         try:
-            for file_version in bucket.list_file_versions(
-                file_name=old_file
-            ):
-                bucket.delete_file_version(
-                    file_name=old_file, file_id=file_version.id_
-                )
+            for file_version in bucket.list_file_versions(file_name=old_file):
+                bucket.delete_file_version(file_name=old_file, file_id=file_version.id_)
             return None
         except Exception as e:
             return e
-        
+
+
 def download_file_from_bucket(file_name):
     b2_api = B2Api()
     b2_api.authorize_account(
