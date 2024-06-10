@@ -2513,12 +2513,28 @@ class Start_Hiring(APIView):
                     hiring_start_date=serializer.validated_data["hiring_start_date"],
                     hiring_end_date=serializer.validated_data["hiring_end_date"],
                 )
-                notifications.objects.create(
+                notifi = notifications.objects.create(
                     email=talent_email,
                     ref_id=hire_req.id,
                     notification_type="hiring_request",
                     status="added",
-                    description="A new hiring request created.",
+                    description="A new hiring request is created.",
+                )
+
+                record = {
+                    "type": "Hiring Request",
+                    "description": f"{notifi.description}",
+                    "date": f"{notifi.created_at.date()}",
+                    "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                }
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    "hr",
+                    {
+                        "type": "notification.send",
+                        "email": talent_email,
+                        "message": record,
+                    }
                 )
                 return Response(
                     {

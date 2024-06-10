@@ -231,13 +231,30 @@ class Start_Hiring(APIView):
                     hiring_end_date=serializer.validated_data["hiring_end_date"],
                 )
 
-                notifications.objects.create(
+                notifi = notifications.objects.create(
                     email=talent_email,
                     ref_id=hr_req.id,
                     notification_type="hiring_request",
                     status="added",
-                    description="A new hiring request created.",
+                    description="A new hiring request is created.",
                 )
+
+                record = {
+                    "type": "Hiring Request",
+                    "description": f"{notifi.description}",
+                    "date": f"{notifi.created_at.date()}",
+                    "time": f"{notifi.created_at.strftime('%H:%M:%S')}",
+                }
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    "hr",
+                    {
+                        "type": "notification.send",
+                        "email": talent_email,
+                        "message": record,
+                    }
+                )
+
                 return Response(
                     {
                         "message": "One new request is successfully added to hiring.",
@@ -501,6 +518,22 @@ class Interview_Schedule(APIView):
                 notifi.status = to_update_status
                 notifi.description = f"Candidate has been {to_update_status}"
                 notifi.save()
+
+                record = {
+                    "type": "Interview Schedule",
+                    "description": f"1 interviewee is {to_update_status}.",
+                    "date": f"{notifi.updated_at.date()}",
+                    "time": f"{notifi.updated_at.strftime('%H:%M:%S')}",
+                }
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    "hr",
+                    {
+                        "type": "notification.send",
+                        "email": talent_email,
+                        "message": record,
+                    }
+                )
 
                 return Response(
                     {"message": f"One new interviewee is {to_update_status}"},
@@ -3292,6 +3325,22 @@ class Invoice_Payments(APIView):
                     notifi.status = new_pay_status
                     notifi.description = f"employee invoice has been {new_pay_status}"
                     notifi.save()
+                    
+                    record = {
+                        "type": "Employee Invoice",
+                        "description": f"1 new invoice is {new_pay_status}.",
+                        "date": f"{notifi.updated_at.date()}",
+                        "time": f"{notifi.updated_at.strftime('%H:%M:%S')}",
+                    }
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        "hr",
+                        {
+                            "type": "notification.send",
+                            "email": talent_email,
+                            "message": record,
+                        }
+                    )
 
                 except Exception as e:
                     return Response(
@@ -3309,6 +3358,22 @@ class Invoice_Payments(APIView):
                     notifi.status = new_pay_status
                     notifi.description = f"other invoice has been {new_pay_status}"
                     notifi.save()
+                    
+                    record = {
+                        "type": "Other Payment",
+                        "description": f"1 new invoice is {new_pay_status}.",
+                        "date": f"{notifi.updated_at.date()}",
+                        "time": f"{notifi.updated_at.strftime('%H:%M:%S')}",
+                    }
+                    channel_layer = get_channel_layer()
+                    async_to_sync(channel_layer.group_send)(
+                        "hr",
+                        {
+                            "type": "notification.send",
+                            "email": talent_email,
+                            "message": record,
+                        }
+                    )
 
                 except Exception as e:
                     return Response(
