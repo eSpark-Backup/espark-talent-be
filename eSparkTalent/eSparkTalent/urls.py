@@ -8,4 +8,4 @@ urlpatterns = [
     path("api/", include("eSparkTalentAPI.clienturls")),
     path("api/", include("eSparkTalentAPI.employeeurls")),
     path("api/", include("eSparkTalentAPI.hrurls")),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
