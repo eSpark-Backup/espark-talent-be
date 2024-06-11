@@ -33,4 +33,6 @@ jobs:
         pip install -r requirements.txt
     - name: Execute Deployment
       run: |
+        python manage.py migrate
+        python manage.py runserver
         pm2 restart talent-backend
