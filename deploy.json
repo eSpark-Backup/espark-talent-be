@@ -1,0 +1,12 @@
+{
+ "apps": [
+   {
+     "name": "eSparkTalent",
+     "cwd": "eSparkTalent",
+     "args": "runserver",
+     "script": "manage.py",
+     "exec_mode": "fork",
+     "exec_interpreter": "python"
+   }
+ ]
+}
