@@ -32,7 +32,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["*" , "dashboard.esparktalent.com"]
 
 
 # Application definition
@@ -66,6 +66,10 @@ REST_FRAMEWORK = {
         # ... other authentication classes
     ],
 }
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://dashboard.esparktalent.com',
+]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
