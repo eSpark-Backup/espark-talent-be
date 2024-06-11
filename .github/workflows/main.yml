@@ -34,5 +34,4 @@ jobs:
     - name: Execute Deployment
       run: |
         python eSparkTalent/manage.py migrate
-        python eSparkTalent/manage.py runserver
         pm2 restart talent-backend
