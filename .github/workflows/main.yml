@@ -31,7 +31,19 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+
+    - name: Create env file
+        nano .env
+        echo AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}} >> .env
+        echo AWS_S3_ENDPOINT_URL: ${{ secrets.AWS_S3_ENDPOINT_URL }} >> .env
+        echo AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }} >> .env
+        echo AWS_STORAGE_BUCKET_NAME: ${{ secrets.AWS_STORAGE_BUCKET_NAME }} >> .env
+        echo MEDIA_URL: ${{ secrets.MEDIA_URL }} >> .env
+        echo SECRET_KEY: ${{ secrets.SECRET_KEY }} >> .env
+        echo TALENT_EMAIL: ${{ secrets.TALENT_EMAIL }} >> .env
+
+
     - name: Execute Deployment
       run: |
         python eSparkTalent/manage.py migrate
-        pm2 restart talent-backend
+        pm2 start ecosystem.config.json
