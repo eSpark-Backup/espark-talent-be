@@ -2,7 +2,7 @@
    "apps":[
       {
          "name":"talent-backend",
-         "script":"manage.py",
+         "script":"eSparkTalent/manage.py",
          "args":[
             "runserver",
             "127.0.0.1:8000"
