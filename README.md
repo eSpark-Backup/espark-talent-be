@@ -57,7 +57,7 @@ python manage.py migrate
 ```
 python manage.py runserver
 
-```
+``` 
 
 > The backend should now be accessible at http://localhost:8000/.
 
