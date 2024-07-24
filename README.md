@@ -13,7 +13,7 @@
 - Python:
 ``` 
  visit (https://www.python.org/downloads/) and install latest version of python 3.11
-
+ 
  ```
 
 - Django
