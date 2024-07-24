@@ -115,7 +115,7 @@ class employee(models.Model):
     employee_id = models.CharField(max_length=15, unique=True, default="")
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
-    gender = models.CharField(max_length=7)
+    gender = models.CharField(max_length=10)
     dob = models.DateField(null=True)
     phone_number = models.CharField(max_length=11)
     email = models.EmailField(unique=True)
