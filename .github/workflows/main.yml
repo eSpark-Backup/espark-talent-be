@@ -36,6 +36,6 @@ jobs:
         TALENT_EMAIL: ${{ secrets.TALENT_EMAIL }}
 
       run: |
-        python eSparkTalent/manage.py create_super_user
         python eSparkTalent/manage.py migrate
+        python eSparkTalent/manage.py create_super_user
         pm2 restart talent-backend
