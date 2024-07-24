@@ -56,3 +56,4 @@ __pycache__/
 eSparkTalent/eSparkTalent/__pycache__/
 eSparkTalent/eSparkTalentAPI/__pycache__/
 eSparkTalent/eSparkTalentAPI/migrations/__pycache__/
+eSparkTalent/db.sqlite3
