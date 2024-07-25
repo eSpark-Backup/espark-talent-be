@@ -2814,6 +2814,7 @@ class Onboarding(APIView):
                 ),
                 "notice_period": openapi.Schema(type=openapi.TYPE_INTEGER),
                 "salary": openapi.Schema(type=openapi.TYPE_INTEGER),
+                "salary_currency": openapi.Schema(type=openapi.TYPE_STRING),
                 "benefits": openapi.Schema(type=openapi.TYPE_OBJECT),
             },
             required=[
@@ -2827,6 +2828,7 @@ class Onboarding(APIView):
                 "joining_date",
                 "notice_period",
                 "salary",
+                "salary_currency",
             ],
         ),
         responses={
@@ -2859,6 +2861,7 @@ class Onboarding(APIView):
                     joining_date=serializer.validated_data["joining_date"],
                     notice_period=serializer.validated_data["notice_period"],
                     salary=serializer.validated_data["salary"],
+                    salary_currency=serializer.validated_data["salary_currency"],
                     employment_term=serializer.validated_data["employment_term"],
                     benefits=request.data.get("benefits"),
                 )
@@ -2913,6 +2916,7 @@ class Onboarding(APIView):
                             ),
                             "notice_period": openapi.Schema(type=openapi.TYPE_STRING),
                             "salary": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "salary_currency": openapi.Schema(type=openapi.TYPE_STRING),
                         },
                     ),
                 ),
@@ -2956,6 +2960,7 @@ class Onboarding(APIView):
                         "joining_date": data.joining_date,
                         "notice_period": data.notice_period,
                         "salary": data.salary,
+                        "salary_currency": data.salary_currency,
                     }
                     records.append(record)
                 return Response(records, status=status.HTTP_200_OK)

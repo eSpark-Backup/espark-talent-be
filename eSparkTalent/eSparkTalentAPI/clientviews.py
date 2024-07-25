@@ -538,6 +538,7 @@ class Onboarding(APIView):
                             ),
                             "notice_period": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "salary": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "salary_currency": openapi.Schema(type=openapi.TYPE_STRING),
                         },
                     ),
                 ),
@@ -572,6 +573,7 @@ class Onboarding(APIView):
                     "joining_date": data.joining_date,
                     "notice_period": data.notice_period,
                     "salary": data.salary,
+                    "salary_currency": data.salary_currency,
                 }
                 records.append(record)
             return Response(records, status=status.HTTP_200_OK)

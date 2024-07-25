@@ -298,6 +298,7 @@ class onboarding(models.Model):
     joining_date = models.DateField()
     notice_period = models.IntegerField()
     salary = models.IntegerField(null=True)
+    salary_currency  = models.CharField(max_length=30, null=True, default="")
     benefits = models.JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
