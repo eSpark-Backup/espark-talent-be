@@ -5046,7 +5046,7 @@ class ClientEmployees(APIView):
                     notif = notifications.objects.get(
                         email=c_emp.client_id,
                         ref_id=c_emp.id,
-                        notification_type="outsource_employees",
+                        notification_type="team_member",
                     )
                     notif.status = "removed"
                     notif.description = (
@@ -5243,6 +5243,13 @@ class ClientAddEmployee(APIView):
                     salary=salary,
                     benefits=benefits,
                 )
+                notifications.objects.create(
+                        email=out_emp.client_id,
+                        ref_id=out_emp.id,
+                        notification_type="team_member",
+                        status="added",
+                        description=f"{emp.first_name} {emp.last_name} have been added to your team",
+                    )
                 return Response(
                     {
                         "message": f"{emp.first_name} {emp.last_name} is added successfully",
