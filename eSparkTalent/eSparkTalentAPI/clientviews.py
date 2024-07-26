@@ -3558,7 +3558,6 @@ class Notifications(APIView):
                 Q(status="processing") | Q(status="paid"),
                 notification_type="other_payment",
                 email=talent_email,
-                status="paid",
                 updated_at__gte=one_week_ago,
             ).order_by("-updated_at")
             if hire_req:
@@ -3581,8 +3580,8 @@ class Notifications(APIView):
                     record = {
                         "type": "Interview Shortlist",
                         "description": f"{req.employee_name} has been shortlisted by {client_data.company_name} ",
-                        "date": st_req.created_at.date(),
-                        "time": st_req.created_at.strftime("%H:%M:%S"),
+                        "date": st_req.updated_at.date(),
+                        "time": st_req.updated_at.strftime("%H:%M:%S"),
                         "client_email": client_data.email,
                         "client_record_id":client_data.id,
                     }
@@ -3594,8 +3593,8 @@ class Notifications(APIView):
                     record = {
                         "type": "Interview Reject",
                         "description": f"{req.employee_name} has been rejected by {client_data.company_name} ",
-                        "date": rj_req.created_at.date(),
-                        "time": rj_req.created_at.strftime("%H:%M:%S"),
+                        "date": rj_req.updated_at.date(),
+                        "time": rj_req.updated_at.strftime("%H:%M:%S"),
                         "client_email": client_data.email,
                         "client_record_id":client_data.id,
                     }
@@ -3607,21 +3606,21 @@ class Notifications(APIView):
                     record = {
                         "type": "Employee Invoice",
                         "description": f"Employee Invoice has been {inv.status} by {client_data.company_name}",
-                        "date": req.created_at.date(),
-                        "time": req.created_at.strftime("%H:%M:%S"),
+                        "date": req.updated_at.date(),
+                        "time": req.updated_at.strftime("%H:%M:%S"),
                         "client_email": client_data.email,
                         "client_record_id":client_data.id,
                     }
                     noti_array.append(record)
             if other_inv:
                 for inv in other_inv:
-                    req = employee_invoice.objects.get(id=inv.ref_id)
+                    req = other_payment.objects.get(id=inv.ref_id)
                     client_data = client.objects.get(email=req.client_id)
                     record = {
                         "type": "Other Payments",
                         "description": f"Other Payment has been {inv.status} by {client_data.company_name}",
-                        "date": req.created_at.date(),
-                        "time": req.created_at.strftime("%H:%M:%S"),
+                        "date": req.updated_at.date(),
+                        "time": req.updated_at.strftime("%H:%M:%S"),
                         "client_email": client_data.email,
                         "client_record_id":client_data.id,
                     }
