@@ -11,18 +11,20 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
 # set work directory
-WORKDIR /code
+WORKDIR /usr/src/app
 
 # install dependencies
-COPY requirements.txt /code/
+COPY requirements.txt ./
 RUN pip install -r requirements.txt
 
 
 # copy project
-COPY . /code/
+COPY . .
 
 RUN python eSparkTalent/manage.py makemigrations
 RUN python eSparkTalent/manage.py migrate
+RUN python eSparkTalent/manage.py collectstatic
+RUN python eSparkTalent/manage.py create_super_user
 
 EXPOSE 8000
 
