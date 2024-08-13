@@ -1,5 +1,10 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
+import os
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 class Command(BaseCommand):
     help = 'Create superusers if none exist'
@@ -8,8 +13,8 @@ class Command(BaseCommand):
         User = get_user_model()
 
         superusers = [
-            {'username': 'database admin', 'email': 'talent@backendpython.com', 'password': 'talent$90waqar$'},
-            {'username': 'super_admin', 'email': 'superadmin@esparkconsultants.com', 'password': 'super@espark'}
+            {'username': 'database admin', 'email': os.getenv('DATABASE_ADMIN_EMAIL'), 'password': os.getenv('DATABASE_ADMIN_AUTH')},
+            {'username': 'super_admin', 'email': os.getenv('SUPER_ADMIN_EMAIL'), 'password': os.getenv('SUPER_ADMIN_AUTH')}
         ]
 
         for superuser in superusers:

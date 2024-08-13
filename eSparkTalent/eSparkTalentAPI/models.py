@@ -29,6 +29,8 @@ class ClientManager(BaseUserManager):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("role", "super_admin")
+        if extra_fields.get("username") == "super_admin":
+            extra_fields["is_staff"] = False
         return self.create_user(email, password, **extra_fields)
 
 
