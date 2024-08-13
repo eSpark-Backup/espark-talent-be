@@ -4,38 +4,236 @@ on:
   push:
     branches: [ "deployment" ]
 
-jobs:
-  build:
+# jobs:
+#   build:
 
-    runs-on: dashboardbe-prod
-    strategy:
-      max-parallel: 4
-      matrix:
-        python-version: [3.11]
+#     runs-on: dashboardbe-prod
+#     strategy:
+#       max-parallel: 4
+#       matrix:
+#         python-version: [3.11]
 
       
+#     steps:
+#     - uses: actions/checkout@v4
+#     - name: Set up Python ${{ matrix.python-version }}
+#       uses: actions/setup-python@v3
+#       with:
+#         python-version: ${{ matrix.python-version }}
+#     - name: Install Dependencies
+#       run: |
+#         python -m pip install --upgrade pip
+#         pip install -r requirements.txt
+
+#     - name: Execute Deployment
+#       env:
+#         AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
+#         AWS_S3_ENDPOINT_URL: ${{ secrets.AWS_S3_ENDPOINT_URL }}
+#         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#         AWS_STORAGE_BUCKET_NAME: ${{ secrets.AWS_STORAGE_BUCKET_NAME }}
+#         MEDIA_URL: ${{ secrets.MEDIA_URL }}
+#         SECRET_KEY: ${{ secrets.SECRET_KEY }}
+#         TALENT_EMAIL: ${{ secrets.TALENT_EMAIL }}
+
+#       run: |
+#         python eSparkTalent/manage.py migrate
+#         python eSparkTalent/manage.py create_super_user
+#         pm2 restart talent-backend
+
+
+concurrency: ci-${{ github.repository }}-docker-pipeline
+
+env:
+  path_to_dockerfile: "Dockerfile"
+  docker_build_dir: "."
+  image_tag: "latest"
+  lifecycle_policy_file: "policy.json"
+  backend_s3_bucket: "talent-terraform-bucket"
+  backend_iam_role: "terraform-role"
+  github_iam_role: "cicd"
+  aws_account_id: "${{ secrets.AWS_ACCOUNT_ID }}"
+  aws_region: "${{ secrets.AWS_REGION }}"
+  backend_dynamodb_table: "talent-terraform-dynamodb"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+     
+    permissions:
+      id-token: write
+      contents: read
+    
+    outputs:
+      image_tag: ${{ steps.build-publish.outputs.image_tag }}
+      full_image: ${{ steps.build-publish.outputs.full_image }}
+      
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+    - name: Checkout source repository
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        role-to-assume: arn:aws:iam::${{ env.aws_account_id }}:role/cicd
+        aws-region: ${{ env.aws_region }}
 
-    - name: Execute Deployment
+    - name: Setup TerraForm
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_wrapper: false
+
+    - name: prepare ECR repo name based on the Github repository
+      shell: bash
+      run: |
+        set -eux
+        
+        # lowercase the name
+        repo="${GITHUB_REPOSITORY,,}"
+        
+        # replace / with _
+        echo "ECR_REPO_NAME=${repo//\//_}" >> $GITHUB_ENV
+
+    - name: TerraForm init
+      shell: bash
+      run: |
+        set -eux
+        terraform init -upgrade -reconfigure \
+          -backend-config='skip_metadata_api_check=true' \
+          -backend-config='skip_region_validation=true' \
+          -backend-config='skip_credentials_validation=true' \
+          -backend-config='region=${{ env.aws_region }}' \
+          -backend-config='bucket=${{ env.backend_s3_bucket }}' \
+          -backend-config='key=docker-ecr/terraform-${{ env.ECR_REPO_NAME }}.tfstate' \
+          -backend-config='dynamodb_table=${{ env.backend_dynamodb_table }}' \
+          -backend-config='role_arn=arn:aws:iam::${{ env.aws_account_id }}:role/${{ env.backend_iam_role }}'
+      working-directory: ${{ github.action_path }}
+
+    - name: Create ECR repo [TerraForm apply]
+      shell: bash
+      run: |
+        set -eux
+        terraform apply \
+          -var 'repository_name=${{ env.ECR_REPO_NAME }}' \
+          -var 'lifecycle_policy=${{ env.lifecycle_policy_file }}' \
+          -var 'iam_role=arn:aws:iam::${{ env.aws_account_id }}:role/${{ env.github_iam_role }}' \
+          -var 'aws_account_id=${{ env.aws_account_id }}' \
+          -auto-approve
+      working-directory: ${{ github.action_path }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+      with:
+        registries: ${{ env.aws_account_id }}
+        mask-password: "true" # see: https://github.com/aws-actions/amazon-ecr-login#docker-credentials
+
+           
+    - name: Create .env File
+      run: |
+        touch .env
+        echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
+        echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+        echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+        echo "AWS_STORAGE_BUCKET_NAME=${{ secrets.AWS_STORAGE_BUCKET_NAME }}" >> .env
+        echo "AWS_S3_ENDPOINT_URL=${{ secrets.AWS_S3_ENDPOINT_URL }}" >> .env
+        echo "MEDIA_URL=${{ secrets.MEDIA_URL }}" >> .env
+        echo "TALENT_EMAIL=${{ secrets.TALENT_EMAIL }}" >> .env
+        echo "MYSQL_HOST=${{ secrets.MYSQL_HOST }}" >> .env
+        echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" >> .env
+        echo "MYSQL_PORT=${{ secrets.MYSQL_PORT }}" >> .env
+        echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> .env
+        echo "MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}" >> .env
+        echo "MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
+        echo "SUPER_ADMIN_EMAIL: ${{ secrets.SUPER_ADMIN_EMAIL }}" >> .env
+        echo "SUPER_ADMIN_AUTH: ${{ secrets.SUPER_ADMIN_AUTH }}" >> .env
+        echo "DATABASE_ADMIN_EMAIL: ${{ secrets.DATABASE_ADMIN_EMAIL }}" >> .env
+        echo "DATABASE_ADMIN_AUTH: ${{ secrets.DATABASE_ADMIN_AUTH }}" >> .env
+        echo "DOCKER_EXPOSED_PORT=${{ secrets.DOCKER_EXPOSED_PORT }}" >> .env
+        echo "DOCKER_APPLICATION_PORT=${{ secrets.DOCKER_APPLICATION_PORT }}" >> .env
+        
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-publish
+      shell: bash
       env:
-        AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID}}
-        AWS_S3_ENDPOINT_URL: ${{ secrets.AWS_S3_ENDPOINT_URL }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_STORAGE_BUCKET_NAME: ${{ secrets.AWS_STORAGE_BUCKET_NAME }}
-        MEDIA_URL: ${{ secrets.MEDIA_URL }}
-        SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        TALENT_EMAIL: ${{ secrets.TALENT_EMAIL }}
-
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ env.ECR_REPO_NAME }}
+        IMAGE_TAG: ${{ env.image_tag }}
       run: |
-        python eSparkTalent/manage.py migrate
-        python eSparkTalent/manage.py create_super_user
-        pm2 restart talent-backend
+        docker compose build
+        docker compose push
+        echo "IMAGE $IMAGE_TAG is pushed to $ECR_REGISTRY/$ECR_REPOSITORY"
+        echo "image_tag=$IMAGE_TAG" 
+        echo "full_image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+  # deploy:
+  #   needs: build
+  #   runs-on: mls-backend
+
+  #   permissions:
+  #     id-token: write
+  #     contents: read
+
+  #   steps:
+
+  #   - name: Checkout source repository
+  #     uses: actions/checkout@v4
+
+  #   - name: Configure AWS credentials
+  #     uses: aws-actions/configure-aws-credentials@v4
+  #     with:
+  #       role-to-assume: arn:aws:iam::${{ env.aws_account_id }}:role/cicd
+  #       aws-region: ${{ env.aws_region }}
+
+
+  #   - name: Login to Amazon ECR
+  #     id: login-ecr
+  #     uses: aws-actions/amazon-ecr-login@v2
+  #     with:
+  #       registries: ${{ env.aws_account_id }}
+  #       mask-password: "true"
+
+  #   - name: Prepare ECR repo name based on the Github repository
+  #     shell: bash
+  #     run: |
+  #       set -eux
+          
+  #       # lowercase the name
+  #       repo="${GITHUB_REPOSITORY,,}"
+          
+  #       # replace / with _
+  #       echo "ECR_REPO_NAME=${repo//\//_}" >> $GITHUB_ENV
+
+  #   - name: Pull Image from Amazon ECR and Deploy as Docker Container to EC2
+  #     env:
+  #       ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+  #       ECR_REPOSITORY: ${{ env.ECR_REPO_NAME }}
+  #       IMAGE_TAG: ${{ env.image_tag }}
+  #       # PORT: ${{ secrets.PORT }}
+  #       # TOKEN_KEY: ${{ secrets.TOKEN_KEY }}
+  #       # TOKEN_EXPIRY: ${{ secrets.TOKEN_EXPIRY }}
+  #       # SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+  #       # SENDGRID_EMAIL: ${{ secrets.SENDGRID_EMAIL }}
+  #       # FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+  #       # TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+  #       # TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+  #       # TWILIO_PHONE_NUMBER: ${{ secrets.TWILIO_PHONE_NUMBER }}
+  #       # OTP_TTL: ${{ secrets.OTP_TTL }}
+  #       # OTP_KEY: ${{ secrets.OTP_KEY }}
+  #       # MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+  #       MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+  #       MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+  #       MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
+  #       MYSQL_USER: ${{ secrets.MYSQL_USER }}
+  #       MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+  #       # BACK_BLAZE_KEY_ID: ${{ secrets.BACK_BLAZE_KEY_ID }}
+  #       # BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+  #       # BACK_BALZE_APP_KEY: ${{ secrets.BACK_BALZE_APP_KEY }}
+  #       # BUCKET_ID: ${{ secrets.BUCKET_ID }}
+  #       DOCKER_EXPOSED_PORT: ${{ secrets.DOCKER_EXPOSED_PORT }}
+  #       DOCKER_APPLICATION_PORT: ${{ secrets.DOCKER_APPLICATION_PORT }}
+      
+  #     run: |
+  #       docker compose pull
+  #       docker compose down
+  #       docker compose up -d
