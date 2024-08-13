@@ -1,50 +1,48 @@
 services:
-  mls_api:
+  talent_api:
     container_name: talent_api
     image: talent-backend:latest
     environment:
-      - NODE_ENV=production
-      # - PORT
-      # - TOKEN_KEY
-      # - TOKEN_EXPIRY
-      # - SENDGRID_API_KEY
-      # - SENDGRID_EMAIL
-      # - FRONTEND_URL
-      # - TWILIO_ACCOUNT_SID
-      # - TWILIO_AUTH_TOKEN
-      # - TWILIO_PHONE_NUMBER
-      # - OTP_TTL
-      # - OTP_KEY
-      # - MYSQL_HOST
-      # - MYSQL_DATABASE
-      # - MYSQL_PORT
-      # - MYSQL_USER
-      # - MYSQL_PASSWORD
-      # - BACK_BLAZE_KEY_ID
-      # - BUCKET_NAME
-      # - BACK_BALZE_APP_KEY
-      # - BUCKET_ID
+      - SECRET_KEY
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_STORAGE_BUCKET_NAME
+      - AWS_S3_ENDPOINT_URL
+      - MEDIA_URL
+      - TALENT_EMAIL
+      - MYSQL_HOST
+      - MYSQL_DATABASE
+      - MYSQL_PORT
+      - MYSQL_USER
+      - MYSQL_PASSWORD
+
     build:
       context: .
       dockerfile: Dockerfile
+    command: bash -c "python eSparkTalent/manage.py migrate && python eSparkTalent/manage.py runserver 0.0.0.0:${DOCKER_APPLICATION_PORT}"
     ports:
-      # - ${DOCKER_EXPOSED_PORT}:${DOCKER_APPLICATION_PORT}
-      - 8000:8000
+      - ${DOCKER_EXPOSED_PORT}:${DOCKER_APPLICATION_PORT}
+      
+    depends_on:
+      talent_db:
+        condition: service_healthy
+
+  talent_db:
+    container_name: talent_db
+    image: mysql:latest
+    ports:
+      - ${MYSQL_PORT}:${MYSQL_PORT}
+    environment:
+      - MYSQL_ROOT_PASSWORD
+      - MYSQL_DATABASE
+      - MYSQL_USER
+      - MYSQL_PASSWORD
+      - MYSQL_TCP_PORT
     volumes:
-      - talent_database:/usr/src/app/eSparkTalent/db_data/
-
-  # mls_db:
-  #   container_name: mls_db
-  #   image: mysql:latest
-  #   ports:
-  #     - ${MYSQL_PORT}:${MYSQL_PORT}
-  #   environment:
-  #     - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-  #     - MYSQL_DATABASE=${MYSQL_DATABASE}
-  #     - MYSQL_USER=${MYSQL_USER}
-  #     - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-  #     - MYSQL_TCP_PORT=${MYSQL_PORT}
-
+      - talent_database:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysql", "-uroot", "-p$$MYSQL_ROOT_PASSWORD", "-h", "talent_db", "-e", "USE MYSQL_DATABASE;"]
+      retries: 10
 
 volumes:
   talent_database:
