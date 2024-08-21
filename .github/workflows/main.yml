@@ -1,4 +1,4 @@
-name: Talent Dashboard Backend CI
+name: Talent Dashboard Backend CICD
 
 on:
   push:
@@ -194,5 +194,5 @@ jobs:
       
       run: |
         docker compose pull
-        docker compose down
+        docker compose down -v
         docker compose up -d
