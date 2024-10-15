@@ -1,7 +1,7 @@
 # pull the official base image
 
 # for windows containers
-# FROM python:3.6.3-windowsservercore-ltsc2016
+# FROM python:3.10
 
 # for linux containers
 FROM python:3
