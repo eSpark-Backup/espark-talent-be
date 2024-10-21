@@ -31,6 +31,8 @@ class interview_requestSerializer(serializers.ModelSerializer):
         depth = 1
 
 class EmployeeSerializer(serializers.ModelSerializer):
+    starting_date = serializers.DateField(required=False, allow_null=True)
+    ending_date = serializers.DateField(required=False, allow_null=True)
     class Meta:
         model = employee
         fields = "__all__"
