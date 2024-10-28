@@ -119,6 +119,7 @@ class employee(models.Model):
     dob = models.DateField(null=True)
     phone_number = models.CharField(max_length=11)
     email = models.EmailField(unique=True)
+    personal_email =  models.EmailField(unique=True, default="")
     marital_status = models.CharField(max_length=15, null=True)
     image = models.ImageField(
         upload_to="employees/profiles/",
@@ -136,6 +137,9 @@ class employee(models.Model):
     role = models.CharField(max_length=30)
     job_title = models.CharField(max_length=30)
     company = models.CharField(max_length=30)
+    job_status = models.CharField(max_length=30, default="")
+    starting_date = models.DateField(null=True)
+    ending_date = models.DateField(null=True)
     punch_timings = models.JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

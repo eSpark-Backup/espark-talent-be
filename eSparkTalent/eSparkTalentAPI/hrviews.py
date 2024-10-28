@@ -91,6 +91,13 @@ class Add_Employee(APIView):
                 required=True,
             ),
             openapi.Parameter(
+                name="personal_email",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
                 name="marital_status",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
@@ -156,6 +163,24 @@ class Add_Employee(APIView):
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
                 required=True,
+            ),
+            openapi.Parameter(
+                name="job_status",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="starting_date",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+            ),
+            openapi.Parameter(
+                name="ending_date",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
             ),
             openapi.Parameter(
                 name="punch_timings",
@@ -247,6 +272,7 @@ class Add_Employee(APIView):
                         dob=serializer.validated_data["dob"],
                         phone_number=serializer.validated_data["phone_number"],
                         email=serializer.validated_data["email"],
+                        personal_email=serializer.validated_data["personal_email"],
                         marital_status=serializer.validated_data["marital_status"],
                         image=serializer.validated_data["image"],
                         emergency_no=serializer.validated_data["emergency_no"],
@@ -255,7 +281,10 @@ class Add_Employee(APIView):
                             "emergency_contact"
                         ],
                         joining_date=serializer.validated_data["joining_date"],
+                        starting_date=serializer.validated_data.get("starting_date", None),
+                        ending_date=serializer.validated_data.get("ending_date", None), 
                         job_title=serializer.validated_data["job_title"],
+                        job_status=serializer.validated_data["job_status"],
                         role=serializer.validated_data["role"],
                         company=serializer.validated_data["company"],
                         punch_timings=serializer.validated_data["punch_timings"],
@@ -1633,7 +1662,10 @@ class Hr_Employee(APIView):
                             properties={
                                 "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                                 "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
-                                "employee_name": openapi.Schema(
+                                "first_name": openapi.Schema(
+                                    type=openapi.TYPE_STRING
+                                ),
+                                "last_name": openapi.Schema(
                                     type=openapi.TYPE_STRING
                                 ),
                                 "gender": openapi.Schema(type=openapi.TYPE_STRING),
@@ -1642,6 +1674,10 @@ class Hr_Employee(APIView):
                                     format=openapi.FORMAT_DATE,
                                 ),
                                 "email": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_EMAIL,
+                                ),
+                                "personal_email": openapi.Schema(
                                     type=openapi.TYPE_STRING,
                                     format=openapi.FORMAT_EMAIL,
                                 ),
@@ -1688,6 +1724,15 @@ class Hr_Employee(APIView):
                                 ),
                                 "job_title": openapi.Schema(type=openapi.TYPE_STRING),
                                 "role": openapi.Schema(type=openapi.TYPE_STRING),
+                                "status": openapi.Schema(type=openapi.TYPE_STRING),
+                                "probation_started": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATE,
+                                ),
+                                "probation_ended": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                    format=openapi.FORMAT_DATE,
+                                ),
                             },
                         ),
                     },
@@ -1803,16 +1848,21 @@ class Hr_Employee(APIView):
                 record = {
                     "id": emp_record.id,
                     "employee_id": emp_record.employee_id,
-                    "employee_name": emp_record.first_name + " " + emp_record.last_name,
+                    "first_name": emp_record.first_name, 
+                    "last_name": emp_record.last_name,
                     "gender": emp_record.gender,
                     "dob": emp_record.dob,
                     "email": emp_record.email,
+                    "personal_email": emp_record.personal_email,
                     "marital_status": emp_record.marital_status,
                     "image_path": emp_record.image.url,
                     "emergency_contact": emp_record.emergency_contact,
                     "joining_date": emp_record.joining_date,
                     "job_title": emp_record.job_title,
                     "role": emp_record.role,
+                    "status": emp_record.job_status,
+                    "probation_started": emp_record.starting_date,
+                    "probation_ended": emp_record.ending_date,
                 }
                 return Response(record, status=status.HTTP_200_OK)
             except Exception as e:
