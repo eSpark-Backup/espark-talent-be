@@ -251,7 +251,6 @@ class Start_Hiring(APIView):
                 "comments",
                 openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
-                required= True,
             ),
         ],
         operation_summary="Endpoint to create hiring request.",
