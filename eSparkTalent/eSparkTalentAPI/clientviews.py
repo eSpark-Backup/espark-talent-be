@@ -409,10 +409,16 @@ class Hiring_Resquest(APIView):
         user = request.user
         delete_id = request.query_params.get("id")
         try:
-            hiring_request.objects.get(id=delete_id).delete()
+            hr_req=hiring_request.objects.get(id=delete_id)
+            removed = remove_bucket_file(hr_req.job_description.name)
+            if removed:
+                return Response(
+                    {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
+                )
             notifications.objects.get(
                 ref_id=delete_id, notification_type="hiring_request"
             ).delete()
+            hr_req.delete()
             return Response(
                 {"message": "Hiring request is successfully deleted"},
                 status=status.HTTP_200_OK,
