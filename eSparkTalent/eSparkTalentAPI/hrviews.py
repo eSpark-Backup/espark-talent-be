@@ -2443,45 +2443,10 @@ class Edit_Cridentials(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Start_Hiring(APIView):
+    parser_classes = (MultiPartParser,)
+
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "client_id": openapi.Schema(
-                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
-                ),
-                "job_title": openapi.Schema(type=openapi.TYPE_STRING),
-                "role_type": openapi.Schema(type=openapi.TYPE_STRING),
-                "gender": openapi.Schema(type=openapi.TYPE_STRING),
-                "employment_term": openapi.Schema(type=openapi.TYPE_STRING),
-                "salary_range": openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        "minimum": openapi.Schema(type=openapi.TYPE_INTEGER),
-                        "maximum": openapi.Schema(type=openapi.TYPE_INTEGER),
-                    },
-                ),
-                "country": openapi.Schema(type=openapi.TYPE_STRING),
-                "hiring_start_date": openapi.Schema(
-                    type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
-                ),
-                "hiring_end_date": openapi.Schema(
-                    type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
-                ),
-            },
-            required=[
-                "client_id",
-                "job_title",
-                "role_type",
-                "gender",
-                "employment_term",
-                "salary_range",
-                "country",
-                "hiring_start_date",
-                "hiring_end_date",
-            ],
-        ),
         responses={
             201: openapi.Response("Successful created"),
             400: openapi.Response("Bad request"),
@@ -2492,6 +2457,80 @@ class Start_Hiring(APIView):
                 "Authorization",
                 openapi.IN_HEADER,
                 description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "client_id",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required= True,
+            ),
+            openapi.Parameter(
+                "job_title",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required= True,
+            ),
+            openapi.Parameter(
+                "role_type",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required= True,
+            ),
+            openapi.Parameter(
+                "gender",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required= True,
+            ),
+            openapi.Parameter(
+                "employment_term",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required= True,
+            ),
+            openapi.Parameter(
+                "salary_range",
+                openapi.IN_FORM,
+                type=openapi.TYPE_OBJECT,
+                required= True,
+            ),
+            openapi.Parameter(
+                "salary_currency",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required= True,
+            ),
+            openapi.Parameter(
+                "country",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required= True,
+            ),
+            openapi.Parameter(
+                "hiring_start_date",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                required= True,
+            ),
+            openapi.Parameter(
+                "hiring_end_date",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                required= True,
+            ),
+            openapi.Parameter(
+                "job_description",
+                openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required= True,
+            ),
+            openapi.Parameter(
+                "comments",
+                openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
             ),
         ],
@@ -2509,9 +2548,12 @@ class Start_Hiring(APIView):
                     gender=serializer.validated_data["gender"],
                     employment_term=serializer.validated_data["employment_term"],
                     salary_range=serializer.validated_data["salary_range"],
+                    salary_currency=serializer.validated_data["salary_currency"],
                     country=serializer.validated_data["country"],
                     hiring_start_date=serializer.validated_data["hiring_start_date"],
                     hiring_end_date=serializer.validated_data["hiring_end_date"],
+                    job_description=serializer.validated_data["job_description"],
+                    comments=serializer.validated_data["comments"],
                 )
                 notifications.objects.create(
                     email=talent_email,
@@ -2564,18 +2606,31 @@ class Start_Hiring(APIView):
                             "role_type": openapi.Schema(type=openapi.TYPE_STRING),
                             "gender": openapi.Schema(type=openapi.TYPE_STRING),
                             "employment_term": openapi.Schema(type=openapi.TYPE_STRING),
-                            "salary_range": openapi.Schema(type=openapi.TYPE_STRING),
+                            "salary_range": openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "minimum": openapi.Schema(
+                                        type=openapi.TYPE_INTEGER
+                                    ),
+                                    "maximum": openapi.Schema(
+                                        type=openapi.TYPE_INTEGER
+                                    ),
+                                },
+                            ),
+                            "salary_currency": openapi.Schema(type=openapi.TYPE_STRING),
                             "hiring_start_date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
                             "hiring_end_date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
+                            "comments": openapi.Schema(type=openapi.TYPE_STRING),
                         },
                     ),
                 ),
             ),
             204: openapi.Response(description="No Content"),
+            401: openapi.Response("UnAuthorize"),
         },
         operation_id="4",
         operation_summary="Get Start_Hiring ",
@@ -2598,14 +2653,138 @@ class Start_Hiring(APIView):
                     "gender": data.gender,
                     "employment_term": data.employment_term,
                     "salary_range": data.salary_range,
+                    "salary_currency": data.salary_currency,
                     "hiring_start_date": data.hiring_start_date,
                     "hiring_end_date": data.hiring_end_date,
+                    "comments": data.comments,
                 }
                 records.append(record)
 
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+    @swagger_auto_schema(
+        tags=["Clients : Hire & onBoard"],
+        responses={
+            200: openapi.Response("Successfull"),
+            400: openapi.Response("Bad request"),
+            401: openapi.Response("UnAuthorize"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required= True,
+            ),
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_INTEGER,
+                required= True,
+            ),
+            openapi.Parameter(
+                "job_title",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "role_type",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "gender",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "employment_term",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "salary_range",
+                openapi.IN_FORM,
+                type=openapi.TYPE_OBJECT,
+            ),
+            openapi.Parameter(
+                "salary_currency",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "country",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "hiring_start_date",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+            ),
+            openapi.Parameter(
+                "hiring_end_date",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+            ),
+            openapi.Parameter(
+                "job_description",
+                openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+            ),
+            openapi.Parameter(
+                "comments",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to update hiring request.",
+        operation_id="9",
+    )
+    def patch(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        updates = request.data
+        try:
+            record = hiring_request.objects.get(id=record_id)
+            for key in updates:
+                if key == "salary_range":
+                    try:
+                        salary_range = json.loads(updates["salary_range"])
+                        record.salary_range = salary_range
+                        continue
+                    except Exception as e:
+                        return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+                
+                if key == "job_description":
+                    removed = remove_bucket_file(record.job_description.name)
+                    if removed:
+                        return Response(
+                            {"error": str(removed)},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                setattr(record, key, updates[key])
+            try:
+                record.save()
+            except ValidationError as e:
+                return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response(
+                    {"error": str(e)},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            return Response(
+                {"message": "Hiring request has been updated successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
@@ -2637,6 +2816,11 @@ class Start_Hiring(APIView):
         delete_id = request.query_params.get("id")
         try:
             hr_req = hiring_request.objects.get(id=delete_id)
+            removed = remove_bucket_file(hr_req.job_description.name)
+            if removed:
+                return Response(
+                    {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
+                )
             notifications.objects.filter(
                 email=talent_email, ref_id=hr_req.id, notification_type="hiring_request"
             ).delete()

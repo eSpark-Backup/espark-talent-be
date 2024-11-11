@@ -11,6 +11,7 @@ class userSerializer(serializers.ModelSerializer):
 
 
 class hiring_requestSerializer(serializers.ModelSerializer):
+    comments = serializers.CharField(required=False, allow_null=True)
     class Meta:
         model = hiring_request
         exclude = ['client_id']
@@ -18,6 +19,7 @@ class hiring_requestSerializer(serializers.ModelSerializer):
         depth = 1
 
 class start_requestSerializer(serializers.ModelSerializer):
+    comments = serializers.CharField(required=False, allow_null=True)
     class Meta:
         model = hiring_request
         # exclude = ['client_id']

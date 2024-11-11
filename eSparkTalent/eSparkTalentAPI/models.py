@@ -248,9 +248,17 @@ class hiring_request(models.Model):
     gender = models.CharField(max_length=7)
     employment_term = models.CharField(max_length=15)
     salary_range = models.JSONField(null=True)
+    salary_currency = models.CharField(max_length=50, default="$ U.S. dollar")
     country = models.CharField(max_length=30, default="")
     hiring_start_date = models.DateField()
     hiring_end_date = models.DateField()
+    job_description = models.FileField(
+        null=True,
+        upload_to="clients/hiring_requests/job_descriptions",
+        validators=[pdf_ext_valid, valid_pdffile_type],
+        default="",
+    )
+    comments = models.CharField(max_length=255, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -262,6 +270,24 @@ class hiring_request(models.Model):
             error = valid_json_check(self.salary_range)
             if error:
                 raise ValidationError(error)
+
+        if self.job_description:
+            try:
+                jd = hiring_request.objects.get(id=self.id)
+                if self.job_description != jd.job_description:
+                    try:
+                        file_content = self.job_description.file.seek(0)
+                        valid_pdffile_type(self.job_description.file)
+                        self.job_description.name = upload_file(self.job_description.name)
+                    except ValidationError as e:
+                        raise ValidationError(e)
+            except hiring_request.DoesNotExist:
+                try:
+                    file_content = self.job_description.file.seek(0)
+                    valid_pdffile_type(self.job_description.file)
+                    self.job_description.name = upload_file(self.job_description.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
 
         super().save(*args, **kwargs)
 
