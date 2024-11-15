@@ -10,6 +10,7 @@ urlpatterns=[
     path('emp_lr/', Leave_Request.as_view()),
     path('emp_timesheet/', Time_Sheet.as_view()),
     path('emp_pr/', Punch_Request.as_view()),
+    path('emp_wfhr/', WFH_Request.as_view()),
     path('emp_policies/', Policies.as_view()),
     path('notify/', Notifications.as_view()),
 ]

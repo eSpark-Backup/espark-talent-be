@@ -25,6 +25,7 @@ from .bucket_functions import remove_bucket_file
 from django.db.models.fields.files import FileField
 from calendar import month_name
 from django.db.utils import IntegrityError
+import calendar
 
 
 @authentication_classes([JWTAuthentication])
@@ -5839,3 +5840,152 @@ class Attendance_Report(APIView):
                 return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Employee_WFH_Request(APIView):
+    @swagger_auto_schema(
+        tags=["Request : WFH requests"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "e_email",
+                openapi.IN_QUERY,
+                description="Employee email",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "requests": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                                    "employee_id": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "employee_name": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "department": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "start_date": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATE,
+                                        example="2024-02-29(Y:M:D)",
+                                    ),
+                                    "end_date": openapi.Schema(
+                                        type=openapi.TYPE_STRING,
+                                        format=openapi.FORMAT_DATE,
+                                        example="2024-02-29(Y:M:D)",
+                                    ),
+                                    "count":openapi.Schema(
+                                        type=openapi.TYPE_INTEGER
+                                    ),
+                                    "reason": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "status": openapi.Schema(type=openapi.TYPE_STRING),
+                                },
+                            ),
+                        ),
+                    },
+                ),
+            ),
+            204: openapi.Response(description="No content"),
+            206: openapi.Response(description="Partial content"),
+            401: openapi.Response(description="UnAuthorize"),
+            400: openapi.Response(description="Bad Request"),
+        },
+        operation_summary="Endpoint to retrieve punch request data.",
+        operation_id="0",
+    )
+    def get(self, request, *args, **kwargs):
+        e_email=request.query_params.get("e_email")
+        from_date_object = datetime.datetime.today().replace(day=1).date()
+        last_day = calendar.monthrange(from_date_object.year, from_date_object.month)[1]
+        to_date_object = datetime.datetime.today().replace(day=last_day).date()
+        requests = wfh_request.objects.filter(
+                Q(employee_id=e_email),
+                start_date__gte=from_date_object,
+                start_date__lte=to_date_object,
+            )
+        serializer = WFHRequestSerializerHR(requests, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        tags=["Request : WFH requests"],
+        operation_summary="Update WFH request status",
+        operation_id="1",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "status": openapi.Schema(
+                    type=openapi.TYPE_STRING, enum=["completed", "rejected"]
+                ),
+            },
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="id of the record",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: "WFH request status updated successfully.",
+            204: "WFH request not found or no content.",
+            400: "Bad request.",
+        },
+    )
+    def patch(self, request,*args, **kwargs):
+        record_id = request.query_params.get("id")
+        to_update_status = request.data.get("status")
+        try:
+            wfh_req= wfh_request.objects.get(id=record_id)
+            wfh_req.status=to_update_status
+            wfh_req.save()
+            notifi = notifications.objects.get(
+                ref_id=record_id,
+                notification_type="wfh_request",
+            )
+            notifi.email = wfh_req.employee_id
+            notifi.status = to_update_status
+            notifi.description = f"WFH request has been {to_update_status}"
+            notifi.save()
+            return Response(
+                {"message":f"WFH request is {to_update_status}"}, status=status.HTTP_200_OK
+            )
+        except wfh_request.DoesNotExist():
+            return Response(
+                {
+                    "error": "WFH request does not exists"
+                },
+                status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response(
+                {"error":e}, status=status.HTTP_400_BAD_REQUEST
+            )

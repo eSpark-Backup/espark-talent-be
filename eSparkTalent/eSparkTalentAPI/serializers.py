@@ -119,3 +119,24 @@ class OffshoreContractSerializers(serializers.ModelSerializer):
     class Meta:
         model = offshore_contracts
         fields = "__all__"
+        
+class WFHRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = wfh_request
+        exclude = ["employee_id","status"]
+
+class WFHRequestSerializerHR(serializers.ModelSerializer):
+    employee_name = serializers.SerializerMethodField()
+    employee_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = wfh_request
+        fields = ["id", "employee_id", "employee_name", "start_date", "end_date", "count", "reason", "status"]
+
+    def get_employee_name(self, obj):
+        emp = employee.objects.get(email=obj.employee_id)
+        return f"{emp.first_name} {emp.last_name}" if emp else None
+
+    def get_employee_id(self, obj):
+        emp = employee.objects.get(email=obj.employee_id)
+        return emp.employee_id if emp else None
