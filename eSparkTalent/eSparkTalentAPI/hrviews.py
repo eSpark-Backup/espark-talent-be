@@ -1529,6 +1529,7 @@ class Hr_Employees(APIView):
                 leave_balance,
                 leave_request,
                 punch_request,
+                wfh_request,
                 offshore_contracts,
                 end_user,
             ]

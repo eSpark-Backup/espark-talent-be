@@ -2772,6 +2772,9 @@ class WFH_Request(APIView):
                 }
                 return Response(records, status=status.HTTP_204_NO_CONTENT)
         else:
+            from_date_object = datetime.today().replace(day=1).date()
+            last_day = calendar.monthrange(from_date_object.year, from_date_object.month)[1]
+            to_date_object = datetime.today().replace(day=last_day).date()
             req_record = []
             pending = wfh_request.objects.filter(
                 employee_id=e_email, status="pending"
@@ -2787,7 +2790,10 @@ class WFH_Request(APIView):
             ).count()
             if tab == "pending" or tab == "completed" or tab == "rejected":
                 p_request = wfh_request.objects.filter(
-                    employee_id=e_email, status=tab
+                    Q(employee_id=e_email),
+                    start_date__gte=from_date_object,
+                    start_date__lte=to_date_object,
+                    status=tab
                 )
                 if p_request:
                     emp=employee.objects.get(email=request.user)
@@ -2807,7 +2813,9 @@ class WFH_Request(APIView):
                     req_record = []
             elif not tab:
                 p_request = wfh_request.objects.filter(
-                    employee_id=e_email
+                    Q(employee_id=e_email),
+                    start_date__gte=from_date_object,
+                    start_date__lte=to_date_object,
                 )
                 if p_request:
                     emp=employee.objects.get(email=request.user)
