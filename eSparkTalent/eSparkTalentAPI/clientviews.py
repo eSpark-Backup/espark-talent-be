@@ -997,6 +997,7 @@ class Leave_Request(APIView):
                                                     "Day Off": False,
                                                     "Full Leave": True,
                                                     "Short Duration": False,
+                                                    "WFH": False,
                                                 },
                                             }
                                 timesheet.save()
@@ -1334,6 +1335,14 @@ class ClockInOut_Request(APIView):
                     working_hours = datetime.datetime.strptime(
                         check_out, "%I:%M %p"
                     ) - datetime.datetime.strptime(check_in, "%I:%M %p")
+                    
+                    wfh_records = wfh_request.objects.filter(
+                        Q(
+                            employee_id=emp_req.email,
+                            status="completed",
+                        ),
+                        Q(start_date__lte=to_update_clockinout_request.date) & Q(end_date__gte=to_update_clockinout_request.date),
+                    )
                     try:
                         record_punch_type = to_update_clockinout_request.punch_type
                         if record_punch_type == "check_in":
@@ -1644,6 +1653,7 @@ class ClockInOut_Request(APIView):
                                             "Day Off": False,
                                             "Full Leave": False,
                                             "Short Duration": False,
+                                            "WFH": False,
                                         },
                                     }
                                     timesheet_record.save()
@@ -1687,32 +1697,62 @@ class ClockInOut_Request(APIView):
                                         ).time()
                                         > datetime.datetime.now().time()
                                     ):
-                                        timesheet_record = time_sheet.objects.create(
-                                            employee_id=to_update_clockinout_request.employee_id,
-                                            client_id=user,
-                                            month=calendar.month_name[
-                                                to_update_clockinout_request.date.month
-                                            ],
-                                            year=to_update_clockinout_request.date.year,
-                                            record={
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                ): {
-                                                    "check_in": to_update_clockinout_request.punch_time,
-                                                    "check_out": "-",
-                                                    "hours_worked": "-",
-                                                    "overtime": "-",
-                                                    "status": {
-                                                        "Present": True,
-                                                        "Missing": False,
-                                                        "Absent": False,
-                                                        "Day Off": False,
-                                                        "Full Leave": False,
-                                                        "Short Duration": False,
+                                        if len(wfh_records)>0:
+                                            timesheet_record = time_sheet.objects.create(
+                                                employee_id=to_update_clockinout_request.employee_id,
+                                                client_id=user,
+                                                month=calendar.month_name[
+                                                    to_update_clockinout_request.date.month
+                                                ],
+                                                year=to_update_clockinout_request.date.year,
+                                                record={
+                                                    to_update_clockinout_request.date.strftime(
+                                                        "%d-%m-%Y"
+                                                    ): {
+                                                        "check_in": to_update_clockinout_request.punch_time,
+                                                        "check_out": "-",
+                                                        "hours_worked": "-",
+                                                        "overtime": "-",
+                                                        "status": {
+                                                            "Present": True,
+                                                            "Missing": False,
+                                                            "Absent": False,
+                                                            "Day Off": False,
+                                                            "Full Leave": False,
+                                                            "Short Duration": False,
+                                                            "WFH":True,
+                                                        },
                                                     },
                                                 },
-                                            },
-                                        )
+                                            )
+                                        else:
+                                            timesheet_record = time_sheet.objects.create(
+                                                employee_id=to_update_clockinout_request.employee_id,
+                                                client_id=user,
+                                                month=calendar.month_name[
+                                                    to_update_clockinout_request.date.month
+                                                ],
+                                                year=to_update_clockinout_request.date.year,
+                                                record={
+                                                    to_update_clockinout_request.date.strftime(
+                                                        "%d-%m-%Y"
+                                                    ): {
+                                                        "check_in": to_update_clockinout_request.punch_time,
+                                                        "check_out": "-",
+                                                        "hours_worked": "-",
+                                                        "overtime": "-",
+                                                        "status": {
+                                                            "Present": True,
+                                                            "Missing": False,
+                                                            "Absent": False,
+                                                            "Day Off": False,
+                                                            "Full Leave": False,
+                                                            "Short Duration": False,
+                                                            "WFH":False,
+                                                        },
+                                                    },
+                                                },
+                                            )
                                         to_update_clockinout_request.status = (
                                             to_update_status
                                         )
@@ -1734,32 +1774,62 @@ class ClockInOut_Request(APIView):
                                             status=status.HTTP_200_OK,
                                         )
                                     else:
-                                        timesheet_record = time_sheet.objects.create(
-                                            employee_id=to_update_clockinout_request.employee_id,
-                                            client_id=user,
-                                            month=calendar.month_name[
-                                                to_update_clockinout_request.date.month
-                                            ],
-                                            year=to_update_clockinout_request.date.year,
-                                            record={
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                ): {
-                                                    "check_in": to_update_clockinout_request.punch_time,
-                                                    "check_out": "-",
-                                                    "hours_worked": "-",
-                                                    "overtime": "-",
-                                                    "status": {
-                                                        "Present": True,
-                                                        "Missing": True,
-                                                        "Absent": False,
-                                                        "Day Off": False,
-                                                        "Full Leave": False,
-                                                        "Short Duration": False,
+                                        if len(wfh_records)>0:
+                                            timesheet_record = time_sheet.objects.create(
+                                                employee_id=to_update_clockinout_request.employee_id,
+                                                client_id=user,
+                                                month=calendar.month_name[
+                                                    to_update_clockinout_request.date.month
+                                                ],
+                                                year=to_update_clockinout_request.date.year,
+                                                record={
+                                                    to_update_clockinout_request.date.strftime(
+                                                        "%d-%m-%Y"
+                                                    ): {
+                                                        "check_in": to_update_clockinout_request.punch_time,
+                                                        "check_out": "-",
+                                                        "hours_worked": "-",
+                                                        "overtime": "-",
+                                                        "status": {
+                                                            "Present": True,
+                                                            "Missing": True,
+                                                            "Absent": False,
+                                                            "Day Off": False,
+                                                            "Full Leave": False,
+                                                            "Short Duration": False,
+                                                            "WFH":True,
+                                                        },
                                                     },
                                                 },
-                                            },
-                                        )
+                                            )
+                                        else:
+                                            timesheet_record = time_sheet.objects.create(
+                                                employee_id=to_update_clockinout_request.employee_id,
+                                                client_id=user,
+                                                month=calendar.month_name[
+                                                    to_update_clockinout_request.date.month
+                                                ],
+                                                year=to_update_clockinout_request.date.year,
+                                                record={
+                                                    to_update_clockinout_request.date.strftime(
+                                                        "%d-%m-%Y"
+                                                    ): {
+                                                        "check_in": to_update_clockinout_request.punch_time,
+                                                        "check_out": "-",
+                                                        "hours_worked": "-",
+                                                        "overtime": "-",
+                                                        "status": {
+                                                            "Present": True,
+                                                            "Missing": True,
+                                                            "Absent": False,
+                                                            "Day Off": False,
+                                                            "Full Leave": False,
+                                                            "Short Duration": False,
+                                                            "WFH":False,
+                                                        },
+                                                    },
+                                                },
+                                            )
                                         to_update_clockinout_request.status = (
                                             to_update_status
                                         )
@@ -1789,32 +1859,62 @@ class ClockInOut_Request(APIView):
                                     datetime.datetime.now().date().strftime("%d-%m-%Y"),
                                     "%d-%m-%Y",
                                 ):
-                                    timesheet_record = time_sheet.objects.create(
-                                        employee_id=to_update_clockinout_request.employee_id,
-                                        client_id=user,
-                                        month=calendar.month_name[
-                                            to_update_clockinout_request.date.month
-                                        ],
-                                        year=to_update_clockinout_request.date.year,
-                                        record={
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            ): {
-                                                "check_in": to_update_clockinout_request.punch_time,
-                                                "check_out": "-",
-                                                "hours_worked": "-",
-                                                "overtime": "-",
-                                                "status": {
-                                                    "Present": True,
-                                                    "Missing": True,
-                                                    "Absent": False,
-                                                    "Day Off": False,
-                                                    "Full Leave": False,
-                                                    "Short Duration": False,
+                                    if len(wfh_records)>0:
+                                        timesheet_record = time_sheet.objects.create(
+                                            employee_id=to_update_clockinout_request.employee_id,
+                                            client_id=user,
+                                            month=calendar.month_name[
+                                                to_update_clockinout_request.date.month
+                                            ],
+                                            year=to_update_clockinout_request.date.year,
+                                            record={
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                ): {
+                                                    "check_in": to_update_clockinout_request.punch_time,
+                                                    "check_out": "-",
+                                                    "hours_worked": "-",
+                                                    "overtime": "-",
+                                                    "status": {
+                                                        "Present": True,
+                                                        "Missing": True,
+                                                        "Absent": False,
+                                                        "Day Off": False,
+                                                        "Full Leave": False,
+                                                        "Short Duration": False,
+                                                        "WGH":True,
+                                                    },
                                                 },
                                             },
-                                        },
-                                    )
+                                        )
+                                    else:    
+                                        timesheet_record = time_sheet.objects.create(
+                                            employee_id=to_update_clockinout_request.employee_id,
+                                            client_id=user,
+                                            month=calendar.month_name[
+                                                to_update_clockinout_request.date.month
+                                            ],
+                                            year=to_update_clockinout_request.date.year,
+                                            record={
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                ): {
+                                                    "check_in": to_update_clockinout_request.punch_time,
+                                                    "check_out": "-",
+                                                    "hours_worked": "-",
+                                                    "overtime": "-",
+                                                    "status": {
+                                                        "Present": True,
+                                                        "Missing": True,
+                                                        "Absent": False,
+                                                        "Day Off": False,
+                                                        "Full Leave": False,
+                                                        "Short Duration": False,
+                                                        "WFH":False,
+                                                    },
+                                                },
+                                            },
+                                        )
                                 to_update_clockinout_request.status = to_update_status
                                 to_update_clockinout_request.save()
                                 notifi = notifications.objects.get(
@@ -2038,24 +2138,46 @@ class ClockInOut_Request(APIView):
                                             )
 
                                 else:
-                                    timesheet_record.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ] = {
-                                        "check_in": "-",
-                                        "check_out": to_update_clockinout_request.punch_time,
-                                        "hours_worked": "-",
-                                        "overtime": "-",
-                                        "status": {
-                                            "Present": True,
-                                            "Missing": True,
-                                            "Absent": False,
-                                            "Day Off": False,
-                                            "Full Leave": False,
-                                            "Short Duration": False,
-                                        },
-                                    }
+                                    if len(wfh_records)>0:
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ] = {
+                                            "check_in": "-",
+                                            "check_out": to_update_clockinout_request.punch_time,
+                                            "hours_worked": "-",
+                                            "overtime": "-",
+                                            "status": {
+                                                "Present": True,
+                                                "Missing": True,
+                                                "Absent": False,
+                                                "Day Off": False,
+                                                "Full Leave": False,
+                                                "Short Duration": False,
+                                                "WFH":True,
+                                            },
+                                        }
+                                    else:                                        
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ] = {
+                                            "check_in": "-",
+                                            "check_out": to_update_clockinout_request.punch_time,
+                                            "hours_worked": "-",
+                                            "overtime": "-",
+                                            "status": {
+                                                "Present": True,
+                                                "Missing": True,
+                                                "Absent": False,
+                                                "Day Off": False,
+                                                "Full Leave": False,
+                                                "Short Duration": False,
+                                                "WFH":False,
+                                            },
+                                        }
                                     timesheet_record.save()
                                     to_update_clockinout_request.status = (
                                         to_update_status
@@ -2078,32 +2200,62 @@ class ClockInOut_Request(APIView):
                                         status=status.HTTP_200_OK,
                                     )
                             except:
-                                timesheet_record = time_sheet.objects.create(
-                                    employee_id=to_update_clockinout_request.employee_id,
-                                    client_id=user,
-                                    month=calendar.month_name[
-                                        to_update_clockinout_request.date.month
-                                    ],
-                                    year=to_update_clockinout_request.date.year,
-                                    record={
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        ): {
-                                            "check_in": "-",
-                                            "check_out": to_update_clockinout_request.punch_time,
-                                            "hours_worked": "-",
-                                            "overtime": "-",
-                                            "status": {
-                                                "Present": True,
-                                                "Missing": True,
-                                                "Absent": False,
-                                                "Day Off": False,
-                                                "Full Leave": False,
-                                                "Short Duration": False,
+                                if len(wfh_records)>0:
+                                    timesheet_record = time_sheet.objects.create(
+                                        employee_id=to_update_clockinout_request.employee_id,
+                                        client_id=user,
+                                        month=calendar.month_name[
+                                            to_update_clockinout_request.date.month
+                                        ],
+                                        year=to_update_clockinout_request.date.year,
+                                        record={
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            ): {
+                                                "check_in": "-",
+                                                "check_out": to_update_clockinout_request.punch_time,
+                                                "hours_worked": "-",
+                                                "overtime": "-",
+                                                "status": {
+                                                    "Present": True,
+                                                    "Missing": True,
+                                                    "Absent": False,
+                                                    "Day Off": False,
+                                                    "Full Leave": False,
+                                                    "Short Duration": False,
+                                                    "WFH":True,
+                                                },
                                             },
                                         },
-                                    },
-                                )
+                                    )
+                                else:
+                                    timesheet_record = time_sheet.objects.create(
+                                        employee_id=to_update_clockinout_request.employee_id,
+                                        client_id=user,
+                                        month=calendar.month_name[
+                                            to_update_clockinout_request.date.month
+                                        ],
+                                        year=to_update_clockinout_request.date.year,
+                                        record={
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            ): {
+                                                "check_in": "-",
+                                                "check_out": to_update_clockinout_request.punch_time,
+                                                "hours_worked": "-",
+                                                "overtime": "-",
+                                                "status": {
+                                                    "Present": True,
+                                                    "Missing": True,
+                                                    "Absent": False,
+                                                    "Day Off": False,
+                                                    "Full Leave": False,
+                                                    "Short Duration": False,
+                                                    "WFH":False
+                                                },
+                                            },
+                                        },
+                                    )
                                 to_update_clockinout_request.status = to_update_status
                                 to_update_clockinout_request.save()
                                 notifi = notifications.objects.get(

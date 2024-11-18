@@ -858,3 +858,23 @@ class notifications(models.Model):
 
     def __str__(self):
         return f"{self.email} - {self.id}"
+
+
+class wfh_request(models.Model):
+    status = [
+        ("pending", "pending"),
+        ("completed", "completed"),
+        ("rejected", "rejected"),
+    ]
+    id = models.AutoField(primary_key=True)
+    employee_id = models.EmailField()
+    start_date = models.DateField(default=timezone.now)
+    end_date = models.DateField(default=timezone.now)
+    count = models.IntegerField(default=1)
+    reason = models.CharField(max_length=200, default="")
+    status = models.CharField(max_length=10, choices=status, default="pending")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.employee_id} - {self.id}"

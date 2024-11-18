@@ -42,4 +42,5 @@ urlpatterns=[
     path('down_policy/', Download_Policy.as_view()),
     path('down_comp_cont/', Download_Company_Contract.as_view()),
     path('down_jd/',Download_Job_Description.as_view()),
+    path('hr_wfhr/',Employee_WFH_Request.as_view()),
 ]
