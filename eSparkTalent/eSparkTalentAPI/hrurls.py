@@ -45,4 +45,5 @@ urlpatterns=[
     path('hr_wfhr/',Employee_WFH_Request.as_view()),
     path('hr_emp_lr/',Leave_Request.as_view()),
     path('hr_emp_pr/',ClockInOut_Request.as_view()),
+    path('hr_emp_benefit/',Emp_Benefits.as_view()),
 ]

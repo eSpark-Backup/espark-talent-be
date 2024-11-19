@@ -140,3 +140,9 @@ class WFHRequestSerializerHR(serializers.ModelSerializer):
     def get_employee_id(self, obj):
         emp = employee.objects.get(email=obj.employee_id)
         return emp.employee_id if emp else None
+    
+class BenefitsSerializer(serializers.ModelSerializer):
+    description = serializers.StringRelatedField(required=False, allow_null=True)
+    class Meta:
+        model = benefits
+        fields = "__all__"

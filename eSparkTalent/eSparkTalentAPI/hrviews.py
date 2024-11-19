@@ -6189,3 +6189,188 @@ class ClockInOut_Request(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
+        
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Emp_Benefits(APIView):
+    @swagger_auto_schema(
+       tags=["Employee : Benefits"],
+        manual_parameters=[
+            openapi.Parameter(
+                "emp_email",
+                openapi.IN_QUERY,
+                description="email of the employee",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "card_id": openapi.Schema(type=openapi.TYPE_STRING),
+                            "employee_id": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+                            "benefit": openapi.Schema(type=openapi.TYPE_STRING),
+                            "issue_date": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
+                            ),
+                            "description": openapi.Schema(type=openapi.TYPE_STRING),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response("No content"),
+            401: openapi.Response("UnAuthorize"),
+            404: openapi.Response("Not Found"),
+        },
+        operation_summary="Endpoint to retrieve employee benefits.",
+        operation_id="2",
+    )
+    def get(self, request, *args, **kwargs):
+        emp_email = request.query_params.get("emp_email")
+        benefits_data = benefits.objects.filter(
+            employee_id=emp_email,
+        )
+        
+        records = []
+
+        if benefits_data:
+            for data in benefits_data:
+                record = {
+                    "id": data.id,
+                    "card_id": data.card_id,
+                    "benefit": data.benefit,
+                    "issue_date": data.issued_date,
+                    "description": data.description,
+                }
+                records.append(record)
+            return Response(records, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        
+    @swagger_auto_schema(
+        tags=["Employee : Benefits"],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "card_id": openapi.Schema(type=openapi.TYPE_STRING),
+                "employee_id": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+                "benefit": openapi.Schema(type=openapi.TYPE_STRING),
+                "issue_date": openapi.Schema(
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
+                ),
+                "description": openapi.Schema(type=openapi.TYPE_STRING),
+            },
+            required=[
+                "card_id",
+                "employee_id",
+                "benefit",
+                "issue_date",
+            ],
+        ),
+        responses={
+            201: "Request created",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Add new benefit",
+        operation_id=".",
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = BenefitsSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                employee_data = employee.objects.get(email=serializer.validated_data["employee_id"])
+            except employee.DoesNotExist:
+                return Response(
+                    {"error": "Employee does not exist"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            record = benefits.objects.create(
+                card_id=serializer.validated_data["card_id"],
+                employee_id=serializer.validated_data["employee_id"],
+                benefit=serializer.validated_data["benefit"],
+                issue_date=serializer.validated_data["issue_date"],
+                description=serializer.validated_data["description"],
+            )
+           
+            notifications.objects.create(
+                        email=employee_data.email,
+                        ref_id=record.id,
+                        notification_type="benefit",
+                        status="added",
+                        description=f"{serializer.validated_data["benefit"]} benefit is added in Benefits tab",
+                    )
+            return Response(
+                {"message": "One new benefit has been added", "id": record.id},
+                status=status.HTTP_201_CREATED,
+            )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        tags=["Employee : Benefits"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            400: openapi.Response(description="Bad Request"),
+            401: openapi.Response(description="Unauthorize"),
+            404: openapi.Response(description="Not Found"),
+        },
+        operation_summary="Endpoint to delete a benefit.",
+        operation_id="1",
+    )
+    def delete(self, request, *args, **kwargs):
+        id = request.query_params.get("id")
+        if id:
+            try:
+                notifications.objects.get(ref_id=id).delete()
+                benefits.objects.get(id=id).delete()
+                return Response(
+                    {"message": "Asset has been deleted"}, status=status.HTTP_200_OK
+                )
+            except asset.DoesNotExist:
+                return Response(
+                    {"error": "Asset not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(
+                {"error": "Id parameter required"}, status=status.HTTP_400_BAD_REQUEST
+            )

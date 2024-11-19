@@ -878,3 +878,17 @@ class wfh_request(models.Model):
 
     def __str__(self):
         return f"{self.employee_id} - {self.id}"
+    
+
+class benefits(models.Model):
+    id = models.AutoField(primary_key=True)
+    employee_id = models.EmailField(null=True)
+    benefit = models.CharField(max_length=50)
+    card_id = models.CharField(max_length=15)
+    issued_date = models.DateField()
+    description = models.CharField(max_length=255, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.employee_id} - {self.id}"

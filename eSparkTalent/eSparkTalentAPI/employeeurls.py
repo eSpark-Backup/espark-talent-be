@@ -13,4 +13,5 @@ urlpatterns=[
     path('emp_wfhr/', WFH_Request.as_view()),
     path('emp_policies/', Policies.as_view()),
     path('notify/', Notifications.as_view()),
+    path('emp_benefits/', Emp_Benefits.as_view()),
 ]
