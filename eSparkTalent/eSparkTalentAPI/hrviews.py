@@ -6094,3 +6094,98 @@ class Leave_Request(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
+        
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class ClockInOut_Request(APIView):
+    @swagger_auto_schema(
+       tags=["Request : Punch requests"],
+        manual_parameters=[
+            openapi.Parameter(
+                "emp_email",
+                openapi.IN_QUERY,
+                description="email of the employee",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                            "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "date": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
+                            ),
+                            "punch_time": openapi.Schema(type=openapi.TYPE_STRING),
+                            "punch_type": openapi.Schema(type=openapi.TYPE_STRING),
+                            "description": openapi.Schema(type=openapi.TYPE_STRING),
+                            "status": openapi.Schema(type=openapi.TYPE_STRING),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response("No content"),
+            401: openapi.Response("UnAuthorize"),
+            404: openapi.Response("Not Found"),
+        },
+        operation_summary="Endpoint to retrieve Punch request data.",
+        operation_id="1",
+    )
+    def get(self, request, *args, **kwargs):
+        emp_email = request.query_params.get("emp_email")
+        
+        today = datetime.today()
+        current_month_start = today.replace(day=1)
+        if today.month == 12:
+            next_month_start = today.replace(year=today.year + 1, month=1, day=1)
+        else:
+            next_month_start = today.replace(month=today.month + 1, day=1)
+
+
+        clockinout_requests = punch_request.objects.filter(
+            employee_id=emp_email,
+            created_at__gte=current_month_start,
+            created_at__lt=next_month_start,
+        )
+        
+        try:
+            employee_data = employee.objects.get(email=emp_email)
+            employee_name = f"{employee_data.first_name} {employee_data.last_name}"
+        except employee.DoesNotExist:
+            return Response(
+                {"error": "Employee does not exist"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        
+        records = []
+
+        if clockinout_requests:
+            for data in clockinout_requests:
+                record = {
+                    "id": data.id,
+                    "employee_id": employee_data.employee_id,
+                    "employee_name": employee_name,
+                    "date": data.date,
+                    "punch_time": data.punch_time,
+                    "punch_type": data.punch_type,
+                    "description": data.description,
+                    "status": data.status,
+                }
+                records.append(record)
+            return Response(records, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
