@@ -6043,6 +6043,7 @@ class Leave_Request(APIView):
             ),
             204: openapi.Response("No content"),
             401: openapi.Response("UnAuthorize"),
+            404: openapi.Response("Not Found"),
         },
         operation_summary="Endpoint to retrieve current month Leave request data.",
         operation_id="1",
@@ -6065,11 +6066,17 @@ class Leave_Request(APIView):
         )
 
         records = []
-
+        try:
+            employee_data = employee.objects.get(email=emp_email)
+            employee_name = f"{employee_data.first_name} {employee_data.last_name}"
+        except employee.DoesNotExist:
+            return Response(
+                {"error": "Employee does not exist"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        
         if leave_requests:
             for data in leave_requests:
-                employee_data = employee.objects.get(email=emp_email)
-                employee_name = f"{employee_data.first_name} {employee_data.last_name}"
                 record = {
                     "id": data.id,
                     "employee_id": employee_data.employee_id,
