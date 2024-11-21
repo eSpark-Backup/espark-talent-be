@@ -1532,6 +1532,7 @@ class Hr_Employees(APIView):
                 wfh_request,
                 offshore_contracts,
                 end_user,
+                benefits,
             ]
             with transaction.atomic(using="default"):
                 for model_class in related_models:
