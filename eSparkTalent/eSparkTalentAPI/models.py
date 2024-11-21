@@ -329,20 +329,12 @@ class onboarding(models.Model):
     notice_period = models.IntegerField()
     salary = models.IntegerField(null=True)
     salary_currency  = models.CharField(max_length=30, null=True, default="")
-    benefits = models.JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.client_id} - {self.id}"
 
-    def save(self, *args, **kwargs):
-        if self.benefits or self.benefits == 0:
-            error = valid_json_check(self.benefits)
-            if error:
-                raise ValidationError(error)
-
-        super().save(*args, **kwargs)
 
 
 class leave_balance(models.Model):
@@ -694,7 +686,6 @@ class outsource_employees(models.Model):
     employment_term = models.CharField(max_length=15)
     joining_date = models.DateField()
     salary = models.IntegerField()
-    benefits = models.JSONField()
     status = models.CharField(max_length=15, default="active")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -702,13 +693,6 @@ class outsource_employees(models.Model):
     def __str__(self):
         return f"{self.client_id} - {self.id}"
 
-    def save(self, *args, **kwargs):
-        if self.benefits or self.benefits == 0:
-            error = valid_json_check(self.benefits)
-            if error:
-                raise ValidationError(error)
-
-        super().save(*args, **kwargs)
 
 
 class company_data(models.Model):
@@ -885,7 +869,7 @@ class benefits(models.Model):
     employee_id = models.EmailField(null=True)
     benefit = models.CharField(max_length=50)
     card_id = models.CharField(max_length=15)
-    issued_date = models.DateField()
+    issue_date = models.DateField()
     description = models.CharField(max_length=255, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

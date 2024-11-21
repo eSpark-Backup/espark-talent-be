@@ -340,7 +340,6 @@ class Add_Employee(APIView):
                         employment_term="",
                         joining_date=serializer.validated_data["joining_date"],
                         salary=0,
-                        benefits={},
                     )
                     return Response(
                         {
@@ -3052,7 +3051,6 @@ class Onboarding(APIView):
                 "notice_period": openapi.Schema(type=openapi.TYPE_INTEGER),
                 "salary": openapi.Schema(type=openapi.TYPE_INTEGER),
                 "salary_currency": openapi.Schema(type=openapi.TYPE_STRING),
-                "benefits": openapi.Schema(type=openapi.TYPE_OBJECT),
             },
             required=[
                 "client_id",
@@ -3100,7 +3098,6 @@ class Onboarding(APIView):
                     salary=serializer.validated_data["salary"],
                     salary_currency=serializer.validated_data["salary_currency"],
                     employment_term=serializer.validated_data["employment_term"],
-                    benefits=request.data.get("benefits"),
                 )
                 notifications.objects.create(
                     email=onb.client_id,
@@ -5415,7 +5412,6 @@ class ClientAddEmployee(APIView):
                     type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                 ),
                 "salary": openapi.Schema(type=openapi.TYPE_INTEGER),
-                "benefits": openapi.Schema(type=openapi.TYPE_OBJECT),
             },
             required=[
                 "id",
@@ -5425,7 +5421,6 @@ class ClientAddEmployee(APIView):
                 "employment_term",
                 "joining_date",
                 "salary",
-                "benefits",
             ],
         ),
         responses={
@@ -5459,7 +5454,6 @@ class ClientAddEmployee(APIView):
         employment_term = request.data.get("employment_term")
         joining_date = request.data.get("joining_date")
         salary = request.data.get("salary")
-        benefits = request.data.get("benefits")
         if id and c_email:
             try:
                 emp = employee.objects.get(id=id)
@@ -5478,7 +5472,6 @@ class ClientAddEmployee(APIView):
                     employment_term=employment_term,
                     joining_date=joining_date,
                     salary=salary,
-                    benefits=benefits,
                 )
                 notifications.objects.create(
                         email=out_emp.client_id,
@@ -6252,7 +6245,7 @@ class Emp_Benefits(APIView):
                     "id": data.id,
                     "card_id": data.card_id,
                     "benefit": data.benefit,
-                    "issue_date": data.issued_date,
+                    "issue_date": data.issue_date,
                     "description": data.description,
                 }
                 records.append(record)
@@ -6311,15 +6304,15 @@ class Emp_Benefits(APIView):
                 employee_id=serializer.validated_data["employee_id"],
                 benefit=serializer.validated_data["benefit"],
                 issue_date=serializer.validated_data["issue_date"],
-                description=serializer.validated_data["description"],
+                description=serializer.validated_data.get("description", None),
             )
-           
+            benefit = serializer.validated_data["benefit"]
             notifications.objects.create(
                         email=employee_data.email,
                         ref_id=record.id,
                         notification_type="benefit",
                         status="added",
-                        description=f"{serializer.validated_data["benefit"]} benefit is added in Benefits tab",
+                        description=f"{benefit} benefit is added in Benefits tab",
                     )
             return Response(
                 {"message": "One new benefit has been added", "id": record.id},
@@ -6328,6 +6321,60 @@ class Emp_Benefits(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        tags=["Employee : Benefits"],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "card_id": openapi.Schema(type=openapi.TYPE_STRING),
+                "description": openapi.Schema(type=openapi.TYPE_STRING),
+            },
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful update"),
+            400: openapi.Response(description="Bad Request"),
+            401: openapi.Response(description="Unauthorize"),
+            404: openapi.Response(description="Not Found"),
+        },
+        operation_summary="Endpoint to update a benefit.",
+        operation_id="3",
+    )
+    def patch(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        try:
+            card_id = request.data.get("card_id")
+            description = request.data.get("description")
+            benefits_data = benefits.objects.get(id=record_id)
+            benefits_data.card_id = card_id
+            benefits_data.description = description
+            benefits_data.save()
+            return Response(
+                {"message": "Benefit updated successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except benefits.DoesNotExist:
+            return Response(
+                {"error": "Benefit record not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     @swagger_auto_schema(
         tags=["Employee : Benefits"],
         manual_parameters=[

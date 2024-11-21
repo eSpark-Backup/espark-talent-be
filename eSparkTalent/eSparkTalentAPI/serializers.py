@@ -142,7 +142,7 @@ class WFHRequestSerializerHR(serializers.ModelSerializer):
         return emp.employee_id if emp else None
     
 class BenefitsSerializer(serializers.ModelSerializer):
-    description = serializers.StringRelatedField(required=False, allow_null=True)
+    description = serializers.CharField(required=False, allow_null=True)
     class Meta:
         model = benefits
         fields = "__all__"
