@@ -876,3 +876,42 @@ class benefits(models.Model):
 
     def __str__(self):
         return f"{self.employee_id} - {self.id}"
+
+
+class letter(models.Model):
+    id = models.AutoField(primary_key=True)
+    email = models.EmailField()
+    issue_date = models.DateField()
+    objective = models.CharField(max_length=100)
+    letter = models.FileField(
+        upload_to="employees/letters/",
+        validators=[pdf_ext_valid, valid_pdffile_type],
+        default="",
+    )
+    reason = models.CharField(max_length=200, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    
+    def __str__(self):
+        return f"{self.objective} - {self.email}"
+
+    def save(self, *args, **kwargs):
+        try:
+            letter_rec = letter.objects.get(id=self.id)
+            if self.letter != letter_rec.letter:
+                
+                try:
+                    file_content = self.letter.file.seek(0)
+                    valid_pdffile_type(self.letter.file)
+                    self.letter.name = upload_file(self.letter.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
+        except letter.DoesNotExist:
+            try:
+                file_content = self.letter.file.seek(0)
+                valid_pdffile_type(self.letter.file)
+                self.letter.name = upload_file(self.letter.name)
+            except ValidationError as e:
+                raise ValidationError(e)
+        super().save(*args, **kwargs)

@@ -146,3 +146,9 @@ class BenefitsSerializer(serializers.ModelSerializer):
     class Meta:
         model = benefits
         fields = "__all__"
+
+class LetterSerializer(serializers.ModelSerializer):
+    reason = serializers.CharField(required=False, allow_null=True)
+    class Meta:
+        model = letter
+        fields = "__all__"
