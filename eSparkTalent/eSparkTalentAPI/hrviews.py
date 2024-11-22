@@ -6473,9 +6473,9 @@ class Letters(APIView):
         operation_id="0",
     )
     def get(self, request, *args, **kwargs):
-        employee_id = request.query_params.get("employee_id")
+        email = request.query_params.get("email")
         letters = letter.objects.filter(
-            employee_id=employee_id,
+            email=email,
         )
 
         records = []
@@ -6516,7 +6516,7 @@ class Letters(APIView):
                 required=True,
             ),
             openapi.Parameter(
-                name="employee_id",
+                name="email",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
                 format=openapi.FORMAT_EMAIL,
@@ -6548,7 +6548,7 @@ class Letters(APIView):
         serializer = LetterSerializer(data=request.data)
         if serializer.is_valid():
             try:
-                employee_data = employee.objects.get(email=serializer.validated_data["employee_id"])
+                employee_data = employee.objects.get(email=serializer.validated_data["email"])
             except employee.DoesNotExist:
                 return Response(
                     {"error": "Employee does not exist"},
@@ -6556,7 +6556,7 @@ class Letters(APIView):
                 )
             record = letter.objects.create(
                 objective=serializer.validated_data["objective"],
-                employee_id=serializer.validated_data["employee_id"],
+                email=serializer.validated_data["email"],
                 letter=serializer.validated_data["letter"],
                 issue_date=serializer.validated_data["issue_date"],
                 reason=serializer.validated_data.get("reason", None),
@@ -6567,7 +6567,7 @@ class Letters(APIView):
                         ref_id=record.id,
                         notification_type="letter",
                         status="added",
-                        description=f"{objective} is added for {employee_data.first_name} {employee_data.last_name}",
+                        description=f"New {objective} is uploaded for you",
                     )
             return Response(
                 {"message": "One new letter has been added", "id": record.id},
@@ -6616,17 +6616,17 @@ class Letters(APIView):
         updates = request.data
         try:
             record = letter.objects.get(id=record_id)
-            for key in updates:                
-                if key == "letter":
-                    removed = remove_bucket_file(record.letter.name)
-                    if removed:
-                        return Response(
-                            {"error": str(removed)},
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
-                    setattr(record, key, updates[key])
-                else: 
-                    setattr(record, key, updates[key])
+            keys = updates.keys()   
+            if "letter" in keys:
+                removed = remove_bucket_file(record.letter.name)
+                if removed:
+                    return Response(
+                        {"error": str(removed)},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                setattr(record, "letter", updates["letter"])
+            if "reason" in keys: 
+                setattr(record, "reason", updates["reason"])
             try:
                 record.save()
             except ValidationError as e:

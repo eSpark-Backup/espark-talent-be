@@ -582,7 +582,7 @@ class Download_Letter(APIView):
             401: openapi.Response("UnAuthorize"),
         },
         operation_id="0",
-        operation_summary="Endpoint to download file",
+        operation_summary="Endpoint to download letter",
     )
     def get(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
@@ -604,11 +604,11 @@ class Download_Letter(APIView):
                 return http_response
             else:
                 return Response(
-                    {"message": "File doesn't exists"},
+                    {"message": "Letter doesn't exists"},
                     status=status.HTTP_204_NO_CONTENT,
                 )
 
-        except hiring_request.DoesNotExist:
+        except letter.DoesNotExist:
             return Response(
                 {"error": "Record not found"},
                 status=status.HTTP_404_NOT_FOUND,

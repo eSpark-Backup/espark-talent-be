@@ -880,7 +880,7 @@ class benefits(models.Model):
 
 class letter(models.Model):
     id = models.AutoField(primary_key=True)
-    employee_id = models.EmailField()
+    email = models.EmailField()
     issue_date = models.DateField()
     objective = models.CharField(max_length=100)
     letter = models.FileField(
@@ -888,13 +888,13 @@ class letter(models.Model):
         validators=[pdf_ext_valid, valid_pdffile_type],
         default="",
     )
-    reason = models.CharField(max_length=200, default="")
+    reason = models.CharField(max_length=200, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     
     def __str__(self):
-        return f"{self.objective} - {self.employee_id}"
+        return f"{self.objective} - {self.email}"
 
     def save(self, *args, **kwargs):
         try:

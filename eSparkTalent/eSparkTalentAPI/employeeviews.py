@@ -3077,9 +3077,9 @@ class Letters(APIView):
         operation_id="0",
     )
     def get(self, request, *args, **kwargs):
-        employee_id = request.user
+        email = request.user
         letters = letter.objects.filter(
-            employee_id=employee_id,
+            email=email,
         )
 
         records = []
