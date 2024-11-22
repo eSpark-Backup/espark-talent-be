@@ -6410,11 +6410,11 @@ class Emp_Benefits(APIView):
                 notifications.objects.get(ref_id=id).delete()
                 benefits.objects.get(id=id).delete()
                 return Response(
-                    {"message": "Asset has been deleted"}, status=status.HTTP_200_OK
+                    {"message": "Benefit has been deleted"}, status=status.HTTP_200_OK
                 )
             except asset.DoesNotExist:
                 return Response(
-                    {"error": "Asset not found"}, status=status.HTTP_404_NOT_FOUND
+                    {"error": "Benefit not found"}, status=status.HTTP_404_NOT_FOUND
                 )
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
