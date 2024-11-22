@@ -667,7 +667,6 @@ class Team_Member(APIView):
                             "joining_date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
-                            "benefits": openapi.Schema(type=openapi.TYPE_OBJECT),
                         },
                     ),
                 ),
@@ -697,7 +696,6 @@ class Team_Member(APIView):
                         "job_title": data.job_title,
                         "employment_term": data.employment_term,
                         "joining_date": data.joining_date,
-                        "benefits": data.benefits,
                     }
                     records.append(record)
                 return Response(records, status=status.HTTP_200_OK)
@@ -713,7 +711,6 @@ class Team_Member(APIView):
                         "role_type": data.role_type,
                         "job_title": data.job_title,
                         "joining_date": data.joining_date,
-                        "benefits": data.benefits,
                     }
                     records.append(record)
                 return Response(records, status=status.HTTP_200_OK)
@@ -730,7 +727,6 @@ class Team_Member(APIView):
                         "job_title": data.job_title,
                         "employment_term": data.employment_term,
                         "joining_date": data.joining_date,
-                        "benefits": data.benefits,
                     }
                     records.append(record)
                 for data in outsource:
@@ -743,7 +739,6 @@ class Team_Member(APIView):
                         "job_title": data.job_title,
                         "employment_term": data.employment_term,
                         "joining_date": data.joining_date,
-                        "benefits": data.benefits,
                     }
                     records.append(record)
                 return Response(records, status=status.HTTP_200_OK)

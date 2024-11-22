@@ -2976,3 +2976,66 @@ class WFH_Request(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
         except:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Emp_Benefits(APIView):
+    @swagger_auto_schema(
+       tags=["Employee : Benefits"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "card_id": openapi.Schema(type=openapi.TYPE_STRING),
+                            "employee_id": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+                            "benefit": openapi.Schema(type=openapi.TYPE_STRING),
+                            "issue_date": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
+                            ),
+                            "description": openapi.Schema(type=openapi.TYPE_STRING),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response("No content"),
+            401: openapi.Response("UnAuthorize"),
+            404: openapi.Response("Not Found"),
+        },
+        operation_summary="Endpoint to retrieve employee benefits.",
+        operation_id=".",
+    )
+    def get(self, request, *args, **kwargs):
+        emp_email = request.user
+        benefits_data = benefits.objects.filter(
+            employee_id=emp_email,
+        )
+        
+        records = []
+
+        if benefits_data:
+            for data in benefits_data:
+                record = {
+                    "id": data.id,
+                    "card_id": data.card_id,
+                    "benefit": data.benefit,
+                    "issue_date": data.issued_date,
+                    "description": data.description,
+                }
+                records.append(record)
+            return Response(records, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
