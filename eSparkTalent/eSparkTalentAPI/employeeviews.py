@@ -3039,3 +3039,59 @@ class Emp_Benefits(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class Letters(APIView):
+    @swagger_auto_schema(
+       tags=["Letters"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "objective": openapi.Schema(type=openapi.TYPE_STRING),
+                            "issue_date": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
+                            ),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response("No content"),
+            401: openapi.Response("UnAuthorize"),
+            404: openapi.Response("Not Found"),
+        },
+        operation_summary="Endpoint to retrieve letters.",
+        operation_id="0",
+    )
+    def get(self, request, *args, **kwargs):
+        employee_id = request.user
+        letters = letter.objects.filter(
+            employee_id=employee_id,
+        )
+
+        records = []
+
+        if letters:
+            for data in letters:
+                record = {
+                    "id": data.id,
+                    "objective": data.objective,
+                    "issue_date": data.issue_date,
+                }
+                records.append(record)
+            return Response(records, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)

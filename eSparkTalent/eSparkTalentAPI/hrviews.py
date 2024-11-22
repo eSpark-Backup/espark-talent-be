@@ -1533,6 +1533,7 @@ class Hr_Employees(APIView):
                 offshore_contracts,
                 end_user,
                 benefits,
+                letter,
             ]
             with transaction.atomic(using="default"):
                 for model_class in related_models:
@@ -2667,7 +2668,6 @@ class Start_Hiring(APIView):
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
         responses={
@@ -2787,7 +2787,6 @@ class Start_Hiring(APIView):
             )
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
 
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
@@ -6335,7 +6334,7 @@ class Emp_Benefits(APIView):
             openapi.Parameter(
                 "id",
                 openapi.IN_QUERY,
-                description="ID of the record to delete",
+                description="ID of the record to update",
                 type=openapi.TYPE_INTEGER,
                 required=True,
             ),
@@ -6376,6 +6375,7 @@ class Emp_Benefits(APIView):
             )
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     @swagger_auto_schema(
         tags=["Employee : Benefits"],
         manual_parameters=[
@@ -6421,4 +6421,287 @@ class Emp_Benefits(APIView):
         else:
             return Response(
                 {"error": "Id parameter required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Letters(APIView):    
+    parser_classes = (MultiPartParser,)
+
+    @swagger_auto_schema(
+       tags=["Employees : Letters"],
+        manual_parameters=[
+            openapi.Parameter(
+                "employee_id",
+                openapi.IN_QUERY,
+                description="email of the employee",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "objective": openapi.Schema(type=openapi.TYPE_STRING),
+                            "email": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
+                            "issue_date": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
+                            ),
+                            "reason": openapi.Schema(type=openapi.TYPE_STRING),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response("No content"),
+            401: openapi.Response("UnAuthorize"),
+            404: openapi.Response("Not Found"),
+        },
+        operation_summary="Endpoint to retrieve employee letters.",
+        operation_id="0",
+    )
+    def get(self, request, *args, **kwargs):
+        employee_id = request.query_params.get("employee_id")
+        letters = letter.objects.filter(
+            employee_id=employee_id,
+        )
+
+        records = []
+
+        if letters:
+            for data in letters:
+                record = {
+                    "id": data.id,
+                    "objective": data.objective,
+                    "email": data.employee_id,
+                    "issue_date": data.issue_date,
+                    "reason": data.reason,
+                }
+                records.append(record)
+            return Response(records, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        tags=["Employees : Letters"],
+        responses={
+            201: "Request created",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="objective",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="employee_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="letter",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="issue_date",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="reason",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Add a new letter",
+        operation_id="1",
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = LetterSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                employee_data = employee.objects.get(email=serializer.validated_data["employee_id"])
+            except employee.DoesNotExist:
+                return Response(
+                    {"error": "Employee does not exist"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            record = letter.objects.create(
+                objective=serializer.validated_data["objective"],
+                employee_id=serializer.validated_data["employee_id"],
+                letter=serializer.validated_data["letter"],
+                issue_date=serializer.validated_data["issue_date"],
+                reason=serializer.validated_data.get("reason", None),
+            )
+            objective = serializer.validated_data["objective"]
+            notifications.objects.create(
+                        email=employee_data.email,
+                        ref_id=record.id,
+                        notification_type="letter",
+                        status="added",
+                        description=f"{objective} is added for {employee_data.first_name} {employee_data.last_name}",
+                    )
+            return Response(
+                {"message": "One new letter has been added", "id": record.id},
+                status=status.HTTP_201_CREATED,
+            )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        tags=["Employees : Letters"],
+        responses={
+            200: openapi.Response("Successfull"),
+            400: openapi.Response("Bad request"),
+            401: openapi.Response("UnAuthorize"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required= True,
+            ),
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_INTEGER,
+                required= True,
+            ),
+            openapi.Parameter(
+                "reason",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "letter",
+                openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+            ),
+        ],
+        operation_summary="Endpoint to update letter record.",
+        operation_id="2",
+    )
+    def patch(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        updates = request.data
+        try:
+            record = letter.objects.get(id=record_id)
+            for key in updates:                
+                if key == "letter":
+                    removed = remove_bucket_file(record.letter.name)
+                    if removed:
+                        return Response(
+                            {"error": str(removed)},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    setattr(record, key, updates[key])
+                else: 
+                    setattr(record, key, updates[key])
+            try:
+                record.save()
+            except ValidationError as e:
+                return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response(
+                    {"error": str(e)},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            return Response(
+                {"message": "Letter record has been updated successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except letter.DoesNotExist:
+                return Response(
+                    {"error": "Letter record not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        tags=["Employees : Letters"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            400: openapi.Response(description="Bad Request"),
+            401: openapi.Response(description="Unauthorize"),
+            404: openapi.Response(description="Not Found"),
+        },
+        operation_summary="Endpoint to delete a letter.",
+        operation_id="3",
+    )
+    def delete(self, request, *args, **kwargs):
+        id = request.query_params.get("id")
+        if id:
+            try:
+                letter_record = letter.objects.get(id=id)
+                notifi = notifications.objects.get(ref_id=id)
+                removed = remove_bucket_file(letter_record.letter.name)
+                if removed:
+                    return Response(
+                        {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
+                    )
+                letter_record.delete()
+                notifi.delete()
+                return Response(
+                    {"message": "Asset has been deleted"}, status=status.HTTP_200_OK
+                )
+            except notifications.DoesNotExist:
+                return Response(
+                    {"error": "Notification record not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+            except letter.DoesNotExist:
+                return Response(
+                    {"error": "Letter record not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(
+                 {"error": "Id parameter required"}, status=status.HTTP_400_BAD_REQUEST
             )
