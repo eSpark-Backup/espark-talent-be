@@ -2252,9 +2252,6 @@ class Update_Emp_Info(APIView):
                     format=openapi.FORMAT_DATE,
                     example="2024-02-24",
                 ),
-                "email": openapi.Schema(
-                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
-                ),
                 "job_title": openapi.Schema(type=openapi.TYPE_STRING),
                 "marital_status": openapi.Schema(type=openapi.TYPE_STRING),
                 "gender": openapi.Schema(type=openapi.TYPE_STRING),
@@ -2286,6 +2283,8 @@ class Update_Emp_Info(APIView):
     def patch(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
         updates = request.data
+        if "email" in updates:
+            del updates["email"]
         if "employee_name" in updates:
             name = updates["employee_name"]
             first_space_index = name.find(" ")
@@ -3563,12 +3562,6 @@ class Hr_Client(APIView):
                 type=openapi.TYPE_STRING,
             ),
             openapi.Parameter(
-                name="email",
-                in_=openapi.IN_FORM,
-                type=openapi.TYPE_STRING,
-                format=openapi.FORMAT_EMAIL,
-            ),
-            openapi.Parameter(
                 name="phone_number",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_INTEGER,
@@ -3607,6 +3600,9 @@ class Hr_Client(APIView):
             client_record = client.objects.get(id=record_id)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        if "email" in updates:
+            del updates["email"]
 
         if updates.get("image"):
             removed = remove_bucket_file(client_record.image.name)
@@ -5840,6 +5836,7 @@ class Attendance_Report(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Employee_WFH_Request(APIView):
+
     @swagger_auto_schema(
         tags=["Request : WFH requests"],
         manual_parameters=[
@@ -5862,44 +5859,29 @@ class Employee_WFH_Request(APIView):
             200: openapi.Response(
                 description="Successful response",
                 schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        "requests": openapi.Schema(
-                            type=openapi.TYPE_ARRAY,
-                            items=openapi.Schema(
-                                type=openapi.TYPE_OBJECT,
-                                properties={
-                                    "id": openapi.Schema(type=openapi.TYPE_INTEGER),
-                                    "employee_id": openapi.Schema(
-                                        type=openapi.TYPE_STRING
-                                    ),
-                                    "employee_name": openapi.Schema(
-                                        type=openapi.TYPE_STRING
-                                    ),
-                                    "department": openapi.Schema(
-                                        type=openapi.TYPE_STRING
-                                    ),
-                                    "start_date": openapi.Schema(
-                                        type=openapi.TYPE_STRING,
-                                        format=openapi.FORMAT_DATE,
-                                        example="2024-02-29(Y:M:D)",
-                                    ),
-                                    "end_date": openapi.Schema(
-                                        type=openapi.TYPE_STRING,
-                                        format=openapi.FORMAT_DATE,
-                                        example="2024-02-29(Y:M:D)",
-                                    ),
-                                    "count":openapi.Schema(
-                                        type=openapi.TYPE_INTEGER
-                                    ),
-                                    "reason": openapi.Schema(
-                                        type=openapi.TYPE_STRING
-                                    ),
-                                    "status": openapi.Schema(type=openapi.TYPE_STRING),
-                                },
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
+                            "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "department": openapi.Schema(type=openapi.TYPE_STRING),
+                            "start_date": openapi.Schema(
+                                type=openapi.TYPE_STRING,
+                                format=openapi.FORMAT_DATE,
+                                example="2024-02-29(Y:M:D)",
                             ),
-                        ),
-                    },
+                            "end_date": openapi.Schema(
+                                type=openapi.TYPE_STRING,
+                                format=openapi.FORMAT_DATE,
+                                example="2024-02-29(Y:M:D)",
+                            ),
+                            "count": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "reason": openapi.Schema(type=openapi.TYPE_STRING),
+                            "status": openapi.Schema(type=openapi.TYPE_STRING),
+                        },
+                    ),
                 ),
             ),
             204: openapi.Response(description="No content"),
@@ -5912,9 +5894,9 @@ class Employee_WFH_Request(APIView):
     )
     def get(self, request, *args, **kwargs):
         e_email=request.query_params.get("e_email")
-        from_date_object = datetime.datetime.today().replace(day=1).date()
+        from_date_object = datetime.today().replace(day=1).date()
         last_day = calendar.monthrange(from_date_object.year, from_date_object.month)[1]
-        to_date_object = datetime.datetime.today().replace(day=last_day).date()
+        to_date_object = datetime.today().replace(day=last_day).date()
         requests = wfh_request.objects.filter(
                 Q(employee_id=e_email),
                 start_date__gte=from_date_object,
@@ -5984,7 +5966,7 @@ class Employee_WFH_Request(APIView):
             return Response(
                 {"error":e}, status=status.HTTP_400_BAD_REQUEST
             )
-            
+
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Leave_Request(APIView):
@@ -6087,7 +6069,7 @@ class Leave_Request(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
-        
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -6182,7 +6164,7 @@ class ClockInOut_Request(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
-        
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -6426,14 +6408,14 @@ class Emp_Benefits(APIView):
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
-class Letters(APIView):    
+class Letters(APIView):
     parser_classes = (MultiPartParser,)
 
     @swagger_auto_schema(
        tags=["Employees : Letters"],
         manual_parameters=[
             openapi.Parameter(
-                "employee_id",
+                "email",
                 openapi.IN_QUERY,
                 description="email of the employee",
                 type=openapi.TYPE_STRING,
@@ -6641,7 +6623,7 @@ class Letters(APIView):
                 status=status.HTTP_200_OK,
             )
         except letter.DoesNotExist:
-                return Response(
+            return Response(
                     {"error": "Letter record not found"}, status=status.HTTP_404_NOT_FOUND
                 )
 
@@ -6689,7 +6671,7 @@ class Letters(APIView):
                 letter_record.delete()
                 notifi.delete()
                 return Response(
-                    {"message": "Asset has been deleted"}, status=status.HTTP_200_OK
+                    {"message": "Letter record has been deleted"}, status=status.HTTP_200_OK
                 )
             except notifications.DoesNotExist:
                 return Response(
@@ -6698,6 +6680,374 @@ class Letters(APIView):
             except letter.DoesNotExist:
                 return Response(
                     {"error": "Letter record not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(
+                 {"error": "Id parameter required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Salary(APIView):
+    parser_classes = (MultiPartParser,)
+
+    @swagger_auto_schema(
+        tags=["Employees : Salary"],
+        manual_parameters=[
+            openapi.Parameter(
+                "month",
+                openapi.IN_QUERY,
+                description="month for filtering records (e.g. January)",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "year",
+                openapi.IN_QUERY,
+                description="year for filtering records",
+                type=openapi.TYPE_INTEGER,
+            ),
+            openapi.Parameter(
+                "employee_id",
+                openapi.IN_QUERY,
+                description="email of the employee",
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "job_status": openapi.Schema(type=openapi.TYPE_STRING),
+                            "gross_salary": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "tax_deduction": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "net_salary": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "date": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
+                            ),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response("No content"),
+            401: openapi.Response("UnAuthorize"),
+            404: openapi.Response("Not Found"),
+        },
+        operation_summary="Endpoint to retrieve employee salary.",
+        operation_id="0",
+    )
+    def get(self, request, *args, **kwargs):
+        employee_id = request.query_params.get("employee_id")
+        month = request.query_params.get("month")
+        year = request.query_params.get("year")
+        if month and year:
+            year = int(year)
+            try:
+                month_number = datetime.strptime(month, '%B').month
+            except Exception as e:
+                return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            
+            first_date = datetime(year, month_number, 1)
+            days_in_month = calendar.monthrange(year, month_number)[1]
+            last_date = datetime(year, month_number, days_in_month)
+            try:
+                from_date = datetime.today().replace(month=1, day=1).date()
+                today = datetime.today().date()
+                salary_records = salary.objects.filter(
+                    Q(employee_id=employee_id),
+                    date__gte=first_date,
+                    date__lte=last_date,
+                )
+                if salary_records:
+                    records=[]
+                    for rec in salary_records:
+                        records.append({
+                            "id":rec.id,
+                            "job_status":rec.job_status,
+                            "gross_salary":rec.gross_salary,
+                            "tax_deduction":rec.tax_deduction,
+                            "net_salary":rec.net_salary,
+                            "date":rec.date
+                        })
+                    return Response(records, status=status.HTTP_200_OK)
+                else:
+                    return Response(status=status.HTTP_204_NO_CONTENT)
+
+            except employee.DoesNotExist:
+                return Response({"error":"Employee does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            except Exception as e:
+                return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            try:
+                from_date = datetime.today().replace(month=1, day=1).date()
+                print(from_date)
+                today = datetime.today().date()
+                salary_records = salary.objects.filter(
+                    Q(employee_id=employee_id),
+                    date__gte=from_date,
+                    date__lte=today,
+                )
+                if salary_records:
+                    records=[]
+                    for rec in salary_records:
+                        records.append({
+                            "id":rec.id,
+                            "job_status":rec.job_status,
+                            "gross_salary":rec.gross_salary,
+                            "tax_deduction":rec.tax_deduction,
+                            "net_salary":rec.net_salary,
+                            "date":rec.date
+                        })
+                    return Response(records, status=status.HTTP_200_OK)
+                else:
+                    return Response(status=status.HTTP_204_NO_CONTENT)
+
+            except employee.DoesNotExist:
+                return Response({"error":"Employee does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            except Exception as e:
+                return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        tags=["Employees : Salary"],
+        responses={
+            201: "Request created",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="employee_id",
+                in_=openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="job_status",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="gross_salary",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="tax_deduction",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="net_salary",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="pay_slip",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="date",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                required=True,
+            ),
+        ],
+        operation_summary="Add a new salary record",
+        operation_id="1",
+    )
+    def post(self, request, *args, **kwargs):
+        employee_id = request.query_params.get("employee_id")
+        serializer = SalarySerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                emp_rec = employee.objects.get(email=employee_id)
+                record = salary.objects.create(
+                    employee_id=employee_id,
+                    job_status= serializer.validated_data["job_status"],
+                    gross_salary= serializer.validated_data["gross_salary"],
+                    tax_deduction= serializer.validated_data["tax_deduction"],
+                    net_salary= serializer.validated_data["net_salary"],
+                    pay_slip= serializer.validated_data["pay_slip"],
+                    date= serializer.validated_data["date"],
+                )
+                return Response({"message":"Salary record added successfully", "id": record.id}, status=status.HTTP_201_CREATED)
+            except employee.DoesNotExist:
+                return Response({"error": "Employee does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            except ValidationError as e:
+                return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        tags=["Employees : Salary"],
+        responses={
+            200: openapi.Response("Successfull"),
+            400: openapi.Response("Bad request"),
+            401: openapi.Response("UnAuthorize"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required= True,
+            ),
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_INTEGER,
+                required= True,
+            ),
+            openapi.Parameter(
+                "job_status",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "gross_salary",
+                openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+            ),
+            openapi.Parameter(
+                "tax_deduction",
+                openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+            ),
+            openapi.Parameter(
+                "net_salary",
+                openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+            ), 
+            openapi.Parameter(
+                "date",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+            ),
+            openapi.Parameter(
+                "pay_slip",
+                openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+            ),
+        ],
+        operation_summary="Endpoint to update salary record.",
+        operation_id="2",
+    )
+    def patch(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        updates = request.data
+        print(updates)
+        try:
+            record = salary.objects.get(id=record_id)
+            for key in updates:
+                if key == "pay_slip":
+                    removed = remove_bucket_file(record.pay_slip.name)
+                    if removed:
+                        return Response(
+                            {"error": str(removed)},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                setattr(record, key, updates[key])
+                print(record.date)
+
+            try:
+                record.save()
+            except ValidationError as e:
+                return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response(
+                    {"error": str(e)},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            return Response(
+                {"message": "Salary record has been updated successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except salary.DoesNotExist:
+            return Response(
+                    {"error": "Salary record not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        tags=["Employees : Salary"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            400: openapi.Response(description="Bad Request"),
+            401: openapi.Response(description="Unauthorize"),
+            404: openapi.Response(description="Not Found"),
+        },
+        operation_summary="Endpoint to delete a salary record.",
+        operation_id="3",
+    )
+    def delete(self, request, *args, **kwargs):
+        id = request.query_params.get("id")
+        if id:
+            try:
+                salary_record = salary.objects.get(id=id)
+                removed = remove_bucket_file(salary_record.pay_slip.name)
+                if removed:
+                    return Response(
+                        {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
+                    )
+                salary_record.delete()
+                return Response(
+                    {"message": "Salary record has been deleted"}, status=status.HTTP_200_OK
+                )
+            except letter.DoesNotExist:
+                return Response(
+                    {"error": "Salary record not found"}, status=status.HTTP_404_NOT_FOUND
                 )
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
