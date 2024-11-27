@@ -2284,7 +2284,7 @@ class Update_Emp_Info(APIView):
         record_id = request.query_params.get("id")
         updates = request.data
         if "email" in updates:
-            del updates["email"]
+            return Response({"error": "Email field cannnot be editted"}, status=status.HTTP_400_BAD_REQUEST)
         if "employee_name" in updates:
             name = updates["employee_name"]
             first_space_index = name.find(" ")
@@ -3602,7 +3602,7 @@ class Hr_Client(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         if "email" in updates:
-            del updates["email"]
+            return Response({"error": "Email field cannnot be editted"}, status=status.HTTP_400_BAD_REQUEST)
 
         if updates.get("image"):
             removed = remove_bucket_file(client_record.image.name)
@@ -6788,8 +6788,8 @@ class Salary(APIView):
                 else:
                     return Response(status=status.HTTP_204_NO_CONTENT)
 
-            except employee.DoesNotExist:
-                return Response({"error":"Employee does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            except salary.DoesNotExist:
+                return Response({"error":"Salary record does not exist"}, status=status.HTTP_404_NOT_FOUND)
             except Exception as e:
                 return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -6818,8 +6818,8 @@ class Salary(APIView):
                 else:
                     return Response(status=status.HTTP_204_NO_CONTENT)
 
-            except employee.DoesNotExist:
-                return Response({"error":"Employee does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            except salary.DoesNotExist:
+                return Response({"error":"Salary record does not exist"}, status=status.HTTP_404_NOT_FOUND)
             except Exception as e:
                 return Response({"error":str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -6860,7 +6860,7 @@ class Salary(APIView):
             openapi.Parameter(
                 name="tax_deduction",
                 in_=openapi.IN_FORM,
-                type=openapi.TYPE_INTEGER,
+                type=openapi.TYPE_NUMBER,
                 required=True,
             ),
             openapi.Parameter(
@@ -6891,7 +6891,6 @@ class Salary(APIView):
         serializer = SalarySerializer(data=request.data)
         if serializer.is_valid():
             try:
-                emp_rec = employee.objects.get(email=employee_id)
                 record = salary.objects.create(
                     employee_id=employee_id,
                     job_status= serializer.validated_data["job_status"],
@@ -6945,7 +6944,7 @@ class Salary(APIView):
             openapi.Parameter(
                 "tax_deduction",
                 openapi.IN_FORM,
-                type=openapi.TYPE_INTEGER,
+                type=openapi.TYPE_NUMBER,
             ),
             openapi.Parameter(
                 "net_salary",
@@ -7045,7 +7044,7 @@ class Salary(APIView):
                 return Response(
                     {"message": "Salary record has been deleted"}, status=status.HTTP_200_OK
                 )
-            except letter.DoesNotExist:
+            except salary.DoesNotExist:
                 return Response(
                     {"error": "Salary record not found"}, status=status.HTTP_404_NOT_FOUND
                 )

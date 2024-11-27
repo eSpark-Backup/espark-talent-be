@@ -923,7 +923,7 @@ class salary(models.Model):
     date = models.DateField()
     job_status = models.CharField(max_length=25)
     gross_salary = models.IntegerField()
-    tax_deduction = models.IntegerField()
+    tax_deduction = models.FloatField()
     net_salary = models.IntegerField()
     pay_slip = models.FileField(
         upload_to="employees/pay_slips/",
