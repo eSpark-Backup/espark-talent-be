@@ -6735,7 +6735,7 @@ class Salary(APIView):
                             "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "job_status": openapi.Schema(type=openapi.TYPE_STRING),
                             "gross_salary": openapi.Schema(type=openapi.TYPE_INTEGER),
-                            "tax_deduction": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "tax_deduction": openapi.Schema(type=openapi.TYPE_NUMBER),
                             "net_salary": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
@@ -6901,8 +6901,6 @@ class Salary(APIView):
                     date= serializer.validated_data["date"],
                 )
                 return Response({"message":"Salary record added successfully", "id": record.id}, status=status.HTTP_201_CREATED)
-            except employee.DoesNotExist:
-                return Response({"error": "Employee does not exist"}, status=status.HTTP_404_NOT_FOUND)
             except ValidationError as e:
                 return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
