@@ -915,3 +915,44 @@ class letter(models.Model):
             except ValidationError as e:
                 raise ValidationError(e)
         super().save(*args, **kwargs)
+
+
+class salary(models.Model):
+    id = models.AutoField(primary_key=True)
+    employee_id = models.EmailField()
+    date = models.DateField()
+    job_status = models.CharField(max_length=25)
+    gross_salary = models.IntegerField()
+    tax_deduction = models.FloatField()
+    net_salary = models.IntegerField()
+    pay_slip = models.FileField(
+        upload_to="employees/pay_slips/",
+        validators=[pdf_ext_valid, valid_pdffile_type],
+        default="",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    
+    def __str__(self):
+        return f"{self.employee_id} - {self.date}"
+
+    def save(self, *args, **kwargs):
+        try:
+            salary_rec = salary.objects.get(id=self.id)
+            if self.pay_slip != salary_rec.pay_slip:
+                
+                try:
+                    file_content = self.pay_slip.file.seek(0)
+                    valid_pdffile_type(self.pay_slip.file)
+                    self.pay_slip.name = upload_file(self.pay_slip.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
+        except salary.DoesNotExist:
+            try:
+                file_content = self.pay_slip.file.seek(0)
+                valid_pdffile_type(self.pay_slip.file)
+                self.pay_slip.name = upload_file(self.pay_slip.name)
+            except ValidationError as e:
+                raise ValidationError(e)
+        super().save(*args, **kwargs)

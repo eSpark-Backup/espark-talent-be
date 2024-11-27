@@ -48,4 +48,6 @@ urlpatterns=[
     path('hr_emp_benefit/',Emp_Benefits.as_view()),
     path('emp_letters/',Letters.as_view()),
     path('down_letter/',Download_Letter.as_view()),
+    path('emp_salary/',Salary.as_view()),
+    path('down_payslip/',Download_Payslip.as_view()),
 ]

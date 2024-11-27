@@ -152,3 +152,9 @@ class LetterSerializer(serializers.ModelSerializer):
     class Meta:
         model = letter
         fields = "__all__"
+
+class SalarySerializer(serializers.ModelSerializer):
+    reason = serializers.CharField(required=False, allow_null=True)
+    class Meta:
+        model = salary
+        exclude =["employee_id"]
