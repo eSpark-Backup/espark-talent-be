@@ -2724,6 +2724,7 @@ class WFH_Request(APIView):
                             "end_date": req.end_date,
                             "count": req.count,
                             "status": req.status,
+                            "reason": req.reason,
                         }
                         req_record.append(record)
                 else:
@@ -2747,6 +2748,7 @@ class WFH_Request(APIView):
                             "end_date": req.end_date,
                             "count": req.count,
                             "status": req.status,
+                            "reason": req.reason,
                         }
                         req_record.append(record)
                 else:
@@ -2807,6 +2809,7 @@ class WFH_Request(APIView):
                             "end_date": req.end_date,
                             "count": req.count,
                             "status": req.status,
+                            "reason": req.reason,
                         }
                         req_record.append(record)
                 else:
@@ -2829,6 +2832,7 @@ class WFH_Request(APIView):
                             "end_date": req.end_date,
                             "count": req.count,
                             "status": req.status,
+                            "reason": req.reason,
                         }
                         req_record.append(record)
                 else:
@@ -3032,7 +3036,7 @@ class Emp_Benefits(APIView):
                     "id": data.id,
                     "card_id": data.card_id,
                     "benefit": data.benefit,
-                    "issue_date": data.issued_date,
+                    "issue_date": data.issue_date,
                     "description": data.description,
                 }
                 records.append(record)
