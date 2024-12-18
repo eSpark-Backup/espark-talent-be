@@ -128,10 +128,15 @@ class WFHRequestSerializer(serializers.ModelSerializer):
 class WFHRequestSerializerHR(serializers.ModelSerializer):
     employee_name = serializers.SerializerMethodField()
     employee_id = serializers.SerializerMethodField()
+    department = serializers.SerializerMethodField()
 
     class Meta:
         model = wfh_request
-        fields = ["id", "employee_id", "employee_name", "start_date", "end_date", "count", "reason", "status"]
+        fields = ["id", "employee_id", "employee_name", "department", "start_date", "end_date", "count", "reason", "status"]
+
+    def get_department(self, obj):
+        emp = employee.objects.get(email=obj.employee_id)
+        return f"{emp.job_title}" if emp else None
 
     def get_employee_name(self, obj):
         emp = employee.objects.get(email=obj.employee_id)
