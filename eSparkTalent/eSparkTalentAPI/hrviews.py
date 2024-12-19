@@ -5703,13 +5703,13 @@ class Attendance_Report(APIView):
             for record in time_sheet_records:
                 if record.client_id in filtered_records.keys():
                     for key, value in record.record.items():
-                        date = datetime.datetime.strptime(key, "%d-%m-%Y")
+                        date = datetime.strptime(key, "%d-%m-%Y")
                         if from_date_object <= date <= to_date_object:
                             filtered_records[record.client_id][key] = value
                 else:
                     rec = {}
                     for key, value in record.record.items():
-                        date = datetime.datetime.strptime(key, "%d-%m-%Y")
+                        date = datetime.strptime(key, "%d-%m-%Y")
                         if from_date_object <= date <= to_date_object:
                             rec[key] = value
                     filtered_records[record.client_id] = rec
@@ -5765,8 +5765,8 @@ class Attendance_Report(APIView):
         elif e_email:
             ts_records = time_sheet.objects.filter(
                 employee_id=e_email,
-                year=datetime.datetime.now().year,
-                month=datetime.datetime.now().strftime("%B"),
+                year=datetime.now().year,
+                month=datetime.now().strftime("%B"),
             )
             if ts_records:
                 records = []
