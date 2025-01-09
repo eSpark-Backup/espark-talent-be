@@ -4457,9 +4457,9 @@ class Policies(APIView):
                 status=status.HTTP_200_OK,
             )
         except policy.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Policy record not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @authentication_classes([JWTAuthentication])
@@ -6394,9 +6394,13 @@ class Emp_Benefits(APIView):
                 return Response(
                     {"message": "Benefit has been deleted"}, status=status.HTTP_200_OK
                 )
-            except asset.DoesNotExist:
+            except benefits.DoesNotExist:
                 return Response(
                     {"error": "Benefit not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+            except notifications.DoesNotExist:
+                return Response(
+                    {"error": "Notifications record not found"}, status=status.HTTP_404_NOT_FOUND
                 )
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -6467,7 +6471,7 @@ class Letters(APIView):
                 record = {
                     "id": data.id,
                     "objective": data.objective,
-                    "email": data.employee_id,
+                    "email": data.email,
                     "issue_date": data.issue_date,
                     "reason": data.reason,
                 }
