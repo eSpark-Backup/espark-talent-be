@@ -3382,13 +3382,15 @@ class Client_contract(APIView):
         user = request.user
         clnt_contract = client_contract.objects.filter(client_id=user)
         records = []
+        clnt = client.objects.get(email=user)
 
         if clnt_contract:
             for data in clnt_contract:
                 record = {
                     "id": data.id,
                     "contract_name": data.contract_name,
-                    "client_id": data.client_id,
+                    "email": data.client_id,
+                    "client_id": clnt.client_id,
                     "date": data.date,
                 }
                 records.append(record)
@@ -3437,10 +3439,12 @@ class Employee_Contract(APIView):
         records = []
         if emp_contract:
             for data in emp_contract:
+                emp = employee.objects.get(email=data.employee_id)
                 record = {
                     "id": data.id,
                     "contract_name": data.contract_name,
-                    "employee_id": data.employee_id,
+                    "employee_email": data.employee_id,
+                    "employee_id": emp.employee_id,
                     "date": data.date,
                 }
                 records.append(record)

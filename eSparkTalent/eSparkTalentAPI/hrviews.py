@@ -4718,6 +4718,7 @@ class Company_Contract(APIView):
                         record = {
                             "id": contract.id,
                             "contract_name": contract.contract_name,
+                            "email": contract.client_id,
                             "client_id": clnt.client_id,
                             "date": contract.date,
                         }
@@ -4737,6 +4738,7 @@ class Company_Contract(APIView):
                         record = {
                             "id": contract.id,
                             "contract_name": contract.contract_name,
+                            "email": contract.employee_id,
                             "employee_id": emp.employee_id,
                             "date": contract.date,
                         }
@@ -4993,7 +4995,9 @@ class Offshore_Contract(APIView):
             record = {
                 "id": contract.id,
                 "contract_name": contract.contract_name,
+                "client_email": contract.client_id,
                 "client_id": clnt.client_id,
+                "employee_email": contract.employee_id,
                 "employee_id": emp.employee_id,
                 "date": contract.date,
             }
@@ -6800,7 +6804,6 @@ class Salary(APIView):
         else:
             try:
                 from_date = datetime.today().replace(month=1, day=1).date()
-                print(from_date)
                 today = datetime.today().date()
                 salary_records = salary.objects.filter(
                     Q(employee_id=employee_id),
@@ -6971,7 +6974,6 @@ class Salary(APIView):
     def patch(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
         updates = request.data
-        print(updates)
         try:
             record = salary.objects.get(id=record_id)
             for key in updates:
@@ -6983,7 +6985,6 @@ class Salary(APIView):
                             status=status.HTTP_400_BAD_REQUEST,
                         )
                 setattr(record, key, updates[key])
-                print(record.date)
 
             try:
                 record.save()

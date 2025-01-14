@@ -822,6 +822,7 @@ class Company_Contract(APIView):
             for contract in emp_contract:
                 record = {
                     "id": contract.id,
+                    "email": contract.employee_id,
                     "employee_id": employee.objects.get(email=request.user).employee_id,
                     "contract_name": contract.contract_name,
                     "date": contract.date,
@@ -888,7 +889,9 @@ class Offshore_Contract(APIView):
             for contract in offsh_contract:
                 record = {
                     "id": contract.id,
+                    "client_email": contract.client_id,
                     "client_id": client.objects.get(email=workspace).client_id,
+                    "employee_email": contract.employee_id,
                     "employee_id": employee.objects.get(email=request.user).employee_id,
                     "contract_name": contract.contract_name,
                     "date": contract.date,
