@@ -5274,16 +5274,22 @@ class ClientEmployees(APIView):
             try:
                 c_emp = outsource_employees.objects.get(id=id)
                 c_emp.status = new_status
-                emp = employee.objects.get(email=c_emp.employee_id)
+                emp = employee.objects.get(email=c_emp.employee_id)                
+                notif = notifications.objects.get(
+                    email=c_emp.client_id,
+                    ref_id=c_emp.id,
+                    notification_type="team_member",
+                )
                 if new_status == "terminated":
-                    notif = notifications.objects.get(
-                        email=c_emp.client_id,
-                        ref_id=c_emp.id,
-                        notification_type="team_member",
-                    )
                     notif.status = "removed"
                     notif.description = (
                         f"{emp.first_name} {emp.last_name} is removed from your team"
+                    )
+                    notif.save()
+                if new_status == "active":
+                    notif.status = "added"
+                    notif.description = (
+                        f"{emp.first_name} {emp.last_name} is added to your team"
                     )
                     notif.save()
                 c_emp.save()
