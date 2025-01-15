@@ -8,7 +8,6 @@ from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from .serializers import *
-import datetime
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.parsers import MultiPartParser
@@ -6393,7 +6392,7 @@ class Emp_Benefits(APIView):
         id = request.query_params.get("id")
         if id:
             try:
-                notifications.objects.get(ref_id=id).delete()
+                notifications.objects.get(ref_id=id, notification_type="benefit").delete()
                 benefits.objects.get(id=id).delete()
                 return Response(
                     {"message": "Benefit has been deleted"}, status=status.HTTP_200_OK
@@ -6670,7 +6669,7 @@ class Letters(APIView):
         if id:
             try:
                 letter_record = letter.objects.get(id=id)
-                notifi = notifications.objects.get(ref_id=id)
+                notifi = notifications.objects.get(ref_id=id, notification_type="letter")
                 removed = remove_bucket_file(letter_record.letter.name)
                 if removed:
                     return Response(

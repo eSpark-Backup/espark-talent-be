@@ -22,7 +22,6 @@ from eSparkTalent.settings import talent_email
 import calendar
 from datetime import datetime, timedelta
 from .bucket_functions import remove_bucket_file
-import datetime
 from django.utils import timezone
 from django.db.models import Q, IntegerField, Case, When, Value
 from string import capwords
@@ -924,7 +923,7 @@ class Leave_Request(APIView):
                         leave_balances_instance = leave_balance.objects.get(
                             employee_id=to_update_leave_request.employee_id
                         )
-                        now = datetime.datetime.now().date()
+                        now = datetime.now().date()
                         start_date = to_update_leave_request.start_date
                         end_date = to_update_leave_request.end_date
 
@@ -967,13 +966,13 @@ class Leave_Request(APIView):
                         if now >= start_date:
                             for timesheet in time_sheet_record:
                                 for key in timesheet.record:
-                                    if datetime.datetime.strptime(
+                                    if datetime.strptime(
                                         key, "%d-%m-%Y"
-                                    ) >= datetime.datetime.strptime(
+                                    ) >= datetime.strptime(
                                         start_date.strftime("%d-%m-%Y"), "%d-%m-%Y"
-                                    ) and datetime.datetime.strptime(
+                                    ) and datetime.strptime(
                                         key, "%d-%m-%Y"
-                                    ) <= datetime.datetime.strptime(
+                                    ) <= datetime.strptime(
                                         end_date.strftime("%d-%m-%Y"), "%d-%m-%Y"
                                     ):
                                         if (
@@ -1327,9 +1326,9 @@ class ClockInOut_Request(APIView):
                     )
                     check_in = emp_req.punch_timings["check_in"]
                     check_out = emp_req.punch_timings["check_out"]
-                    working_hours = datetime.datetime.strptime(
+                    working_hours = datetime.strptime(
                         check_out, "%I:%M %p"
-                    ) - datetime.datetime.strptime(check_in, "%I:%M %p")
+                    ) - datetime.strptime(check_in, "%I:%M %p")
                     
                     wfh_records = wfh_request.objects.filter(
                         Q(
@@ -1381,13 +1380,13 @@ class ClockInOut_Request(APIView):
                                         ]["check_out"]
                                         == "-"
                                     ):
-                                        if datetime.datetime.strptime(
+                                        if datetime.strptime(
                                             to_update_clockinout_request.date.strftime(
                                                 "%d-%m-%Y"
                                             ),
                                             "%d-%m-%Y",
-                                        ) < datetime.datetime.strptime(
-                                            datetime.datetime.now()
+                                        ) < datetime.strptime(
+                                            datetime.now()
                                             .date()
                                             .strftime("%d-%m-%Y"),
                                             "%d-%m-%Y",
@@ -1419,13 +1418,13 @@ class ClockInOut_Request(APIView):
                                                 status=status.HTTP_200_OK,
                                             )
 
-                                        elif datetime.datetime.strptime(
+                                        elif datetime.strptime(
                                             to_update_clockinout_request.date.strftime(
                                                 "%d-%m-%Y"
                                             ),
                                             "%d-%m-%Y",
-                                        ) == datetime.datetime.strptime(
-                                            datetime.datetime.now()
+                                        ) == datetime.strptime(
+                                            datetime.now()
                                             .date()
                                             .strftime("%d-%m-%Y"),
                                             "%d-%m-%Y",
@@ -1434,10 +1433,10 @@ class ClockInOut_Request(APIView):
                                                 email=to_update_clockinout_request.employee_id
                                             ).punch_timings["check_out"]
                                             if (
-                                                datetime.datetime.strptime(
+                                                datetime.strptime(
                                                     check_out_time, "%I:%M %p"
                                                 ).time()
-                                                > datetime.datetime.now().time()
+                                                > datetime.now().time()
                                             ):
                                                 timesheet_record.record[
                                                     to_update_clockinout_request.date.strftime(
@@ -1494,7 +1493,7 @@ class ClockInOut_Request(APIView):
                                                 )
 
                                     else:
-                                        check_out_time = datetime.datetime.strptime(
+                                        check_out_time = datetime.strptime(
                                             timesheet_record.record[
                                                 to_update_clockinout_request.date.strftime(
                                                     "%d-%m-%Y"
@@ -1502,7 +1501,7 @@ class ClockInOut_Request(APIView):
                                             ]["check_out"],
                                             "%I:%M:%S %p",
                                         )
-                                        check_in_time = datetime.datetime.strptime(
+                                        check_in_time = datetime.strptime(
                                             to_update_clockinout_request.punch_time,
                                             "%I:%M:%S %p",
                                         )
@@ -1568,7 +1567,7 @@ class ClockInOut_Request(APIView):
                                         ):
                                             overtime = (
                                                 hours_worked
-                                                - datetime.timedelta(
+                                                - timedelta(
                                                     hours=int(
                                                         working_hours.total_seconds()
                                                         // 3600
@@ -1674,23 +1673,23 @@ class ClockInOut_Request(APIView):
                                     )
 
                             except:
-                                if datetime.datetime.strptime(
+                                if datetime.strptime(
                                     to_update_clockinout_request.date.strftime(
                                         "%d-%m-%Y"
                                     ),
                                     "%d-%m-%Y",
-                                ) == datetime.datetime.strptime(
-                                    datetime.datetime.now().date().strftime("%d-%m-%Y"),
+                                ) == datetime.strptime(
+                                    datetime.now().date().strftime("%d-%m-%Y"),
                                     "%d-%m-%Y",
                                 ):
                                     check_out_time = employee.objects.get(
                                         email=to_update_clockinout_request.employee_id
                                     ).punch_timings["check_out"]
                                     if (
-                                        datetime.datetime.strptime(
+                                        datetime.strptime(
                                             check_out_time, "%I:%M %p"
                                         ).time()
-                                        > datetime.datetime.now().time()
+                                        > datetime.now().time()
                                     ):
                                         if len(wfh_records)>0:
                                             timesheet_record = time_sheet.objects.create(
@@ -1845,13 +1844,13 @@ class ClockInOut_Request(APIView):
                                             },
                                             status=status.HTTP_200_OK,
                                         )
-                                elif datetime.datetime.strptime(
+                                elif datetime.strptime(
                                     to_update_clockinout_request.date.strftime(
                                         "%d-%m-%Y"
                                     ),
                                     "%d-%m-%Y",
-                                ) < datetime.datetime.strptime(
-                                    datetime.datetime.now().date().strftime("%d-%m-%Y"),
+                                ) < datetime.strptime(
+                                    datetime.now().date().strftime("%d-%m-%Y"),
                                     "%d-%m-%Y",
                                 ):
                                     if len(wfh_records)>0:
@@ -1996,7 +1995,7 @@ class ClockInOut_Request(APIView):
                                         )
 
                                     else:
-                                        check_in_time = datetime.datetime.strptime(
+                                        check_in_time = datetime.strptime(
                                             timesheet_record.record[
                                                 to_update_clockinout_request.date.strftime(
                                                     "%d-%m-%Y"
@@ -2004,7 +2003,7 @@ class ClockInOut_Request(APIView):
                                             ]["check_in"],
                                             "%I:%M:%S %p",
                                         )
-                                        check_out_time = datetime.datetime.strptime(
+                                        check_out_time = datetime.strptime(
                                             to_update_clockinout_request.punch_time,
                                             "%I:%M:%S %p",
                                         )
@@ -2069,7 +2068,7 @@ class ClockInOut_Request(APIView):
                                         ):
                                             overtime = (
                                                 hours_worked
-                                                - datetime.timedelta(
+                                                - timedelta(
                                                     hours=int(
                                                         working_hours.total_seconds()
                                                         // 3600
@@ -2355,7 +2354,7 @@ class Download_Report(APIView):
         try:
             if get_tab == "lr":
                 records = leave_request.objects.filter(client_id=user)
-                current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+                current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
                 filename = f"leaveRequestReport_{current_datetime}.pdf"
                 table_headers = [
                     "Employee ID",
@@ -2398,7 +2397,7 @@ class Download_Report(APIView):
                 col_widths = [65, 90, 70, 90, 60, 35, 100, 60]
             elif get_tab == "cio":
                 records = punch_request.objects.filter(client_id=user)
-                current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+                current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
                 filename = f"ClockInOutReport{current_datetime}.pdf"
                 table_headers = [
                     "Employee ID",
@@ -2434,7 +2433,7 @@ class Download_Report(APIView):
                 col_widths = [100, 100, 80, 80, 80, 80]
             elif get_tab == "lb":
                 records = outsource_employees.objects.filter(client_id=user)
-                current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+                current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
                 filename = f"leaveBalanceReport{current_datetime}.pdf"
                 table_headers = [
                     "Employee Name",
@@ -2576,7 +2575,7 @@ class Download_Attendance_Report(APIView):
                 return Response(
                     {"error": "No record found"}, status=status.HTTP_204_NO_CONTENT
                 )
-            current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+            current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
             filename = f"AttendanceReport_{current_datetime}.pdf"
             table_headers = [
                 "Date",
@@ -2615,7 +2614,7 @@ class Download_Attendance_Report(APIView):
                 "Full Leave": "L",
             }
             for key in rec.record:
-                date_obj = datetime.datetime.strptime(key, "%d-%m-%Y")
+                date_obj = datetime.strptime(key, "%d-%m-%Y")
                 day = date_obj.strftime("%A")
                 status_symbols = ""
                 status_images_list = []
