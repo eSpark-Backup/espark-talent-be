@@ -3368,6 +3368,7 @@ class Client_contract(APIView):
                         "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "contract_name": openapi.Schema(type=openapi.TYPE_STRING),
                         "client_id": openapi.Schema(type=openapi.TYPE_STRING),
+                        "email": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
                         "date": openapi.Schema(
                             type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                         ),
@@ -3422,6 +3423,7 @@ class Employee_Contract(APIView):
                     properties={
                         "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "contract_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "employee_email": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
                         "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
                         "date": openapi.Schema(
                             type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE

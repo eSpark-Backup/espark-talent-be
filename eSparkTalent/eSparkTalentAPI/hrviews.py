@@ -708,42 +708,49 @@ class Employee_Invoice(APIView):
             employee_data = employee.objects.get(employee_id=emp_id)
             posted_data["employee_id"] = employee_data.email
             serializer = EmployeeInvoiceSerializer(data=posted_data)
-
-            if serializer.is_valid():
-                try:
-                    emp_inv = employee_invoice.objects.create(
-                        client_id=serializer.validated_data["client_id"],
-                        employee_id=serializer.validated_data["employee_id"],
-                        invoice_date=serializer.validated_data["invoice_date"],
-                        due_date=serializer.validated_data["due_date"],
-                        invoice_amount=serializer.validated_data["invoice_amount"],
-                        payment_status=serializer.validated_data["payment_status"],
-                        invoice=serializer.validated_data["invoice"],
-                    )
-                    notifications.objects.create(
-                        email=emp_inv.client_id,
-                        ref_id=emp_inv.id,
-                        notification_type="employee_invoice",
-                        status="added",
-                        description=f"Invoice is added for {employee_data.first_name} {employee_data.last_name}",
-                    )
-                    return Response(
-                        {
-                            "message": "One new invoice is added",
-                            "id": emp_inv.id,
-                        },
-                        status=status.HTTP_201_CREATED,
-                    )
-                except ValidationError as e:
-                    return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
-                except Exception as e:
-                    return Response(
-                        {"error": str(e)},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+            outsrc_emp = outsource_employees.objects.get(
+                employee_id=posted_data["employee_id"],
+                client_id=posted_data.get("client_id", None),
+            )
+            if outsrc_emp.status=="active":
+                if serializer.is_valid():
+                    try:
+                        emp_inv = employee_invoice.objects.create(
+                            client_id=serializer.validated_data["client_id"],
+                            employee_id=serializer.validated_data["employee_id"],
+                            invoice_date=serializer.validated_data["invoice_date"],
+                            due_date=serializer.validated_data["due_date"],
+                            invoice_amount=serializer.validated_data["invoice_amount"],
+                            payment_status=serializer.validated_data["payment_status"],
+                            invoice=serializer.validated_data["invoice"],
+                        )
+                        notifications.objects.create(
+                            email=emp_inv.client_id,
+                            ref_id=emp_inv.id,
+                            notification_type="employee_invoice",
+                            status="added",
+                            description=f"Invoice is added for {employee_data.first_name} {employee_data.last_name}",
+                        )
+                        return Response(
+                            {
+                                "message": "One new invoice is added",
+                                "id": emp_inv.id,
+                            },
+                            status=status.HTTP_201_CREATED,
+                        )
+                    except ValidationError as e:
+                        return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+                    except Exception as e:
+                        return Response(
+                            {"error": str(e)},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                else:
+                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             else:
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except ObjectDoesNotExist:
+                return Response({"error":"Cannot create invoice for terminated employee"}, status=status.HTTP_400_BAD_REQUEST)
+
+        except employee.DoesNotExist:
             return Response(
                 {"message": "Employee not found"}, status=status.HTTP_404_NOT_FOUND
             )
@@ -4690,6 +4697,9 @@ class Company_Contract(APIView):
                         properties={
                             "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "contract_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "email": openapi.Schema(
+                                type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
+                            ),
                             "client_id/employee_id": openapi.Schema(
                                 type=openapi.TYPE_STRING
                             ),
@@ -4971,7 +4981,9 @@ class Offshore_Contract(APIView):
                         properties={
                             "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "contract_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "client_email": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
                             "client_id": openapi.Schema(type=openapi.TYPE_STRING),
+                            "employee_email": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
                             "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
                             "date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
@@ -5322,6 +5334,7 @@ class ClientAddEmployee(APIView):
                     type=openapi.TYPE_OBJECT,
                     properties={
                         "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "employee_id": openapi.Schema(type=openapi.TYPE_INTEGER, format=openapi.FORMAT_EMAIL),
                         "name": openapi.Schema(type=openapi.TYPE_STRING),
                         "image": openapi.Schema(type=openapi.TYPE_STRING),
                         "gender": openapi.Schema(type=openapi.TYPE_STRING),
