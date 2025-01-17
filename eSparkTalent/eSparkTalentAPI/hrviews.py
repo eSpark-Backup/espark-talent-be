@@ -4912,47 +4912,56 @@ class Offshore_Contract(APIView):
             posted_data["employee_id"] = emp.email
             clnt = client.objects.get(client_id=posted_data["client_id"])
             posted_data["client_id"] = clnt.email
-            serializer = OffshoreContractSerializers(data=posted_data)
-            if serializer.is_valid():
-                off_cont = offshore_contracts.objects.create(
-                    employee_id=serializer.validated_data["employee_id"],
-                    client_id=serializer.validated_data["client_id"],
-                    contract_name=serializer.validated_data["contract_name"],
-                    date=serializer.validated_data["date"],
-                    contract_doc=serializer.validated_data["contract_doc"],
-                )
-                notifications.objects.create(
-                    email=off_cont.client_id,
-                    ref_id=off_cont.id,
-                    notification_type="offshore_contracts",
-                    status="added",
-                    description=f"{off_cont.contract_name} contract is added",
-                )
-                notifications.objects.create(
-                    email=off_cont.employee_id,
-                    ref_id=off_cont.id,
-                    notification_type="offshore_contracts",
-                    status="added",
-                    description=f"{off_cont.contract_name} contract is added",
-                )
-                return Response(
-                    {
-                        "message": "One new contract has been added to offshore contracts",
-                        "id": off_cont.id,
-                        "client_email": off_cont.client_id,
-                        "employee_email": off_cont.employee_id,
-                    },
-                    status=status.HTTP_201_CREATED,
-                )
+            outsrc = outsource_employees.objects.get(client_id=posted_data["client_id"],employee_id=posted_data["employee_id"])
+            if outsrc.status=="active":
+                serializer = OffshoreContractSerializers(data=posted_data)
+                if serializer.is_valid():
+                    off_cont = offshore_contracts.objects.create(
+                        employee_id=serializer.validated_data["employee_id"],
+                        client_id=serializer.validated_data["client_id"],
+                        contract_name=serializer.validated_data["contract_name"],
+                        date=serializer.validated_data["date"],
+                        contract_doc=serializer.validated_data["contract_doc"],
+                    )
+                    notifications.objects.create(
+                        email=off_cont.client_id,
+                        ref_id=off_cont.id,
+                        notification_type="offshore_contracts",
+                        status="added",
+                        description=f"{off_cont.contract_name} contract is added",
+                    )
+                    notifications.objects.create(
+                        email=off_cont.employee_id,
+                        ref_id=off_cont.id,
+                        notification_type="offshore_contracts",
+                        status="added",
+                        description=f"{off_cont.contract_name} contract is added",
+                    )
+                    return Response(
+                        {
+                            "message": "One new contract has been added to offshore contracts",
+                            "id": off_cont.id,
+                            "client_email": off_cont.client_id,
+                            "employee_email": off_cont.employee_id,
+                        },
+                        status=status.HTTP_201_CREATED,
+                    )
+                else:
+                    return Response(
+                        {"error": "Invalid status parameter"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
             else:
-                return Response(
-                    {"error": "Invalid status parameter"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+                return Response({"error":"Cannot create contract for terminated employee"}, status=status.HTTP_400_BAD_REQUEST)
         except ValidationError as e:
             return Response(
                 {"errors": e},
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ObjectDoesNotExist as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_404_NOT_FOUND,
             )
         except Exception as e:
             return Response(
