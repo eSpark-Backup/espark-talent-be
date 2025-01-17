@@ -289,7 +289,7 @@ class Employee_Home(APIView):
         }
         out_sourced_to = [
             w_space.client_id
-            for w_space in outsource_employees.objects.filter(employee_id=e_email)
+            for w_space in outsource_employees.objects.filter(employee_id=e_email, status="active")
         ]
         clients = client.objects.filter(email__in=out_sourced_to)
         company = company_data.objects.all()
@@ -791,6 +791,7 @@ class Company_Contract(APIView):
                     type=openapi.TYPE_OBJECT,
                     properties={
                         "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "email": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
                         "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
                         "contract_name": openapi.Schema(type=openapi.TYPE_STRING),
                         "date": openapi.Schema(
@@ -846,7 +847,9 @@ class Offshore_Contract(APIView):
                     type=openapi.TYPE_OBJECT,
                     properties={
                         "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "client_email": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
                         "client_id": openapi.Schema(type=openapi.TYPE_STRING),
+                        "employee_email": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
                         "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
                         "contract_name": openapi.Schema(type=openapi.TYPE_STRING),
                         "date": openapi.Schema(
