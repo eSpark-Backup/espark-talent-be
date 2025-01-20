@@ -1804,7 +1804,6 @@ class Hr_Employee(APIView):
                         "job_title": rec.job_title,
                         "employeement_term": rec.employment_term,
                         "join_date": client_data.join_date,
-                        "join_date": client_data.join_date,
                     }
                     active_clients.append(record)
                 for rec in terminated:
@@ -1816,6 +1815,7 @@ class Hr_Employee(APIView):
                         "client_id": client_data.client_id,
                         "job_title": rec.job_title,
                         "employeement_term": rec.employment_term,
+                        "join_date": client_data.join_date,
                     }
                     terminated_clients.append(record)
 
