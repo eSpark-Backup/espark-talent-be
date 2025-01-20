@@ -707,8 +707,8 @@ class Team_Member(APIView):
                     record = {
                         "employee_name": data.employee_name,
                         "country": data.country,
-                        "role_type": data.role_type,
                         "job_title": data.job_title,
+                        "employment_term": data.employment_term,
                         "joining_date": data.joining_date,
                     }
                     records.append(record)
