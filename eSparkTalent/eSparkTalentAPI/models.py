@@ -258,7 +258,7 @@ class hiring_request(models.Model):
         validators=[pdf_ext_valid, valid_pdffile_type],
         default="",
     )
-    comments = models.CharField(max_length=255, default="")
+    comments = models.CharField(max_length=255, default="", null=True,)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

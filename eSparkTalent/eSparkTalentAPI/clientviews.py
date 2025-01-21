@@ -272,7 +272,7 @@ class Start_Hiring(APIView):
                     hiring_start_date=serializer.validated_data["hiring_start_date"],
                     hiring_end_date=serializer.validated_data["hiring_end_date"],
                     job_description=serializer.validated_data["job_description"],
-                    comments=serializer.validated_data["comments"],
+                    comments=request.data.get("comments"),
                 )
 
                 notifications.objects.create(
