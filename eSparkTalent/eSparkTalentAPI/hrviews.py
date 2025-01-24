@@ -2364,6 +2364,14 @@ class Update_Emp_Profile_Pic(APIView):
         if removed:
             return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
 
+        if 'image' in updates:
+            image_file = updates['image']
+            try:
+                img_ext_valid(image_file)
+                valid_imgfile_type(image_file)
+            except ValidationError as e:
+                return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
+
         for key in updates:
             setattr(emp_record, key, updates[key])
         try:
@@ -3616,6 +3624,11 @@ class Hr_Client(APIView):
                 return Response(
                     {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
                 )
+            try:
+                img_ext_valid(updates["image"])
+                valid_imgfile_type(updates["image"])
+            except ValidationError as e:
+                return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
 
         for key in updates:
             setattr(client_record, key, updates[key])
@@ -3736,13 +3749,18 @@ class Company_Settings(APIView):
             try:
                 comp_data = comp_datas[0]
                 for key in updates:
-                    if updates.get("image"):
+                    if key == "image":
                         removed = remove_bucket_file(comp_data.image.name)
                         if removed:
                             return Response(
                                 {"error": str(removed)},
                                 status=status.HTTP_400_BAD_REQUEST,
                             )
+                        try:
+                            img_ext_valid(updates[key])
+                            valid_imgfile_type(updates[key])
+                        except ValidationError as e:
+                            return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
                     setattr(comp_data, key, updates[key])
                 try:
                     comp_data.save()

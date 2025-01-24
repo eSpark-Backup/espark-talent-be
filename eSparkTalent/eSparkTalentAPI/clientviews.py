@@ -2842,6 +2842,11 @@ class UploadPictureView(APIView):
                 return Response(
                     {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
                 )
+            try:
+                img_ext_valid(picture_file)
+                valid_imgfile_type(picture_file)
+            except ValidationError as e:
+                return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
             record.image = picture_file
             try:
                 record.save()
