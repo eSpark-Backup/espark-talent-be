@@ -1526,6 +1526,22 @@ class Leave_Request(APIView):
         serializer = LeaveRequestSerializer(data=request.data)
         if serializer.is_valid():
             try:
+                start_date = serializer.validated_data["start_date"]
+                end_date = serializer.validated_data["end_date"]
+                leave_present = leave_request.objects.filter(
+                Q(employee_id=e_email, client_id=serializer.validated_data["client_id"]),
+                Q(
+                    start_date__lte=end_date,
+                    end_date__gte=start_date
+                )
+                )
+                if leave_present:
+                    return Response(
+                            {
+                                "error": f"Leave request already present",
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
                 result = leave_request.objects.create(
                     employee_id=e_email,
                     client_id=serializer.validated_data["client_id"],

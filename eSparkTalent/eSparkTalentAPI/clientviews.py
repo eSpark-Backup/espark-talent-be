@@ -3764,6 +3764,12 @@ class Notifications(APIView):
                 email=talent_email,
                 updated_at__gte=one_week_ago,
             ).order_by("-updated_at")
+            wfh_req = notifications.objects.filter(
+                Q(status="added"),
+                notification_type="wfh_request",
+                email=talent_email,
+                updated_at__gte=one_week_ago,
+            ).order_by("-updated_at")
             if hire_req:
                 for hr_req in hire_req:
                     req = hiring_request.objects.get(id=hr_req.ref_id)
@@ -3827,6 +3833,19 @@ class Notifications(APIView):
                         "time": req.updated_at.strftime("%H:%M:%S"),
                         "client_email": client_data.email,
                         "client_record_id":client_data.id,
+                    }
+                    noti_array.append(record)
+            if wfh_req:
+                for inv in wfh_req:
+                    req = wfh_request.objects.get(id=inv.ref_id)
+                    employee_data = employee.objects.get(email=req.employee_id)
+                    record = {
+                        "type": "WFH Request",
+                        "description": f"WFH Request is created by {employee_data.first_name} {employee_data.last_name}",
+                        "date": req.updated_at.date(),
+                        "time": req.updated_at.strftime("%H:%M:%S"),
+                        "employee_email": employee_data.email,
+                        "employee_record_id":employee_data.id,
                     }
                     noti_array.append(record)
         if len(noti_array) > 0:
