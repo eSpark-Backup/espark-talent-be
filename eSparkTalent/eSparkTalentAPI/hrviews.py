@@ -448,7 +448,7 @@ class Add_Client(APIView):
                 name="image",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_FILE,
-                required=True,
+                # required=True,
             ),
             openapi.Parameter(
                 name="password",
@@ -468,8 +468,8 @@ class Add_Client(APIView):
     )
     def post(self, request, *args, **kwargs):
         posted_data = request.data
-        password = posted_data.pop("password", None)[0]
-        confirm_password = posted_data.pop("confirm_password", None)[0]
+        password = posted_data.get("password")
+        confirm_password = posted_data.get("confirm_password", None)
         if password == confirm_password:
             serializer = ClientSerializer(data=posted_data)
             if serializer.is_valid():
@@ -491,16 +491,25 @@ class Add_Client(APIView):
                         join_date=serializer.validated_data["join_date"],
                         country=serializer.validated_data["country"],
                         address=serializer.validated_data["address"],
-                        image=serializer.validated_data["image"],
+                        image=request.data.get("image"),
                     )
-                    return Response(
-                        {
-                            "message": f"{clnt.first_name} {clnt.last_name} is added successfully",
-                            "id": clnt.id,
-                            "image": clnt.image.url,
-                        },
-                        status=status.HTTP_201_CREATED,
-                    )
+                    if request.data.get("image"):
+                        return Response(
+                            {
+                                "message": f"{clnt.first_name} {clnt.last_name} is added successfully",
+                                "id": clnt.id,
+                                "image": clnt.image.url,
+                            },
+                            status=status.HTTP_201_CREATED,
+                        )
+                    else:
+                        return Response(
+                            {
+                                "message": f"{clnt.first_name} {clnt.last_name} is added successfully",
+                                "id": clnt.id,
+                            },
+                            status=status.HTTP_201_CREATED,
+                        )
                 except ValidationError as e:
                     return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
                 except IntegrityError as e:
@@ -740,6 +749,11 @@ class Employee_Invoice(APIView):
                         )
                     except ValidationError as e:
                         return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+                    except ObjectDoesNotExist as e:
+                        return Response(
+                            {"error": str(e)},
+                            status=status.HTTP_404_NOT_FOUND,
+                        )
                     except Exception as e:
                         return Response(
                             {"error": str(e)},
@@ -1043,6 +1057,11 @@ class Other_Payment(APIView):
                 )
             except ValidationError as e:
                 return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+            except ObjectDoesNotExist as e:
+                return Response(
+                    {"error": str(e)},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
             except Exception as e:
                 return Response(
                     {"error": str(e)},
@@ -2360,10 +2379,6 @@ class Update_Emp_Profile_Pic(APIView):
         except employee.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        removed = remove_bucket_file(emp_record.image.name)
-        if removed:
-            return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
-
         if 'image' in updates:
             image_file = updates['image']
             try:
@@ -2371,6 +2386,10 @@ class Update_Emp_Profile_Pic(APIView):
                 valid_imgfile_type(image_file)
             except ValidationError as e:
                 return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
+            
+            removed = remove_bucket_file(emp_record.image.name)
+            if removed:
+                return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
 
         for key in updates:
             setattr(emp_record, key, updates[key])
@@ -3619,16 +3638,16 @@ class Hr_Client(APIView):
             return Response({"error": "Email field cannnot be editted"}, status=status.HTTP_400_BAD_REQUEST)
 
         if updates.get("image"):
-            removed = remove_bucket_file(client_record.image.name)
-            if removed:
-                return Response(
-                    {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
-                )
             try:
                 img_ext_valid(updates["image"])
                 valid_imgfile_type(updates["image"])
             except ValidationError as e:
                 return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
+            removed = remove_bucket_file(client_record.image.name)
+            if removed:
+                return Response(
+                    {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
+                )
 
         for key in updates:
             setattr(client_record, key, updates[key])
@@ -3750,17 +3769,17 @@ class Company_Settings(APIView):
                 comp_data = comp_datas[0]
                 for key in updates:
                     if key == "image":
+                        try:
+                            img_ext_valid(updates[key])
+                            valid_imgfile_type(updates[key])
+                        except ValidationError as e:
+                            return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
                         removed = remove_bucket_file(comp_data.image.name)
                         if removed:
                             return Response(
                                 {"error": str(removed)},
                                 status=status.HTTP_400_BAD_REQUEST,
                             )
-                        try:
-                            img_ext_valid(updates[key])
-                            valid_imgfile_type(updates[key])
-                        except ValidationError as e:
-                            return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
                     setattr(comp_data, key, updates[key])
                 try:
                     comp_data.save()
