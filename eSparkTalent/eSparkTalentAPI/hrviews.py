@@ -3650,11 +3650,6 @@ class Hr_Client(APIView):
                 )
 
         for key in updates:
-            if key=="company_name":
-                clnt = client.objects.get(id=record_id)
-                user_record = end_user.objects.get(email=clnt.email)
-                user_record.username = updates[key]
-                user_record.save()
             setattr(client_record, key, updates[key])
         try:
             client_record.save()
