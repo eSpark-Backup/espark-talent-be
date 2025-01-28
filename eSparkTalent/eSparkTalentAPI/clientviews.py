@@ -707,6 +707,7 @@ class Team_Member(APIView):
                     record = {
                         "employee_name": data.employee_name,
                         "country": data.country,
+                        "role_type": data.role_type,
                         "job_title": data.job_title,
                         "employment_term": data.employment_term,
                         "joining_date": data.joining_date,
@@ -2837,16 +2838,17 @@ class UploadPictureView(APIView):
         picture_file = request.FILES.get("picture")
         if picture_file:
             record = client.objects.get(email=user)
-            removed = remove_bucket_file(record.image.name)
-            if removed:
-                return Response(
-                    {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
-                )
             try:
                 img_ext_valid(picture_file)
                 valid_imgfile_type(picture_file)
             except ValidationError as e:
                 return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
+            
+            removed = remove_bucket_file(record.image.name)
+            if removed:
+                return Response(
+                    {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
+                )
             record.image = picture_file
             try:
                 record.save()

@@ -740,6 +740,11 @@ class Employee_Invoice(APIView):
                         )
                     except ValidationError as e:
                         return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+                    except ObjectDoesNotExist as e:
+                        return Response(
+                            {"error": str(e)},
+                            status=status.HTTP_404_NOT_FOUND,
+                        )
                     except Exception as e:
                         return Response(
                             {"error": str(e)},
@@ -1043,6 +1048,11 @@ class Other_Payment(APIView):
                 )
             except ValidationError as e:
                 return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+            except ObjectDoesNotExist as e:
+                        return Response(
+                            {"error": str(e)},
+                            status=status.HTTP_404_NOT_FOUND,
+                        )
             except Exception as e:
                 return Response(
                     {"error": str(e)},
@@ -2360,9 +2370,6 @@ class Update_Emp_Profile_Pic(APIView):
         except employee.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        removed = remove_bucket_file(emp_record.image.name)
-        if removed:
-            return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
 
         if 'image' in updates:
             image_file = updates['image']
@@ -2371,7 +2378,11 @@ class Update_Emp_Profile_Pic(APIView):
                 valid_imgfile_type(image_file)
             except ValidationError as e:
                 return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
-
+            
+            removed = remove_bucket_file(emp_record.image.name)
+            if removed:
+                return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+            
         for key in updates:
             setattr(emp_record, key, updates[key])
         try:
@@ -3619,18 +3630,24 @@ class Hr_Client(APIView):
             return Response({"error": "Email field cannnot be editted"}, status=status.HTTP_400_BAD_REQUEST)
 
         if updates.get("image"):
-            removed = remove_bucket_file(client_record.image.name)
-            if removed:
-                return Response(
-                    {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
-                )
             try:
                 img_ext_valid(updates["image"])
                 valid_imgfile_type(updates["image"])
             except ValidationError as e:
                 return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
-
+            
+            removed = remove_bucket_file(client_record.image.name)
+            if removed:
+                return Response(
+                    {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
+                )
+            
         for key in updates:
+            if key=="company_name":
+                clnt = client.objects.get(id=record_id)
+                user_record = end_user.objects.get(email=clnt.email)
+                user_record.username = updates[key]
+                user_record.save()
             setattr(client_record, key, updates[key])
         try:
             client_record.save()
@@ -3750,17 +3767,18 @@ class Company_Settings(APIView):
                 comp_data = comp_datas[0]
                 for key in updates:
                     if key == "image":
+                        try:
+                            img_ext_valid(updates[key])
+                            valid_imgfile_type(updates[key])
+                        except ValidationError as e:
+                            return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
+                        
                         removed = remove_bucket_file(comp_data.image.name)
                         if removed:
                             return Response(
                                 {"error": str(removed)},
                                 status=status.HTTP_400_BAD_REQUEST,
                             )
-                        try:
-                            img_ext_valid(updates[key])
-                            valid_imgfile_type(updates[key])
-                        except ValidationError as e:
-                            return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
                     setattr(comp_data, key, updates[key])
                 try:
                     comp_data.save()
