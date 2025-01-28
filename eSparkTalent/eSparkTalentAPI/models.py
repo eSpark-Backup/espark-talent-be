@@ -209,7 +209,7 @@ class client(models.Model):
     image = models.ImageField(
         upload_to="clients/profiles/",
         validators=[img_ext_valid, valid_imgfile_type],
-        null=True,
+        default="",
     )
     address = models.CharField(max_length=100, default="")
     join_date = models.DateField(null=True)
@@ -230,13 +230,12 @@ class client(models.Model):
                 except ValidationError as e:
                     raise ValidationError(e)
         except client.DoesNotExist:
-            if self.image:
-                try:
-                    file_content = self.image.file.seek(0)
-                    valid_imgfile_type(self.image.file)
-                    self.image.name = upload_file(self.image.name)
-                except ValidationError as e:
-                    raise ValidationError(e)
+            try:
+                file_content = self.image.file.seek(0)
+                valid_imgfile_type(self.image.file)
+                self.image.name = upload_file(self.image.name)
+            except ValidationError as e:
+                raise ValidationError(e)
 
         super().save(*args, **kwargs)
 

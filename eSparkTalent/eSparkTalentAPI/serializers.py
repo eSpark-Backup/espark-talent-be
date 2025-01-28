@@ -43,7 +43,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
 class ClientSerializer(serializers.ModelSerializer):
     class Meta:
         model = client
-        exclude = ["image"]
+        fields = "__all__"
 
 
 class TimeSheetSerializer(serializers.ModelSerializer):
