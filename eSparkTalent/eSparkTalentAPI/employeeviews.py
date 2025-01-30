@@ -2956,7 +2956,7 @@ class WFH_Request(APIView):
                     status=status.HTTP_201_CREATED,
                 )
             except Exception as e:
-                return Response({"error":e},status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error":str(e)},status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -3067,6 +3067,8 @@ class Emp_Benefits(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 class Letters(APIView):
     @swagger_auto_schema(
        tags=["Letters"],
