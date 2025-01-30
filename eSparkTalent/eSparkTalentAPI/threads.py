@@ -12,7 +12,7 @@ class Check_Punches(BaseCommand):
             now = datetime.now()
             is_weekend = now.weekday() in [5, 6]
 
-            employees = outsource_employees.objects.all()
+            employees = outsource_employees.objects.filter(status="active")
             for emp in employees:
                 p_time = employee.objects.get(email=emp.employee_id).punch_timings
                 if p_time:
