@@ -13,7 +13,6 @@ class Command(BaseCommand):
         User = get_user_model()
 
         superusers = [
-            {'username': 'database admin', 'email': os.getenv('DATABASE_ADMIN_EMAIL'), 'password': os.getenv('DATABASE_ADMIN_AUTH')},
             {'username': 'super_admin', 'email': os.getenv('SUPER_ADMIN_EMAIL'), 'password': os.getenv('SUPER_ADMIN_AUTH')}
         ]
 

@@ -11,6 +11,7 @@ class userSerializer(serializers.ModelSerializer):
 
 
 class hiring_requestSerializer(serializers.ModelSerializer):
+    comments = serializers.CharField(required=False, allow_null=True)
     class Meta:
         model = hiring_request
         exclude = ['client_id']
@@ -18,6 +19,7 @@ class hiring_requestSerializer(serializers.ModelSerializer):
         depth = 1
 
 class start_requestSerializer(serializers.ModelSerializer):
+    comments = serializers.CharField(required=False, allow_null=True)
     class Meta:
         model = hiring_request
         # exclude = ['client_id']
@@ -31,6 +33,8 @@ class interview_requestSerializer(serializers.ModelSerializer):
         depth = 1
 
 class EmployeeSerializer(serializers.ModelSerializer):
+    starting_date = serializers.DateField(required=False, allow_null=True)
+    ending_date = serializers.DateField(required=False, allow_null=True)
     class Meta:
         model = employee
         fields = "__all__"
@@ -74,7 +78,7 @@ class OtherPaymentSerializer(serializers.ModelSerializer):
 class onboardingSerializer(serializers.ModelSerializer):
     class Meta:
         model = onboarding
-        exclude = ["benefits"]
+        fields = "__all__"        
 
 class AccountPermissionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -115,3 +119,47 @@ class OffshoreContractSerializers(serializers.ModelSerializer):
     class Meta:
         model = offshore_contracts
         fields = "__all__"
+        
+class WFHRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = wfh_request
+        exclude = ["employee_id","status"]
+
+class WFHRequestSerializerHR(serializers.ModelSerializer):
+    employee_name = serializers.SerializerMethodField()
+    employee_id = serializers.SerializerMethodField()
+    department = serializers.SerializerMethodField()
+
+    class Meta:
+        model = wfh_request
+        fields = ["id", "employee_id", "employee_name", "department", "start_date", "end_date", "count", "reason", "status"]
+
+    def get_department(self, obj):
+        emp = employee.objects.get(email=obj.employee_id)
+        return f"{emp.job_title}" if emp else None
+
+    def get_employee_name(self, obj):
+        emp = employee.objects.get(email=obj.employee_id)
+        return f"{emp.first_name} {emp.last_name}" if emp else None
+
+    def get_employee_id(self, obj):
+        emp = employee.objects.get(email=obj.employee_id)
+        return emp.employee_id if emp else None
+    
+class BenefitsSerializer(serializers.ModelSerializer):
+    description = serializers.CharField(required=False, allow_null=True)
+    class Meta:
+        model = benefits
+        fields = "__all__"
+
+class LetterSerializer(serializers.ModelSerializer):
+    reason = serializers.CharField(required=False, allow_null=True)
+    class Meta:
+        model = letter
+        fields = "__all__"
+
+class SalarySerializer(serializers.ModelSerializer):
+    reason = serializers.CharField(required=False, allow_null=True)
+    class Meta:
+        model = salary
+        exclude =["employee_id"]

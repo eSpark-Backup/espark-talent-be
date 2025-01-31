@@ -22,7 +22,6 @@ from eSparkTalent.settings import talent_email
 import calendar
 from datetime import datetime, timedelta
 from .bucket_functions import remove_bucket_file
-import datetime
 from django.utils import timezone
 from django.db.models import Q, IntegerField, Case, When, Value
 from string import capwords
@@ -161,41 +160,10 @@ class Client_Home(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Start_Hiring(APIView):
+    parser_classes = (MultiPartParser,)
+
     @swagger_auto_schema(
         tags=["Hire & Onboard : Start Hiring"],
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "job_title": openapi.Schema(type=openapi.TYPE_STRING),
-                "role_type": openapi.Schema(type=openapi.TYPE_STRING),
-                "gender": openapi.Schema(type=openapi.TYPE_STRING),
-                "employment_term": openapi.Schema(type=openapi.TYPE_STRING),
-                "salary_range": openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        "minimum": openapi.Schema(type=openapi.TYPE_INTEGER),
-                        "maximum": openapi.Schema(type=openapi.TYPE_INTEGER),
-                    },
-                ),
-                "country": openapi.Schema(type=openapi.TYPE_STRING),
-                "hiring_start_date": openapi.Schema(
-                    type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
-                ),
-                "hiring_end_date": openapi.Schema(
-                    type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
-                ),
-            },
-            required=[
-                "job_title",
-                "role_type",
-                "gender",
-                "employment_term",
-                "salary_range",
-                "country",
-                "hiring_start_date",
-                "hiring_end_date",
-            ],
-        ),
         responses={
             201: openapi.Response("Successful created"),
             400: openapi.Response("Bad request"),
@@ -206,6 +174,81 @@ class Start_Hiring(APIView):
                 "Authorization",
                 openapi.IN_HEADER,
                 description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required= True,
+            ),
+            openapi.Parameter(
+                "client_id",
+                openapi.IN_HEADER,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+                required= True,
+            ),
+            openapi.Parameter(
+                "job_title",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required= True,
+            ),
+            openapi.Parameter(
+                "role_type",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required= True,
+            ),
+            openapi.Parameter(
+                "gender",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required= True,
+            ),
+            openapi.Parameter(
+                "employment_term",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required= True,
+            ),
+            openapi.Parameter(
+                "salary_range",
+                openapi.IN_FORM,
+                type=openapi.TYPE_OBJECT,
+                required= True,
+            ),
+            openapi.Parameter(
+                "salary_currency",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required= True,
+            ),
+            openapi.Parameter(
+                "country",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required= True,
+            ),
+            openapi.Parameter(
+                "hiring_start_date",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                required= True,
+            ),
+            openapi.Parameter(
+                "hiring_end_date",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                required= True,
+            ),
+            openapi.Parameter(
+                "job_description",
+                openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required= True,
+            ),
+            openapi.Parameter(
+                "comments",
+                openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
             ),
         ],
@@ -224,9 +267,12 @@ class Start_Hiring(APIView):
                     gender=serializer.validated_data["gender"],
                     employment_term=serializer.validated_data["employment_term"],
                     salary_range=serializer.validated_data["salary_range"],
+                    salary_currency=serializer.validated_data["salary_currency"],
                     country=serializer.validated_data["country"],
                     hiring_start_date=serializer.validated_data["hiring_start_date"],
                     hiring_end_date=serializer.validated_data["hiring_end_date"],
+                    job_description=serializer.validated_data["job_description"],
+                    comments=request.data.get("comments"),
                 )
 
                 notifications.objects.create(
@@ -281,23 +327,15 @@ class Hiring_Resquest(APIView):
                                     ),
                                 },
                             ),
+                            "salary_currency": openapi.Schema(type=openapi.TYPE_STRING),
                             "hiring_start_date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
                             "hiring_end_date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
+                            "comments": openapi.Schema(type=openapi.TYPE_STRING),
                         },
-                        required=[
-                            "job_title",
-                            "role_type",
-                            "gender",
-                            "employment_term",
-                            "salary_range",
-                            "country",
-                            "hiring_start_date",
-                            "hiring_end_date",
-                        ],
                     ),
                 ),
             ),
@@ -329,8 +367,10 @@ class Hiring_Resquest(APIView):
                     "gender": data.gender,
                     "employment_term": data.employment_term,
                     "salary_range": data.salary_range,
+                    "salary_currency": data.salary_currency,
                     "hiring_start_date": data.hiring_start_date,
                     "hiring_end_date": data.hiring_end_date,
+                    "comments": data.comments,
                 }
                 records.append(record)
 
@@ -368,10 +408,16 @@ class Hiring_Resquest(APIView):
         user = request.user
         delete_id = request.query_params.get("id")
         try:
-            hiring_request.objects.get(id=delete_id).delete()
+            hr_req=hiring_request.objects.get(id=delete_id)
+            removed = remove_bucket_file(hr_req.job_description.name)
+            if removed:
+                return Response(
+                    {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
+                )
             notifications.objects.get(
                 ref_id=delete_id, notification_type="hiring_request"
             ).delete()
+            hr_req.delete()
             return Response(
                 {"message": "Hiring request is successfully deleted"},
                 status=status.HTTP_200_OK,
@@ -620,7 +666,6 @@ class Team_Member(APIView):
                             "joining_date": openapi.Schema(
                                 type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                             ),
-                            "benefits": openapi.Schema(type=openapi.TYPE_OBJECT),
                         },
                     ),
                 ),
@@ -650,7 +695,6 @@ class Team_Member(APIView):
                         "job_title": data.job_title,
                         "employment_term": data.employment_term,
                         "joining_date": data.joining_date,
-                        "benefits": data.benefits,
                     }
                     records.append(record)
                 return Response(records, status=status.HTTP_200_OK)
@@ -665,8 +709,8 @@ class Team_Member(APIView):
                         "country": data.country,
                         "role_type": data.role_type,
                         "job_title": data.job_title,
+                        "employment_term": data.employment_term,
                         "joining_date": data.joining_date,
-                        "benefits": data.benefits,
                     }
                     records.append(record)
                 return Response(records, status=status.HTTP_200_OK)
@@ -683,7 +727,6 @@ class Team_Member(APIView):
                         "job_title": data.job_title,
                         "employment_term": data.employment_term,
                         "joining_date": data.joining_date,
-                        "benefits": data.benefits,
                     }
                     records.append(record)
                 for data in outsource:
@@ -696,7 +739,6 @@ class Team_Member(APIView):
                         "job_title": data.job_title,
                         "employment_term": data.employment_term,
                         "joining_date": data.joining_date,
-                        "benefits": data.benefits,
                     }
                     records.append(record)
                 return Response(records, status=status.HTTP_200_OK)
@@ -882,7 +924,7 @@ class Leave_Request(APIView):
                         leave_balances_instance = leave_balance.objects.get(
                             employee_id=to_update_leave_request.employee_id
                         )
-                        now = datetime.datetime.now().date()
+                        now = datetime.now().date()
                         start_date = to_update_leave_request.start_date
                         end_date = to_update_leave_request.end_date
 
@@ -925,13 +967,13 @@ class Leave_Request(APIView):
                         if now >= start_date:
                             for timesheet in time_sheet_record:
                                 for key in timesheet.record:
-                                    if datetime.datetime.strptime(
+                                    if datetime.strptime(
                                         key, "%d-%m-%Y"
-                                    ) >= datetime.datetime.strptime(
+                                    ) >= datetime.strptime(
                                         start_date.strftime("%d-%m-%Y"), "%d-%m-%Y"
-                                    ) and datetime.datetime.strptime(
+                                    ) and datetime.strptime(
                                         key, "%d-%m-%Y"
-                                    ) <= datetime.datetime.strptime(
+                                    ) <= datetime.strptime(
                                         end_date.strftime("%d-%m-%Y"), "%d-%m-%Y"
                                     ):
                                         if (
@@ -950,6 +992,7 @@ class Leave_Request(APIView):
                                                     "Day Off": False,
                                                     "Full Leave": True,
                                                     "Short Duration": False,
+                                                    "WFH": False,
                                                 },
                                             }
                                 timesheet.save()
@@ -1284,9 +1327,17 @@ class ClockInOut_Request(APIView):
                     )
                     check_in = emp_req.punch_timings["check_in"]
                     check_out = emp_req.punch_timings["check_out"]
-                    working_hours = datetime.datetime.strptime(
+                    working_hours = datetime.strptime(
                         check_out, "%I:%M %p"
-                    ) - datetime.datetime.strptime(check_in, "%I:%M %p")
+                    ) - datetime.strptime(check_in, "%I:%M %p")
+                    
+                    wfh_records = wfh_request.objects.filter(
+                        Q(
+                            employee_id=emp_req.email,
+                            status="completed",
+                        ),
+                        Q(start_date__lte=to_update_clockinout_request.date) & Q(end_date__gte=to_update_clockinout_request.date),
+                    )
                     try:
                         record_punch_type = to_update_clockinout_request.punch_type
                         if record_punch_type == "check_in":
@@ -1330,13 +1381,13 @@ class ClockInOut_Request(APIView):
                                         ]["check_out"]
                                         == "-"
                                     ):
-                                        if datetime.datetime.strptime(
+                                        if datetime.strptime(
                                             to_update_clockinout_request.date.strftime(
                                                 "%d-%m-%Y"
                                             ),
                                             "%d-%m-%Y",
-                                        ) < datetime.datetime.strptime(
-                                            datetime.datetime.now()
+                                        ) < datetime.strptime(
+                                            datetime.now()
                                             .date()
                                             .strftime("%d-%m-%Y"),
                                             "%d-%m-%Y",
@@ -1368,13 +1419,13 @@ class ClockInOut_Request(APIView):
                                                 status=status.HTTP_200_OK,
                                             )
 
-                                        elif datetime.datetime.strptime(
+                                        elif datetime.strptime(
                                             to_update_clockinout_request.date.strftime(
                                                 "%d-%m-%Y"
                                             ),
                                             "%d-%m-%Y",
-                                        ) == datetime.datetime.strptime(
-                                            datetime.datetime.now()
+                                        ) == datetime.strptime(
+                                            datetime.now()
                                             .date()
                                             .strftime("%d-%m-%Y"),
                                             "%d-%m-%Y",
@@ -1383,10 +1434,10 @@ class ClockInOut_Request(APIView):
                                                 email=to_update_clockinout_request.employee_id
                                             ).punch_timings["check_out"]
                                             if (
-                                                datetime.datetime.strptime(
+                                                datetime.strptime(
                                                     check_out_time, "%I:%M %p"
                                                 ).time()
-                                                > datetime.datetime.now().time()
+                                                > datetime.now().time()
                                             ):
                                                 timesheet_record.record[
                                                     to_update_clockinout_request.date.strftime(
@@ -1443,7 +1494,7 @@ class ClockInOut_Request(APIView):
                                                 )
 
                                     else:
-                                        check_out_time = datetime.datetime.strptime(
+                                        check_out_time = datetime.strptime(
                                             timesheet_record.record[
                                                 to_update_clockinout_request.date.strftime(
                                                     "%d-%m-%Y"
@@ -1451,7 +1502,7 @@ class ClockInOut_Request(APIView):
                                             ]["check_out"],
                                             "%I:%M:%S %p",
                                         )
-                                        check_in_time = datetime.datetime.strptime(
+                                        check_in_time = datetime.strptime(
                                             to_update_clockinout_request.punch_time,
                                             "%I:%M:%S %p",
                                         )
@@ -1517,7 +1568,7 @@ class ClockInOut_Request(APIView):
                                         ):
                                             overtime = (
                                                 hours_worked
-                                                - datetime.timedelta(
+                                                - timedelta(
                                                     hours=int(
                                                         working_hours.total_seconds()
                                                         // 3600
@@ -1597,6 +1648,7 @@ class ClockInOut_Request(APIView):
                                             "Day Off": False,
                                             "Full Leave": False,
                                             "Short Duration": False,
+                                            "WFH": False,
                                         },
                                     }
                                     timesheet_record.save()
@@ -1622,50 +1674,80 @@ class ClockInOut_Request(APIView):
                                     )
 
                             except:
-                                if datetime.datetime.strptime(
+                                if datetime.strptime(
                                     to_update_clockinout_request.date.strftime(
                                         "%d-%m-%Y"
                                     ),
                                     "%d-%m-%Y",
-                                ) == datetime.datetime.strptime(
-                                    datetime.datetime.now().date().strftime("%d-%m-%Y"),
+                                ) == datetime.strptime(
+                                    datetime.now().date().strftime("%d-%m-%Y"),
                                     "%d-%m-%Y",
                                 ):
                                     check_out_time = employee.objects.get(
                                         email=to_update_clockinout_request.employee_id
                                     ).punch_timings["check_out"]
                                     if (
-                                        datetime.datetime.strptime(
+                                        datetime.strptime(
                                             check_out_time, "%I:%M %p"
                                         ).time()
-                                        > datetime.datetime.now().time()
+                                        > datetime.now().time()
                                     ):
-                                        timesheet_record = time_sheet.objects.create(
-                                            employee_id=to_update_clockinout_request.employee_id,
-                                            client_id=user,
-                                            month=calendar.month_name[
-                                                to_update_clockinout_request.date.month
-                                            ],
-                                            year=to_update_clockinout_request.date.year,
-                                            record={
-                                                to_update_clockinout_request.date.strftime(
-                                                    "%d-%m-%Y"
-                                                ): {
-                                                    "check_in": to_update_clockinout_request.punch_time,
-                                                    "check_out": "-",
-                                                    "hours_worked": "-",
-                                                    "overtime": "-",
-                                                    "status": {
-                                                        "Present": True,
-                                                        "Missing": False,
-                                                        "Absent": False,
-                                                        "Day Off": False,
-                                                        "Full Leave": False,
-                                                        "Short Duration": False,
+                                        if len(wfh_records)>0:
+                                            timesheet_record = time_sheet.objects.create(
+                                                employee_id=to_update_clockinout_request.employee_id,
+                                                client_id=user,
+                                                month=calendar.month_name[
+                                                    to_update_clockinout_request.date.month
+                                                ],
+                                                year=to_update_clockinout_request.date.year,
+                                                record={
+                                                    to_update_clockinout_request.date.strftime(
+                                                        "%d-%m-%Y"
+                                                    ): {
+                                                        "check_in": to_update_clockinout_request.punch_time,
+                                                        "check_out": "-",
+                                                        "hours_worked": "-",
+                                                        "overtime": "-",
+                                                        "status": {
+                                                            "Present": True,
+                                                            "Missing": False,
+                                                            "Absent": False,
+                                                            "Day Off": False,
+                                                            "Full Leave": False,
+                                                            "Short Duration": False,
+                                                            "WFH":True,
+                                                        },
                                                     },
                                                 },
-                                            },
-                                        )
+                                            )
+                                        else:
+                                            timesheet_record = time_sheet.objects.create(
+                                                employee_id=to_update_clockinout_request.employee_id,
+                                                client_id=user,
+                                                month=calendar.month_name[
+                                                    to_update_clockinout_request.date.month
+                                                ],
+                                                year=to_update_clockinout_request.date.year,
+                                                record={
+                                                    to_update_clockinout_request.date.strftime(
+                                                        "%d-%m-%Y"
+                                                    ): {
+                                                        "check_in": to_update_clockinout_request.punch_time,
+                                                        "check_out": "-",
+                                                        "hours_worked": "-",
+                                                        "overtime": "-",
+                                                        "status": {
+                                                            "Present": True,
+                                                            "Missing": False,
+                                                            "Absent": False,
+                                                            "Day Off": False,
+                                                            "Full Leave": False,
+                                                            "Short Duration": False,
+                                                            "WFH":False,
+                                                        },
+                                                    },
+                                                },
+                                            )
                                         to_update_clockinout_request.status = (
                                             to_update_status
                                         )
@@ -1687,6 +1769,92 @@ class ClockInOut_Request(APIView):
                                             status=status.HTTP_200_OK,
                                         )
                                     else:
+                                        if len(wfh_records)>0:
+                                            timesheet_record = time_sheet.objects.create(
+                                                employee_id=to_update_clockinout_request.employee_id,
+                                                client_id=user,
+                                                month=calendar.month_name[
+                                                    to_update_clockinout_request.date.month
+                                                ],
+                                                year=to_update_clockinout_request.date.year,
+                                                record={
+                                                    to_update_clockinout_request.date.strftime(
+                                                        "%d-%m-%Y"
+                                                    ): {
+                                                        "check_in": to_update_clockinout_request.punch_time,
+                                                        "check_out": "-",
+                                                        "hours_worked": "-",
+                                                        "overtime": "-",
+                                                        "status": {
+                                                            "Present": True,
+                                                            "Missing": True,
+                                                            "Absent": False,
+                                                            "Day Off": False,
+                                                            "Full Leave": False,
+                                                            "Short Duration": False,
+                                                            "WFH":True,
+                                                        },
+                                                    },
+                                                },
+                                            )
+                                        else:
+                                            timesheet_record = time_sheet.objects.create(
+                                                employee_id=to_update_clockinout_request.employee_id,
+                                                client_id=user,
+                                                month=calendar.month_name[
+                                                    to_update_clockinout_request.date.month
+                                                ],
+                                                year=to_update_clockinout_request.date.year,
+                                                record={
+                                                    to_update_clockinout_request.date.strftime(
+                                                        "%d-%m-%Y"
+                                                    ): {
+                                                        "check_in": to_update_clockinout_request.punch_time,
+                                                        "check_out": "-",
+                                                        "hours_worked": "-",
+                                                        "overtime": "-",
+                                                        "status": {
+                                                            "Present": True,
+                                                            "Missing": True,
+                                                            "Absent": False,
+                                                            "Day Off": False,
+                                                            "Full Leave": False,
+                                                            "Short Duration": False,
+                                                            "WFH":False,
+                                                        },
+                                                    },
+                                                },
+                                            )
+                                        to_update_clockinout_request.status = (
+                                            to_update_status
+                                        )
+                                        to_update_clockinout_request.save()
+                                        notifi = notifications.objects.get(
+                                            ref_id=request_id,
+                                            notification_type="punch_request",
+                                        )
+                                        notifi.email = (
+                                            to_update_clockinout_request.employee_id
+                                        )
+                                        notifi.status = to_update_status
+                                        notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
+                                        notifi.save()
+                                        return Response(
+                                            {
+                                                "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
+                                            },
+                                            status=status.HTTP_200_OK,
+                                        )
+                                elif datetime.strptime(
+                                    to_update_clockinout_request.date.strftime(
+                                        "%d-%m-%Y"
+                                    ),
+                                    "%d-%m-%Y",
+                                ) < datetime.strptime(
+                                    datetime.now().date().strftime("%d-%m-%Y"),
+                                    "%d-%m-%Y",
+                                ):
+                                    if len(wfh_records)>0:
                                         timesheet_record = time_sheet.objects.create(
                                             employee_id=to_update_clockinout_request.employee_id,
                                             client_id=user,
@@ -1709,65 +1877,39 @@ class ClockInOut_Request(APIView):
                                                         "Day Off": False,
                                                         "Full Leave": False,
                                                         "Short Duration": False,
+                                                        "WGH":True,
                                                     },
                                                 },
                                             },
                                         )
-                                        to_update_clockinout_request.status = (
-                                            to_update_status
-                                        )
-                                        to_update_clockinout_request.save()
-                                        notifi = notifications.objects.get(
-                                            ref_id=request_id,
-                                            notification_type="punch_request",
-                                        )
-                                        notifi.email = (
-                                            to_update_clockinout_request.employee_id
-                                        )
-                                        notifi.status = to_update_status
-                                        notifi.description = f"{to_update_clockinout_request.punch_type} punch request has been {to_update_status}"
-                                        notifi.save()
-                                        return Response(
-                                            {
-                                                "message": f"{emp_req.first_name} {emp_req.last_name} {to_update_clockinout_request.punch_type} request is {to_update_status}"
-                                            },
-                                            status=status.HTTP_200_OK,
-                                        )
-                                elif datetime.datetime.strptime(
-                                    to_update_clockinout_request.date.strftime(
-                                        "%d-%m-%Y"
-                                    ),
-                                    "%d-%m-%Y",
-                                ) < datetime.datetime.strptime(
-                                    datetime.datetime.now().date().strftime("%d-%m-%Y"),
-                                    "%d-%m-%Y",
-                                ):
-                                    timesheet_record = time_sheet.objects.create(
-                                        employee_id=to_update_clockinout_request.employee_id,
-                                        client_id=user,
-                                        month=calendar.month_name[
-                                            to_update_clockinout_request.date.month
-                                        ],
-                                        year=to_update_clockinout_request.date.year,
-                                        record={
-                                            to_update_clockinout_request.date.strftime(
-                                                "%d-%m-%Y"
-                                            ): {
-                                                "check_in": to_update_clockinout_request.punch_time,
-                                                "check_out": "-",
-                                                "hours_worked": "-",
-                                                "overtime": "-",
-                                                "status": {
-                                                    "Present": True,
-                                                    "Missing": True,
-                                                    "Absent": False,
-                                                    "Day Off": False,
-                                                    "Full Leave": False,
-                                                    "Short Duration": False,
+                                    else:    
+                                        timesheet_record = time_sheet.objects.create(
+                                            employee_id=to_update_clockinout_request.employee_id,
+                                            client_id=user,
+                                            month=calendar.month_name[
+                                                to_update_clockinout_request.date.month
+                                            ],
+                                            year=to_update_clockinout_request.date.year,
+                                            record={
+                                                to_update_clockinout_request.date.strftime(
+                                                    "%d-%m-%Y"
+                                                ): {
+                                                    "check_in": to_update_clockinout_request.punch_time,
+                                                    "check_out": "-",
+                                                    "hours_worked": "-",
+                                                    "overtime": "-",
+                                                    "status": {
+                                                        "Present": True,
+                                                        "Missing": True,
+                                                        "Absent": False,
+                                                        "Day Off": False,
+                                                        "Full Leave": False,
+                                                        "Short Duration": False,
+                                                        "WFH":False,
+                                                    },
                                                 },
                                             },
-                                        },
-                                    )
+                                        )
                                 to_update_clockinout_request.status = to_update_status
                                 to_update_clockinout_request.save()
                                 notifi = notifications.objects.get(
@@ -1854,7 +1996,7 @@ class ClockInOut_Request(APIView):
                                         )
 
                                     else:
-                                        check_in_time = datetime.datetime.strptime(
+                                        check_in_time = datetime.strptime(
                                             timesheet_record.record[
                                                 to_update_clockinout_request.date.strftime(
                                                     "%d-%m-%Y"
@@ -1862,7 +2004,7 @@ class ClockInOut_Request(APIView):
                                             ]["check_in"],
                                             "%I:%M:%S %p",
                                         )
-                                        check_out_time = datetime.datetime.strptime(
+                                        check_out_time = datetime.strptime(
                                             to_update_clockinout_request.punch_time,
                                             "%I:%M:%S %p",
                                         )
@@ -1927,7 +2069,7 @@ class ClockInOut_Request(APIView):
                                         ):
                                             overtime = (
                                                 hours_worked
-                                                - datetime.timedelta(
+                                                - timedelta(
                                                     hours=int(
                                                         working_hours.total_seconds()
                                                         // 3600
@@ -1991,24 +2133,46 @@ class ClockInOut_Request(APIView):
                                             )
 
                                 else:
-                                    timesheet_record.record[
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        )
-                                    ] = {
-                                        "check_in": "-",
-                                        "check_out": to_update_clockinout_request.punch_time,
-                                        "hours_worked": "-",
-                                        "overtime": "-",
-                                        "status": {
-                                            "Present": True,
-                                            "Missing": True,
-                                            "Absent": False,
-                                            "Day Off": False,
-                                            "Full Leave": False,
-                                            "Short Duration": False,
-                                        },
-                                    }
+                                    if len(wfh_records)>0:
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ] = {
+                                            "check_in": "-",
+                                            "check_out": to_update_clockinout_request.punch_time,
+                                            "hours_worked": "-",
+                                            "overtime": "-",
+                                            "status": {
+                                                "Present": True,
+                                                "Missing": True,
+                                                "Absent": False,
+                                                "Day Off": False,
+                                                "Full Leave": False,
+                                                "Short Duration": False,
+                                                "WFH":True,
+                                            },
+                                        }
+                                    else:                                        
+                                        timesheet_record.record[
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            )
+                                        ] = {
+                                            "check_in": "-",
+                                            "check_out": to_update_clockinout_request.punch_time,
+                                            "hours_worked": "-",
+                                            "overtime": "-",
+                                            "status": {
+                                                "Present": True,
+                                                "Missing": True,
+                                                "Absent": False,
+                                                "Day Off": False,
+                                                "Full Leave": False,
+                                                "Short Duration": False,
+                                                "WFH":False,
+                                            },
+                                        }
                                     timesheet_record.save()
                                     to_update_clockinout_request.status = (
                                         to_update_status
@@ -2031,32 +2195,62 @@ class ClockInOut_Request(APIView):
                                         status=status.HTTP_200_OK,
                                     )
                             except:
-                                timesheet_record = time_sheet.objects.create(
-                                    employee_id=to_update_clockinout_request.employee_id,
-                                    client_id=user,
-                                    month=calendar.month_name[
-                                        to_update_clockinout_request.date.month
-                                    ],
-                                    year=to_update_clockinout_request.date.year,
-                                    record={
-                                        to_update_clockinout_request.date.strftime(
-                                            "%d-%m-%Y"
-                                        ): {
-                                            "check_in": "-",
-                                            "check_out": to_update_clockinout_request.punch_time,
-                                            "hours_worked": "-",
-                                            "overtime": "-",
-                                            "status": {
-                                                "Present": True,
-                                                "Missing": True,
-                                                "Absent": False,
-                                                "Day Off": False,
-                                                "Full Leave": False,
-                                                "Short Duration": False,
+                                if len(wfh_records)>0:
+                                    timesheet_record = time_sheet.objects.create(
+                                        employee_id=to_update_clockinout_request.employee_id,
+                                        client_id=user,
+                                        month=calendar.month_name[
+                                            to_update_clockinout_request.date.month
+                                        ],
+                                        year=to_update_clockinout_request.date.year,
+                                        record={
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            ): {
+                                                "check_in": "-",
+                                                "check_out": to_update_clockinout_request.punch_time,
+                                                "hours_worked": "-",
+                                                "overtime": "-",
+                                                "status": {
+                                                    "Present": True,
+                                                    "Missing": True,
+                                                    "Absent": False,
+                                                    "Day Off": False,
+                                                    "Full Leave": False,
+                                                    "Short Duration": False,
+                                                    "WFH":True,
+                                                },
                                             },
                                         },
-                                    },
-                                )
+                                    )
+                                else:
+                                    timesheet_record = time_sheet.objects.create(
+                                        employee_id=to_update_clockinout_request.employee_id,
+                                        client_id=user,
+                                        month=calendar.month_name[
+                                            to_update_clockinout_request.date.month
+                                        ],
+                                        year=to_update_clockinout_request.date.year,
+                                        record={
+                                            to_update_clockinout_request.date.strftime(
+                                                "%d-%m-%Y"
+                                            ): {
+                                                "check_in": "-",
+                                                "check_out": to_update_clockinout_request.punch_time,
+                                                "hours_worked": "-",
+                                                "overtime": "-",
+                                                "status": {
+                                                    "Present": True,
+                                                    "Missing": True,
+                                                    "Absent": False,
+                                                    "Day Off": False,
+                                                    "Full Leave": False,
+                                                    "Short Duration": False,
+                                                    "WFH":False
+                                                },
+                                            },
+                                        },
+                                    )
                                 to_update_clockinout_request.status = to_update_status
                                 to_update_clockinout_request.save()
                                 notifi = notifications.objects.get(
@@ -2161,7 +2355,7 @@ class Download_Report(APIView):
         try:
             if get_tab == "lr":
                 records = leave_request.objects.filter(client_id=user)
-                current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+                current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
                 filename = f"leaveRequestReport_{current_datetime}.pdf"
                 table_headers = [
                     "Employee ID",
@@ -2204,7 +2398,7 @@ class Download_Report(APIView):
                 col_widths = [65, 90, 70, 90, 60, 35, 100, 60]
             elif get_tab == "cio":
                 records = punch_request.objects.filter(client_id=user)
-                current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+                current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
                 filename = f"ClockInOutReport{current_datetime}.pdf"
                 table_headers = [
                     "Employee ID",
@@ -2240,7 +2434,7 @@ class Download_Report(APIView):
                 col_widths = [100, 100, 80, 80, 80, 80]
             elif get_tab == "lb":
                 records = outsource_employees.objects.filter(client_id=user)
-                current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+                current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
                 filename = f"leaveBalanceReport{current_datetime}.pdf"
                 table_headers = [
                     "Employee Name",
@@ -2382,7 +2576,7 @@ class Download_Attendance_Report(APIView):
                 return Response(
                     {"error": "No record found"}, status=status.HTTP_204_NO_CONTENT
                 )
-            current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+            current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
             filename = f"AttendanceReport_{current_datetime}.pdf"
             table_headers = [
                 "Date",
@@ -2421,7 +2615,7 @@ class Download_Attendance_Report(APIView):
                 "Full Leave": "L",
             }
             for key in rec.record:
-                date_obj = datetime.datetime.strptime(key, "%d-%m-%Y")
+                date_obj = datetime.strptime(key, "%d-%m-%Y")
                 day = date_obj.strftime("%A")
                 status_symbols = ""
                 status_images_list = []
@@ -2644,6 +2838,12 @@ class UploadPictureView(APIView):
         picture_file = request.FILES.get("picture")
         if picture_file:
             record = client.objects.get(email=user)
+            try:
+                img_ext_valid(picture_file)
+                valid_imgfile_type(picture_file)
+            except ValidationError as e:
+                return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
+            
             removed = remove_bucket_file(record.image.name)
             if removed:
                 return Response(
@@ -3175,6 +3375,7 @@ class Client_contract(APIView):
                         "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "contract_name": openapi.Schema(type=openapi.TYPE_STRING),
                         "client_id": openapi.Schema(type=openapi.TYPE_STRING),
+                        "email": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
                         "date": openapi.Schema(
                             type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                         ),
@@ -3188,13 +3389,15 @@ class Client_contract(APIView):
         user = request.user
         clnt_contract = client_contract.objects.filter(client_id=user)
         records = []
+        clnt = client.objects.get(email=user)
 
         if clnt_contract:
             for data in clnt_contract:
                 record = {
                     "id": data.id,
                     "contract_name": data.contract_name,
-                    "client_id": data.client_id,
+                    "email": data.client_id,
+                    "client_id": clnt.client_id,
                     "date": data.date,
                 }
                 records.append(record)
@@ -3227,6 +3430,7 @@ class Employee_Contract(APIView):
                     properties={
                         "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "contract_name": openapi.Schema(type=openapi.TYPE_STRING),
+                        "employee_email": openapi.Schema(type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL),
                         "employee_id": openapi.Schema(type=openapi.TYPE_STRING),
                         "date": openapi.Schema(
                             type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
@@ -3243,10 +3447,12 @@ class Employee_Contract(APIView):
         records = []
         if emp_contract:
             for data in emp_contract:
+                emp = employee.objects.get(email=data.employee_id)
                 record = {
                     "id": data.id,
                     "contract_name": data.contract_name,
-                    "employee_id": data.employee_id,
+                    "employee_email": data.employee_id,
+                    "employee_id": emp.employee_id,
                     "date": data.date,
                 }
                 records.append(record)
@@ -3560,6 +3766,12 @@ class Notifications(APIView):
                 email=talent_email,
                 updated_at__gte=one_week_ago,
             ).order_by("-updated_at")
+            wfh_req = notifications.objects.filter(
+                Q(status="added"),
+                notification_type="wfh_request",
+                email=talent_email,
+                updated_at__gte=one_week_ago,
+            ).order_by("-updated_at")
             if hire_req:
                 for hr_req in hire_req:
                     req = hiring_request.objects.get(id=hr_req.ref_id)
@@ -3623,6 +3835,19 @@ class Notifications(APIView):
                         "time": req.updated_at.strftime("%H:%M:%S"),
                         "client_email": client_data.email,
                         "client_record_id":client_data.id,
+                    }
+                    noti_array.append(record)
+            if wfh_req:
+                for inv in wfh_req:
+                    req = wfh_request.objects.get(id=inv.ref_id)
+                    employee_data = employee.objects.get(email=req.employee_id)
+                    record = {
+                        "type": "WFH Request",
+                        "description": f"WFH Request is created by {employee_data.first_name} {employee_data.last_name}",
+                        "date": req.updated_at.date(),
+                        "time": req.updated_at.strftime("%H:%M:%S"),
+                        "employee_email": employee_data.email,
+                        "employee_record_id":employee_data.id,
                     }
                     noti_array.append(record)
         if len(noti_array) > 0:

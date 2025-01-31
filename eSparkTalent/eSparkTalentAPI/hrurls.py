@@ -41,4 +41,13 @@ urlpatterns=[
     path('down_oth_inv/', Download_Other_Invoice.as_view()),
     path('down_policy/', Download_Policy.as_view()),
     path('down_comp_cont/', Download_Company_Contract.as_view()),
+    path('down_jd/',Download_Job_Description.as_view()),
+    path('hr_wfhr/',Employee_WFH_Request.as_view()),
+    path('hr_emp_lr/',Leave_Request.as_view()),
+    path('hr_emp_pr/',ClockInOut_Request.as_view()),
+    path('hr_emp_benefit/',Emp_Benefits.as_view()),
+    path('emp_letters/',Letters.as_view()),
+    path('down_letter/',Download_Letter.as_view()),
+    path('emp_salary/',Salary.as_view()),
+    path('down_payslip/',Download_Payslip.as_view()),
 ]
