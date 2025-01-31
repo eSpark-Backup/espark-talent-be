@@ -17,15 +17,3 @@ resource "aws_ecr_lifecycle_policy" "name" {
   repository = aws_ecr_repository.repository.name
   policy     = templatefile(var.lifecycle_policy, {})
 }
-
-resource "aws_ecr_registry_scanning_configuration" "scan_configuration" {
-  scan_type = "ENHANCED"
-
-  rule {
-    scan_frequency = "CONTINUOUS_SCAN"
-    repository_filter {
-      filter      = "*"
-      filter_type = "WILDCARD"
-    }
-  }
-}

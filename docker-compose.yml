@@ -1,5 +1,5 @@
 services:
-  talent_dashboard_api:
+  api:
     container_name: talent_dashboard_api
     image: "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
     environment:
@@ -21,13 +21,24 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: bash -c "python eSparkTalent/manage.py makemigrations && python eSparkTalent/manage.py migrate && python eSparkTalent/manage.py create_super_user && python eSparkTalent/manage.py runserver 0.0.0.0:${DOCKER_APPLICATION_PORT}"
+    command: >
+        bash -c "python eSparkTalent/manage.py makemigrations 
+        && python eSparkTalent/manage.py migrate 
+        && python eSparkTalent/manage.py create_super_user 
+        && python eSparkTalent/manage.py runserver 0.0.0.0:${DOCKER_APPLICATION_PORT}"
     ports:
       - ${DOCKER_EXPOSED_PORT}:${DOCKER_APPLICATION_PORT}
 
     depends_on:
       talent_db:
         condition: service_healthy
+
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 7000:7000
 
   talent_db:
     container_name: talent_db
@@ -39,7 +50,6 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_TCP_PORT=${MYSQL_PORT}
     volumes:
       - talent_database:/var/lib/mysql
     healthcheck:

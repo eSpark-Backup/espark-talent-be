@@ -1,4 +1,4 @@
-name: Talent Dashboard Backend CICD
+name: Talent Dashboard Backend Live CICD
 
 on:
   push:
@@ -68,7 +68,7 @@ jobs:
           -backend-config='bucket=${{ env.backend_s3_bucket }}' \
           -backend-config='key=docker-ecr/terraform-${{ env.ECR_REPO_NAME }}.tfstate' \
           -backend-config='dynamodb_table=${{ env.backend_dynamodb_table }}' \
-          -backend-config='role_arn=arn:aws:iam::${{ env.aws_account_id }}:role/${{ env.backend_iam_role }}'
+          -backend-config="assume_role={role_arn=\"arn:aws:iam::${{ env.aws_account_id }}:role/${{ env.backend_iam_role }}\"}"
       working-directory: ${{ github.action_path }}
 
     - name: Create ECR repo [TerraForm apply]
@@ -102,15 +102,12 @@ jobs:
         echo "MEDIA_URL=${{ secrets.MEDIA_URL }}" >> .env
         echo "TALENT_EMAIL=${{ secrets.TALENT_EMAIL }}" >> .env
         echo "MYSQL_HOST=${{ secrets.MYSQL_HOST }}" >> .env
+        echo "MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
         echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" >> .env
-        echo "MYSQL_PORT=${{ secrets.MYSQL_PORT }}" >> .env
         echo "MYSQL_USER=${{ secrets.MYSQL_USER }}" >> .env
         echo "MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}" >> .env
-        echo "MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
         echo "SUPER_ADMIN_EMAIL: ${{ secrets.SUPER_ADMIN_EMAIL }}" >> .env
         echo "SUPER_ADMIN_AUTH: ${{ secrets.SUPER_ADMIN_AUTH }}" >> .env
-        echo "DATABASE_ADMIN_EMAIL: ${{ secrets.DATABASE_ADMIN_EMAIL }}" >> .env
-        echo "DATABASE_ADMIN_AUTH: ${{ secrets.DATABASE_ADMIN_AUTH }}" >> .env
         echo "DOCKER_EXPOSED_PORT=${{ secrets.DOCKER_EXPOSED_PORT }}" >> .env
         echo "DOCKER_APPLICATION_PORT=${{ secrets.DOCKER_APPLICATION_PORT }}" >> .env
         
@@ -187,12 +184,10 @@ jobs:
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
           SUPER_ADMIN_EMAIL: ${{ secrets.SUPER_ADMIN_EMAIL }}
           SUPER_ADMIN_AUTH: ${{ secrets.SUPER_ADMIN_AUTH }}
-          DATABASE_ADMIN_EMAIL: ${{ secrets.DATABASE_ADMIN_EMAIL }}
-          DATABASE_ADMIN_AUTH: ${{ secrets.DATABASE_ADMIN_AUTH }}
           DOCKER_EXPOSED_PORT: ${{ secrets.DOCKER_EXPOSED_PORT }}
           DOCKER_APPLICATION_PORT: ${{ secrets.DOCKER_APPLICATION_PORT }}
       
       run: |
         docker compose pull
-        docker compose down
+        docker compose down -v
         docker compose up -d
