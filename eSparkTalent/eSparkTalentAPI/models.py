@@ -121,6 +121,7 @@ class employee(models.Model):
     dob = models.DateField(null=True)
     phone_number = models.CharField(max_length=11)
     email = models.EmailField(unique=True)
+    personal_email =  models.EmailField(unique=True, default="")
     marital_status = models.CharField(max_length=15, null=True)
     image = models.ImageField(
         upload_to="employees/profiles/",
@@ -138,6 +139,9 @@ class employee(models.Model):
     role = models.CharField(max_length=30)
     job_title = models.CharField(max_length=30)
     company = models.CharField(max_length=30)
+    job_status = models.CharField(max_length=30, default="")
+    starting_date = models.DateField(null=True)
+    ending_date = models.DateField(null=True)
     punch_timings = models.JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -246,9 +250,17 @@ class hiring_request(models.Model):
     gender = models.CharField(max_length=7)
     employment_term = models.CharField(max_length=15)
     salary_range = models.JSONField(null=True)
+    salary_currency = models.CharField(max_length=50, default="$ U.S. dollar")
     country = models.CharField(max_length=30, default="")
     hiring_start_date = models.DateField()
     hiring_end_date = models.DateField()
+    job_description = models.FileField(
+        null=True,
+        upload_to="clients/hiring_requests/job_descriptions",
+        validators=[pdf_ext_valid, valid_pdffile_type],
+        default="",
+    )
+    comments = models.CharField(max_length=255, default="", null=True,)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -260,6 +272,24 @@ class hiring_request(models.Model):
             error = valid_json_check(self.salary_range)
             if error:
                 raise ValidationError(error)
+
+        if self.job_description:
+            try:
+                jd = hiring_request.objects.get(id=self.id)
+                if self.job_description != jd.job_description:
+                    try:
+                        file_content = self.job_description.file.seek(0)
+                        valid_pdffile_type(self.job_description.file)
+                        self.job_description.name = upload_file(self.job_description.name)
+                    except ValidationError as e:
+                        raise ValidationError(e)
+            except hiring_request.DoesNotExist:
+                try:
+                    file_content = self.job_description.file.seek(0)
+                    valid_pdffile_type(self.job_description.file)
+                    self.job_description.name = upload_file(self.job_description.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
 
         super().save(*args, **kwargs)
 
@@ -301,20 +331,12 @@ class onboarding(models.Model):
     notice_period = models.IntegerField()
     salary = models.IntegerField(null=True)
     salary_currency  = models.CharField(max_length=30, null=True, default="")
-    benefits = models.JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.client_id} - {self.id}"
 
-    def save(self, *args, **kwargs):
-        if self.benefits or self.benefits == 0:
-            error = valid_json_check(self.benefits)
-            if error:
-                raise ValidationError(error)
-
-        super().save(*args, **kwargs)
 
 
 class leave_balance(models.Model):
@@ -666,7 +688,6 @@ class outsource_employees(models.Model):
     employment_term = models.CharField(max_length=15)
     joining_date = models.DateField()
     salary = models.IntegerField()
-    benefits = models.JSONField()
     status = models.CharField(max_length=15, default="active")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -674,13 +695,6 @@ class outsource_employees(models.Model):
     def __str__(self):
         return f"{self.client_id} - {self.id}"
 
-    def save(self, *args, **kwargs):
-        if self.benefits or self.benefits == 0:
-            error = valid_json_check(self.benefits)
-            if error:
-                raise ValidationError(error)
-
-        super().save(*args, **kwargs)
 
 
 class company_data(models.Model):
@@ -830,3 +844,117 @@ class notifications(models.Model):
 
     def __str__(self):
         return f"{self.email} - {self.id}"
+
+
+class wfh_request(models.Model):
+    status = [
+        ("pending", "pending"),
+        ("completed", "completed"),
+        ("rejected", "rejected"),
+    ]
+    id = models.AutoField(primary_key=True)
+    employee_id = models.EmailField()
+    start_date = models.DateField(default=timezone.now)
+    end_date = models.DateField(default=timezone.now)
+    count = models.IntegerField(default=1)
+    reason = models.CharField(max_length=200, default="")
+    status = models.CharField(max_length=10, choices=status, default="pending")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.employee_id} - {self.id}"
+    
+
+class benefits(models.Model):
+    id = models.AutoField(primary_key=True)
+    employee_id = models.EmailField(null=True)
+    benefit = models.CharField(max_length=50)
+    card_id = models.CharField(max_length=15)
+    issue_date = models.DateField()
+    description = models.CharField(max_length=255, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.employee_id} - {self.id}"
+
+
+class letter(models.Model):
+    id = models.AutoField(primary_key=True)
+    email = models.EmailField()
+    issue_date = models.DateField()
+    objective = models.CharField(max_length=100)
+    letter = models.FileField(
+        upload_to="employees/letters/",
+        validators=[pdf_ext_valid, valid_pdffile_type],
+        default="",
+    )
+    reason = models.CharField(max_length=200, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    
+    def __str__(self):
+        return f"{self.objective} - {self.email}"
+
+    def save(self, *args, **kwargs):
+        try:
+            letter_rec = letter.objects.get(id=self.id)
+            if self.letter != letter_rec.letter:
+                
+                try:
+                    file_content = self.letter.file.seek(0)
+                    valid_pdffile_type(self.letter.file)
+                    self.letter.name = upload_file(self.letter.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
+        except letter.DoesNotExist:
+            try:
+                file_content = self.letter.file.seek(0)
+                valid_pdffile_type(self.letter.file)
+                self.letter.name = upload_file(self.letter.name)
+            except ValidationError as e:
+                raise ValidationError(e)
+        super().save(*args, **kwargs)
+
+
+class salary(models.Model):
+    id = models.AutoField(primary_key=True)
+    employee_id = models.EmailField()
+    date = models.DateField()
+    job_status = models.CharField(max_length=25)
+    gross_salary = models.IntegerField()
+    tax_deduction = models.FloatField()
+    net_salary = models.IntegerField()
+    pay_slip = models.FileField(
+        upload_to="employees/pay_slips/",
+        validators=[pdf_ext_valid, valid_pdffile_type],
+        default="",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    
+    def __str__(self):
+        return f"{self.employee_id} - {self.date}"
+
+    def save(self, *args, **kwargs):
+        try:
+            salary_rec = salary.objects.get(id=self.id)
+            if self.pay_slip != salary_rec.pay_slip:
+                
+                try:
+                    file_content = self.pay_slip.file.seek(0)
+                    valid_pdffile_type(self.pay_slip.file)
+                    self.pay_slip.name = upload_file(self.pay_slip.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
+        except salary.DoesNotExist:
+            try:
+                file_content = self.pay_slip.file.seek(0)
+                valid_pdffile_type(self.pay_slip.file)
+                self.pay_slip.name = upload_file(self.pay_slip.name)
+            except ValidationError as e:
+                raise ValidationError(e)
+        super().save(*args, **kwargs)

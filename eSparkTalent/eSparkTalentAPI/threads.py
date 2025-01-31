@@ -12,7 +12,7 @@ class Check_Punches(BaseCommand):
             now = datetime.now()
             is_weekend = now.weekday() in [5, 6]
 
-            employees = outsource_employees.objects.all()
+            employees = outsource_employees.objects.filter(status="active")
             for emp in employees:
                 p_time = employee.objects.get(email=emp.employee_id).punch_timings
                 if p_time:
@@ -41,6 +41,7 @@ class Check_Punches(BaseCommand):
                                             "Day Off": True,
                                             "Full Leave": False,
                                             "Short Duration": False,
+                                            "WFH": False,
                                         },
                                     }
                                     rec.save()
@@ -63,6 +64,7 @@ class Check_Punches(BaseCommand):
                                             "Day Off": True,
                                             "Full Leave": False,
                                             "Short Duration": False,
+                                            "WFH": False,
                                         },
                                     }
                                 },
@@ -80,6 +82,13 @@ class Check_Punches(BaseCommand):
                             Q(
                                 employee_id=emp.employee_id,
                                 client_id=emp.client_id,
+                                status="completed",
+                            ),
+                            Q(start_date__lte=now) & Q(end_date__gte=now),
+                        )
+                        wfh_records = wfh_request.objects.filter(
+                            Q(
+                                employee_id=emp.employee_id,
                                 status="completed",
                             ),
                             Q(start_date__lte=now) & Q(end_date__gte=now),
@@ -109,6 +118,29 @@ class Check_Punches(BaseCommand):
                                             "Day Off": False,
                                             "Full Leave": True,
                                             "Short Duration": False,
+                                            "WFH": False,
+                                        },
+                                    }
+                                    rec.save()
+                                    
+                                elif (
+                                    now.date().strftime("%d-%m-%Y")
+                                    not in rec.record.keys()
+                                    and wfh_records
+                                ):
+                                    rec.record[now.date().strftime("%d-%m-%Y")] = {
+                                        "check_in": "-",
+                                        "check_out": "-",
+                                        "hours_worked": "-",
+                                        "overtime": "-",
+                                        "status": {
+                                            "Present": False,
+                                            "Missing": False,
+                                            "Absent": False,
+                                            "Day Off": False,
+                                            "Full Leave": False,
+                                            "Short Duration": False,
+                                            "WFH": True,
                                         },
                                     }
                                     rec.save()
@@ -129,6 +161,7 @@ class Check_Punches(BaseCommand):
                                             "Day Off": False,
                                             "Full Leave": False,
                                             "Short Duration": False,
+                                            "WFH": False,
                                         },
                                     }
                                     rec.save()
@@ -152,6 +185,31 @@ class Check_Punches(BaseCommand):
                                                 "Day Off": False,
                                                 "Full Leave": True,
                                                 "Short Duration": False,
+                                                "WFH": False,
+                                            },
+                                        }
+                                    },
+                                )
+                            elif wfh_records:
+                                time_sheet.objects.create(
+                                    employee_id=emp.employee_id,
+                                    client_id=emp.client_id,
+                                    month=now.strftime("%B"),
+                                    year=now.strftime("%Y"),
+                                    record={
+                                        now.date().strftime("%d-%m-%Y"): {
+                                            "check_in": "-",
+                                            "check_out": "-",
+                                            "hours_worked": "-",
+                                            "overtime": "-",
+                                            "status": {
+                                                "Present": False,
+                                                "Missing": False,
+                                                "Absent": False,
+                                                "Day Off": False,
+                                                "Full Leave": False,
+                                                "Short Duration": False,
+                                                "WFH": True,
                                             },
                                         }
                                     },
@@ -175,6 +233,7 @@ class Check_Punches(BaseCommand):
                                                 "Day Off": False,
                                                 "Full Leave": False,
                                                 "Short Duration": False,
+                                                "WFH": False,
                                             },
                                         }
                                     },
@@ -277,6 +336,7 @@ class Check_Punches(BaseCommand):
                                         "Day Off": False,
                                         "Full Leave": False,
                                         "Short Duration": False,
+                                        "WFH": False,
                                     },
                                 }
                                 rec.save()
@@ -299,6 +359,7 @@ class Check_Punches(BaseCommand):
                                             "Day Off": False,
                                             "Full Leave": False,
                                             "Short Duration": False,
+                                            "WFH": False,
                                         },
                                     }
                                 },

@@ -1,5 +1,6 @@
 from django.urls import path
 from .clientviews import *
+from .downloadviews import *
 
 urlpatterns=[
     path('login/',LoginView.as_view()),
@@ -24,4 +25,5 @@ urlpatterns=[
     path('c_policy/', Policies.as_view()),
     path('notify/', Notifications.as_view()),
     path('c_availemp/', Available_Employees.as_view()),
+    path('down_jd/',Download_Job_Description.as_view()),
 ]
