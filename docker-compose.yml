@@ -17,13 +17,11 @@ services:
       - MYSQL_PASSWORD
       - SUPER_ADMIN_EMAIL
       - SUPER_ADMIN_AUTH
-      - DATABASE_ADMIN_EMAIL
-      - DATABASE_ADMIN_AUTH
       
     build:
       context: .
       dockerfile: Dockerfile
-    command: bash -c "python eSparkTalent/manage.py migrate && python eSparkTalent/manage.py create_super_user && python eSparkTalent/manage.py runserver 0.0.0.0:${DOCKER_APPLICATION_PORT}"
+    command: bash -c "python eSparkTalent/manage.py makemigrations && python eSparkTalent/manage.py migrate && python eSparkTalent/manage.py create_super_user && python eSparkTalent/manage.py runserver 0.0.0.0:${DOCKER_APPLICATION_PORT}"
     ports:
       - ${DOCKER_EXPOSED_PORT}:${DOCKER_APPLICATION_PORT}
 
