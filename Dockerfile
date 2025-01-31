@@ -4,7 +4,7 @@
 # FROM python:3.10
 
 # for linux containers
-FROM python:3
+FROM python:3.10
 
 # set environment variables
 ENV PYTHONUNBUFFERED=1
