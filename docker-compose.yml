@@ -38,10 +38,10 @@ services:
     image: adminer
     restart: always
     ports:
-      - 7000:7000
+      - 7000:8080
 
-  talent_db:
-    container_name: talent_db
+  talent_dashboard_db:
+    container_name: talent_dashboard_db
     image: mysql:latest
     ports:
       - ${MYSQL_PORT}:${MYSQL_PORT}
@@ -53,7 +53,7 @@ services:
     volumes:
       - talent_database:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysql", "-uroot", "-p${MYSQL_ROOT_PASSWORD}", "-h", "talent_db", "-e", "USE ${MYSQL_DATABASE};"]
+      test: ["CMD", "mysql", "-uroot", "-p${MYSQL_ROOT_PASSWORD}", "-h", "talent_dashboard_db", "-e", "USE ${MYSQL_DATABASE};"]
       retries: 10
 
 volumes:
