@@ -30,7 +30,7 @@ services:
       - ${DOCKER_EXPOSED_PORT}:${DOCKER_APPLICATION_PORT}
 
     depends_on:
-      talent_db:
+      talent_dashboard_db:
         condition: service_healthy
 
 
