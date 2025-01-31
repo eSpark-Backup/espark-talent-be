@@ -35,6 +35,7 @@ services:
 
 
   adminer:
+    container_name: adminer_dbviewer
     image: adminer
     restart: always
     ports:
