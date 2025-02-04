@@ -2370,14 +2370,23 @@ class Download_Report(APIView):
                 FileHeading = "Leave Request"
                 table_data = [table_headers]
                 raw_data = []
+                employee_names_length = [15]
+                job_titles_length = [10]
+                countries_length = [8]
                 for data in records:
                     employee_serializer = EmployeeSerializer(
                         employee.objects.get(email=data.employee_id)
                     )
                     employee_data = employee_serializer.data
+                    full_name = len(str(employee_data.get("first_name", "") + " " + employee_data.get("last_name", "")))
+                    employee_names_length.append(full_name)
                     outsource = outsource_employees.objects.get(
                         client_id=data.client_id, employee_id=employee_data["email"]
                     )
+                    job_title = len(outsource.job_title)
+                    job_titles_length.append(job_title)
+                    country = len(outsource.country)
+                    countries_length.append(country)
 
                     row_data = [
                         str(employee_data.get("employee_id", "")),
@@ -2395,7 +2404,10 @@ class Download_Report(APIView):
                     ]
                     table_data.append(row_data)
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
-                col_widths = [65, 155, 70, 100, 60, 35, 70, 50]
+                name_length = max(employee_names_length)*6
+                job_title_length = max(job_titles_length)*6
+                country_length = max(countries_length)*6
+                col_widths = [65, name_length, country_length, job_title_length, 60, 35, 70, 50]
             elif get_tab == "cio":
                 records = punch_request.objects.filter(client_id=user)
                 current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -2411,11 +2423,14 @@ class Download_Report(APIView):
                 FileHeading = "Clock In Out Request"
                 table_data = [table_headers]
                 raw_data = []
+                employee_names_length = [15]
                 for data in records:
                     employee_serializer = EmployeeSerializer(
                         employee.objects.get(email=data.employee_id)
                     )
                     employee_data = employee_serializer.data
+                    full_name = len(str(employee_data.get("first_name", "") + " " + employee_data.get("last_name", "")))
+                    employee_names_length.append(full_name)
 
                     row_data = [
                         str(employee_data.get("employee_id", "")),
@@ -2431,7 +2446,8 @@ class Download_Report(APIView):
                     ]
                     table_data.append(row_data)
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
-                col_widths = [65, 155, 80, 80, 80, 80]
+                name_length = max(employee_names_length)*6
+                col_widths = [65, name_length, 80, 80, 80, 80]
             elif get_tab == "lb":
                 records = outsource_employees.objects.filter(client_id=user)
                 current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -2447,11 +2463,14 @@ class Download_Report(APIView):
                 FileHeading = "Leave Balance"
                 table_data = [table_headers]
                 raw_data = []
+                employee_names_length = [15]
                 for data in records:
                     employee_serializer = EmployeeSerializer(
                         employee.objects.get(email=data.employee_id)
                     )
                     employee_data = employee_serializer.data
+                    full_name = len(str(employee_data.get("first_name", "") + " " + employee_data.get("last_name", "")))
+                    employee_names_length.append(full_name)
                     leaves = leave_balance.objects.get(employee_id=data.employee_id)
                     row_data = [
                         str(
@@ -2477,7 +2496,8 @@ class Download_Report(APIView):
                     ]
                     table_data.append(row_data)
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
-                col_widths = [155, 80, 80, 80, 80, 80]
+                name_length = max(employee_names_length)*6
+                col_widths = [name_length, 80, 80, 80, 80, 80]
             if records.exists():
                 response = HttpResponse(content_type="application/pdf")
                 response["Content-Disposition"] = f'attachment; filename="{filename}"'
