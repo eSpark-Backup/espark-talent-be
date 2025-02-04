@@ -2395,7 +2395,7 @@ class Download_Report(APIView):
                     ]
                     table_data.append(row_data)
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
-                col_widths = [65, 90, 70, 90, 60, 35, 100, 60]
+                col_widths = [65, 155, 70, 100, 60, 35, 70, 50]
             elif get_tab == "cio":
                 records = punch_request.objects.filter(client_id=user)
                 current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -2431,7 +2431,7 @@ class Download_Report(APIView):
                     ]
                     table_data.append(row_data)
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
-                col_widths = [100, 100, 80, 80, 80, 80]
+                col_widths = [65, 155, 80, 80, 80, 80]
             elif get_tab == "lb":
                 records = outsource_employees.objects.filter(client_id=user)
                 current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -2477,7 +2477,7 @@ class Download_Report(APIView):
                     ]
                     table_data.append(row_data)
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
-                col_widths = [100, 100, 80, 80, 80, 80]
+                col_widths = [155, 80, 80, 80, 80, 80]
             if records.exists():
                 response = HttpResponse(content_type="application/pdf")
                 response["Content-Disposition"] = f'attachment; filename="{filename}"'
