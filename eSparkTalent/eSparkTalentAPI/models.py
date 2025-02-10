@@ -474,6 +474,7 @@ class employee_invoice(models.Model):
     invoice_date = models.DateField()
     due_date = models.DateField()
     invoice_amount = models.IntegerField()
+    currency = models.CharField(max_length=10, default="", null=True)
     payment_status = models.CharField(
         max_length=15, choices=payment_status, default="pending"
     )
@@ -520,6 +521,7 @@ class other_payment(models.Model):
     invoice_date = models.DateField()
     due_date = models.DateField()
     invoice_amount = models.IntegerField()
+    currency = models.CharField(max_length=10, default="", null=True)
     payment_status = models.CharField(
         max_length=15, choices=payment_status, default="pending"
     )

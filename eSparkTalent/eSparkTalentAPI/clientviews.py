@@ -3197,6 +3197,9 @@ class Invoice_Payments(APIView):
                                     "payment_status": openapi.Schema(
                                         type=openapi.TYPE_STRING
                                     ),
+                                    "currency": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
                                 },
                             ),
                         ),
@@ -3221,6 +3224,9 @@ class Invoice_Payments(APIView):
                                         type=openapi.TYPE_INTEGER
                                     ),
                                     "payment_status": openapi.Schema(
+                                        type=openapi.TYPE_STRING
+                                    ),
+                                    "currency": openapi.Schema(
                                         type=openapi.TYPE_STRING
                                     ),
                                 },
@@ -3258,6 +3264,7 @@ class Invoice_Payments(APIView):
                     "invoice_date": data.invoice_date,
                     "due_date": data.due_date,
                     "invoice_amount": data.invoice_amount,
+                    "currency": data.currency,
                     "payment_status": pay_status,
                 }
                 emp_inv_records.append(record)
@@ -3274,6 +3281,7 @@ class Invoice_Payments(APIView):
                     "invoice_date": data.invoice_date,
                     "due_date": data.due_date,
                     "invoice_amount": data.invoice_amount,
+                    "currency": data.currency,
                     "payment_status": pay_status,
                 }
                 other_pays_records.append(record)

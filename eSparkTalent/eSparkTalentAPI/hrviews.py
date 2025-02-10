@@ -678,6 +678,12 @@ class Employee_Invoice(APIView):
                 required=True,
             ),
             openapi.Parameter(
+                name="currency",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
                 name="invoice",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_FILE,
@@ -721,6 +727,7 @@ class Employee_Invoice(APIView):
                             invoice_date=serializer.validated_data["invoice_date"],
                             due_date=serializer.validated_data["due_date"],
                             invoice_amount=serializer.validated_data["invoice_amount"],
+                            currency=serializer.validated_data["currency"],
                             payment_status=serializer.validated_data["payment_status"],
                             invoice=serializer.validated_data["invoice"],
                         )
@@ -865,6 +872,7 @@ class Employee_Invoice(APIView):
                             type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                         ),
                         "invoice_amount": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "currency": openapi.Schema(type=openapi.TYPE_STRING),
                         "payment_status": openapi.Schema(type=openapi.TYPE_STRING),
                     },
                 ),
@@ -892,6 +900,7 @@ class Employee_Invoice(APIView):
                         "invoice_date": inv.invoice_date,
                         "due_date": inv.due_date,
                         "invoice_amount": inv.invoice_amount,
+                        "currency": inv.currency,
                         "payment_status": inv.payment_status,
                     }
                     records.append(record)
@@ -1003,6 +1012,13 @@ class Other_Payment(APIView):
                 required=True,
             ),
             openapi.Parameter(
+                name="currency",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+                required=True,
+            ),
+            openapi.Parameter(
                 name="invoice",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_FILE,
@@ -1029,6 +1045,7 @@ class Other_Payment(APIView):
                     invoice_date=serializer.validated_data["invoice_date"],
                     due_date=serializer.validated_data["due_date"],
                     invoice_amount=serializer.validated_data["invoice_amount"],
+                    currency=serializer.validated_data["currency"],
                     payment_status=serializer.validated_data["payment_status"],
                     invoice=serializer.validated_data["invoice"],
                 )
@@ -1158,6 +1175,7 @@ class Other_Payment(APIView):
                             type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
                         ),
                         "invoice_amount": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "currency": openapi.Schema(type=openapi.TYPE_STRING),
                         "payment_status": openapi.Schema(type=openapi.TYPE_STRING),
                     },
                 ),
@@ -1184,6 +1202,7 @@ class Other_Payment(APIView):
                         "invoice_date": inv.invoice_date,
                         "due_date": inv.due_date,
                         "invoice_amount": inv.invoice_amount,
+                        "currency": inv.currency,
                         "payment_status": inv.payment_status,
                     }
                     records.append(record)
