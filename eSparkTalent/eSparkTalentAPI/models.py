@@ -54,7 +54,7 @@ class end_user(AbstractBaseUser, PermissionsMixin):
 
 
 # file format checks
-img_ext_valid = FileExtensionValidator(["png", "jpg"])
+img_ext_valid = FileExtensionValidator(["png", "jpg", "jpeg"])
 
 
 def valid_imgfile_type(file):
@@ -62,7 +62,7 @@ def valid_imgfile_type(file):
     file_type = magic.from_buffer(file.read(1024), mime=True)
     if file_type not in accept:
         raise ValidationError(
-            "Unsupported file type. Only PNG and JPEG images are allowed."
+            "Unsupported file type. Only PNG JPG and JPEG images are allowed."
         )
     limit = 5 * 1024 * 1024
     if file.size > limit:
@@ -82,7 +82,7 @@ def valid_pdffile_type(file):
         raise ValidationError("File too large. Size should not exceed 5 MB.")
 
 
-ext_valid = FileExtensionValidator(["png", "jpg", "pdf"])
+ext_valid = FileExtensionValidator(["png", "jpg", "jpeg", "pdf"])
 
 
 def valid_file_type(file):
@@ -90,7 +90,7 @@ def valid_file_type(file):
     file_type = magic.from_buffer(file.read(1024), mime=True)
     if file_type not in accept:
         raise ValidationError(
-            "Unsupported file type. Only PNG JPEG and PDFs are allowed."
+            "Unsupported file type. Only PNG JPG JPEG and PDFs are allowed."
         )
     limit = 5 * 1024 * 1024
     if file.size > limit:
