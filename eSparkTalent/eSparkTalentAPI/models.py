@@ -117,7 +117,7 @@ class employee(models.Model):
     last_name = models.CharField(max_length=30)
     gender = models.CharField(max_length=7)
     dob = models.DateField(null=True)
-    phone_number = models.CharField(max_length=11)
+    phone_number = models.CharField(max_length=15)
     email = models.EmailField(unique=True)
     personal_email =  models.EmailField(unique=True, default="")
     marital_status = models.CharField(max_length=15, null=True)
@@ -126,7 +126,7 @@ class employee(models.Model):
         validators=[img_ext_valid, valid_imgfile_type],
         default="",
     )
-    emergency_no = models.CharField(max_length=11, null=True)
+    emergency_no = models.CharField(max_length=15, null=True)
     resume = models.FileField(
         upload_to="employees/resumes/",
         validators=[pdf_ext_valid, valid_pdffile_type],
@@ -203,7 +203,7 @@ class client(models.Model):
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     company_name = models.CharField(max_length=30)
-    phone_number = models.CharField(max_length=11)
+    phone_number = models.CharField(max_length=15)
     email = models.EmailField(unique=True)
     country = models.CharField(max_length=15, null=True)
     image = models.ImageField(
