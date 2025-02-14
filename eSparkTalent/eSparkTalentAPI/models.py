@@ -56,7 +56,7 @@ class end_user(AbstractBaseUser, PermissionsMixin):
 
 
 # file format checks
-img_ext_valid = FileExtensionValidator(["png", "jpg"])
+img_ext_valid = FileExtensionValidator(["png", "jpg", "jpeg"])
 
 
 def valid_imgfile_type(file):
@@ -64,7 +64,7 @@ def valid_imgfile_type(file):
     file_type = magic.from_buffer(file.read(1024), mime=True)
     if file_type not in accept:
         raise ValidationError(
-            "Unsupported file type. Only PNG and JPEG images are allowed."
+            "Unsupported file type. Only PNG JPG and JPEG images are allowed."
         )
     limit = 5 * 1024 * 1024
     if file.size > limit:
@@ -84,7 +84,7 @@ def valid_pdffile_type(file):
         raise ValidationError("File too large. Size should not exceed 5 MB.")
 
 
-ext_valid = FileExtensionValidator(["png", "jpg", "pdf"])
+ext_valid = FileExtensionValidator(["png", "jpg", "jpeg", "pdf"])
 
 
 def valid_file_type(file):
@@ -92,7 +92,7 @@ def valid_file_type(file):
     file_type = magic.from_buffer(file.read(1024), mime=True)
     if file_type not in accept:
         raise ValidationError(
-            "Unsupported file type. Only PNG JPEG and PDFs are allowed."
+            "Unsupported file type. Only PNG JPG JPEG and PDFs are allowed."
         )
     limit = 5 * 1024 * 1024
     if file.size > limit:
@@ -119,7 +119,7 @@ class employee(models.Model):
     last_name = models.CharField(max_length=30)
     gender = models.CharField(max_length=10)
     dob = models.DateField(null=True)
-    phone_number = models.CharField(max_length=11)
+    phone_number = models.CharField(max_length=15)
     email = models.EmailField(unique=True)
     personal_email =  models.EmailField(unique=True, default="")
     marital_status = models.CharField(max_length=15, null=True)
@@ -128,7 +128,7 @@ class employee(models.Model):
         validators=[img_ext_valid, valid_imgfile_type],
         default="",
     )
-    emergency_no = models.CharField(max_length=11, null=True)
+    emergency_no = models.CharField(max_length=15, null=True)
     resume = models.FileField(
         upload_to="employees/resumes/",
         validators=[pdf_ext_valid, valid_pdffile_type],
@@ -137,7 +137,7 @@ class employee(models.Model):
     emergency_contact = models.JSONField(null=True)
     joining_date = models.DateField(null=True)
     role = models.CharField(max_length=30)
-    job_title = models.CharField(max_length=30)
+    job_title = models.CharField(max_length=150)
     company = models.CharField(max_length=30)
     job_status = models.CharField(max_length=30, default="")
     starting_date = models.DateField(null=True)
@@ -205,9 +205,9 @@ class client(models.Model):
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     company_name = models.CharField(max_length=30)
-    phone_number = models.CharField(max_length=11)
+    phone_number = models.CharField(max_length=15)
     email = models.EmailField(unique=True)
-    country = models.CharField(max_length=15, null=True)
+    country = models.CharField(max_length=45, null=True)
     image = models.ImageField(
         upload_to="clients/profiles/",
         validators=[img_ext_valid, valid_imgfile_type],
@@ -245,13 +245,13 @@ class client(models.Model):
 class hiring_request(models.Model):
     id = models.AutoField(primary_key=True)
     client_id = models.EmailField()
-    job_title = models.CharField(max_length=30)
+    job_title = models.CharField(max_length=150)
     role_type = models.CharField(max_length=15)
     gender = models.CharField(max_length=7)
     employment_term = models.CharField(max_length=15)
     salary_range = models.JSONField(null=True)
     salary_currency = models.CharField(max_length=50, default="$ U.S. dollar")
-    country = models.CharField(max_length=30, default="")
+    country = models.CharField(max_length=45, default="")
     hiring_start_date = models.DateField()
     hiring_end_date = models.DateField()
     job_description = models.FileField(
@@ -305,11 +305,11 @@ class interview_schedule(models.Model):
     client_id = models.EmailField()
     employee_name = models.CharField(max_length=50)
     gender = models.CharField(max_length=15, default="")
-    job_title = models.CharField(max_length=30, default="")
+    job_title = models.CharField(max_length=150, default="")
     role_type = models.CharField(max_length=15)
     employment_term = models.CharField(max_length=15)
     interview_date_time = models.DateTimeField()
-    country = models.CharField(max_length=30)
+    country = models.CharField(max_length=45)
     status = models.CharField(max_length=15, choices=status, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -323,8 +323,8 @@ class onboarding(models.Model):
     client_id = models.EmailField()
     employee_name = models.CharField(max_length=20)
     gender = models.CharField(max_length=15, default="")
-    job_title = models.CharField(max_length=30, default="")
-    country = models.CharField(max_length=30)
+    job_title = models.CharField(max_length=150, default="")
+    country = models.CharField(max_length=45)
     role_type = models.CharField(max_length=15)
     employment_term = models.CharField(max_length=15)
     joining_date = models.DateField()
@@ -684,8 +684,8 @@ class outsource_employees(models.Model):
     id = models.AutoField(primary_key=True)
     client_id = models.EmailField()
     employee_id = models.EmailField()
-    job_title = models.CharField(max_length=30, default="")
-    country = models.CharField(max_length=30)
+    job_title = models.CharField(max_length=150, default="")
+    country = models.CharField(max_length=45)
     role_type = models.CharField(max_length=15)
     employment_term = models.CharField(max_length=15)
     joining_date = models.DateField()

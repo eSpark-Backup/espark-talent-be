@@ -81,7 +81,7 @@ class Add_Employee(APIView):
             openapi.Parameter(
                 name="phone_number",
                 in_=openapi.IN_FORM,
-                type=openapi.TYPE_INTEGER,
+                type=openapi.TYPE_STRING,
                 required=True,
             ),
             openapi.Parameter(
@@ -113,7 +113,7 @@ class Add_Employee(APIView):
             openapi.Parameter(
                 name="emergency_no",
                 in_=openapi.IN_FORM,
-                type=openapi.TYPE_INTEGER,
+                type=openapi.TYPE_STRING,
                 required=True,
             ),
             openapi.Parameter(
@@ -422,7 +422,7 @@ class Add_Client(APIView):
             openapi.Parameter(
                 name="phone_number",
                 in_=openapi.IN_FORM,
-                type=openapi.TYPE_INTEGER,
+                type=openapi.TYPE_STRING,
                 required=True,
             ),
             openapi.Parameter(
