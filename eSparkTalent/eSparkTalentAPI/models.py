@@ -37,8 +37,8 @@ class ClientManager(BaseUserManager):
 # Create your models here.
 class end_user(AbstractBaseUser, PermissionsMixin):
     id = models.AutoField(primary_key=True)
-    username = models.CharField(max_length=50)
-    role = models.CharField(max_length=15)
+    username = models.CharField(max_length=255)
+    role = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -117,21 +117,21 @@ def valid_json_check(json):
 
 class employee(models.Model):
     id = models.AutoField(primary_key=True)
-    employee_id = models.CharField(max_length=15, unique=True, default="")
-    first_name = models.CharField(max_length=30)
-    last_name = models.CharField(max_length=30)
-    gender = models.CharField(max_length=10)
+    employee_id = models.CharField(max_length=255, unique=True, default="")
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    gender = models.CharField(max_length=255)
     dob = models.DateField(null=True)
-    phone_number = models.CharField(max_length=15)
+    phone_number = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     personal_email =  models.EmailField(unique=True, default="")
-    marital_status = models.CharField(max_length=15, null=True)
+    marital_status = models.CharField(max_length=255, null=True)
     image = models.FileField(
         upload_to="employees/profiles/",
         validators=[img_ext_valid, valid_imgfile_type],
         default="",
     )
-    emergency_no = models.CharField(max_length=15, null=True)
+    emergency_no = models.CharField(max_length=255, null=True)
     resume = models.FileField(
         upload_to="employees/resumes/",
         validators=[pdf_ext_valid, valid_pdffile_type],
@@ -139,10 +139,10 @@ class employee(models.Model):
     )
     emergency_contact = models.JSONField(null=True)
     joining_date = models.DateField(null=True)
-    role = models.CharField(max_length=30)
-    job_title = models.CharField(max_length=150)
-    company = models.CharField(max_length=30)
-    job_status = models.CharField(max_length=30, default="")
+    role = models.CharField(max_length=255)
+    job_title = models.CharField(max_length=255)
+    company = models.CharField(max_length=255)
+    job_status = models.CharField(max_length=255, default="")
     starting_date = models.DateField(null=True)
     ending_date = models.DateField(null=True)
     punch_timings = models.JSONField(null=True)
@@ -204,19 +204,19 @@ class employee(models.Model):
 
 class client(models.Model):
     id = models.AutoField(primary_key=True)
-    client_id = models.CharField(max_length=15, unique=True)
-    first_name = models.CharField(max_length=30)
-    last_name = models.CharField(max_length=30)
-    company_name = models.CharField(max_length=30)
-    phone_number = models.CharField(max_length=15)
+    client_id = models.CharField(max_length=255, unique=True)
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    company_name = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
-    country = models.CharField(max_length=45, null=True)
+    country = models.CharField(max_length=255, null=True)
     image = models.FileField(
         upload_to="clients/profiles/",
         validators=[img_ext_valid, valid_imgfile_type],
         default="",
     )
-    address = models.CharField(max_length=100, default="")
+    address = models.CharField(max_length=255, default="")
     join_date = models.DateField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -248,13 +248,13 @@ class client(models.Model):
 class hiring_request(models.Model):
     id = models.AutoField(primary_key=True)
     client_id = models.EmailField()
-    job_title = models.CharField(max_length=150)
-    role_type = models.CharField(max_length=15)
-    gender = models.CharField(max_length=7)
-    employment_term = models.CharField(max_length=15)
+    job_title = models.CharField(max_length=255)
+    role_type = models.CharField(max_length=255)
+    gender = models.CharField(max_length=255)
+    employment_term = models.CharField(max_length=255)
     salary_range = models.JSONField(null=True)
-    salary_currency = models.CharField(max_length=50, default="$ U.S. dollar")
-    country = models.CharField(max_length=45, default="")
+    salary_currency = models.CharField(max_length=255, default="$ U.S. dollar")
+    country = models.CharField(max_length=255, default="")
     hiring_start_date = models.DateField()
     hiring_end_date = models.DateField()
     job_description = models.FileField(
@@ -306,14 +306,14 @@ class interview_schedule(models.Model):
     ]
     id = models.AutoField(primary_key=True)
     client_id = models.EmailField()
-    employee_name = models.CharField(max_length=50)
-    gender = models.CharField(max_length=15, default="")
-    job_title = models.CharField(max_length=150, default="")
-    role_type = models.CharField(max_length=15)
-    employment_term = models.CharField(max_length=15)
+    employee_name = models.CharField(max_length=255)
+    gender = models.CharField(max_length=255, default="")
+    job_title = models.CharField(max_length=255, default="")
+    role_type = models.CharField(max_length=255)
+    employment_term = models.CharField(max_length=255)
     interview_date_time = models.DateTimeField()
-    country = models.CharField(max_length=45)
-    status = models.CharField(max_length=15, choices=status, default="pending")
+    country = models.CharField(max_length=255)
+    status = models.CharField(max_length=255, choices=status, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -324,16 +324,16 @@ class interview_schedule(models.Model):
 class onboarding(models.Model):
     id = models.AutoField(primary_key=True)
     client_id = models.EmailField()
-    employee_name = models.CharField(max_length=20)
-    gender = models.CharField(max_length=15, default="")
-    job_title = models.CharField(max_length=150, default="")
-    country = models.CharField(max_length=45)
-    role_type = models.CharField(max_length=15)
-    employment_term = models.CharField(max_length=15)
+    employee_name = models.CharField(max_length=255)
+    gender = models.CharField(max_length=255, default="")
+    job_title = models.CharField(max_length=255, default="")
+    country = models.CharField(max_length=255)
+    role_type = models.CharField(max_length=255)
+    employment_term = models.CharField(max_length=255)
     joining_date = models.DateField()
     notice_period = models.IntegerField()
     salary = models.IntegerField(null=True)
-    salary_currency  = models.CharField(max_length=30, null=True, default="")
+    salary_currency  = models.CharField(max_length=255, null=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -375,18 +375,18 @@ class leave_request(models.Model):
     id = models.AutoField(primary_key=True)
     client_id = models.EmailField()
     employee_id = models.EmailField()
-    leave_type = models.CharField(max_length=7, choices=leave_type)
+    leave_type = models.CharField(max_length=255, choices=leave_type)
     start_date = models.DateField(default=timezone.now)
     end_date = models.DateField(default=timezone.now)
     count = models.IntegerField(default=1)
-    reason = models.CharField(max_length=200, default="")
+    reason = models.CharField(max_length=255, default="")
     attachment = models.FileField(
         null=True,
         upload_to="employees/leave_requests",
         validators=[pdf_ext_valid, valid_pdffile_type],
         default="",
     )
-    status = models.CharField(max_length=10, choices=status, default="pending")
+    status = models.CharField(max_length=255, choices=status, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -425,11 +425,11 @@ class punch_request(models.Model):
     id = models.AutoField(primary_key=True)
     client_id = models.EmailField()
     employee_id = models.EmailField()
-    punch_type = models.CharField(max_length=10, choices=punch_type)
-    punch_time = models.CharField(max_length=15)
+    punch_type = models.CharField(max_length=255, choices=punch_type)
+    punch_time = models.CharField(max_length=255)
     date = models.DateField()
-    description = models.CharField(max_length=200, default="")
-    status = models.CharField(max_length=10, choices=status, default="pending")
+    description = models.CharField(max_length=255, default="")
+    status = models.CharField(max_length=255, choices=status, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -455,7 +455,7 @@ class time_sheet(models.Model):
     id = models.AutoField(primary_key=True)
     client_id = models.EmailField()
     employee_id = models.EmailField()
-    month = models.CharField(max_length=15, choices=months)
+    month = models.CharField(max_length=255, choices=months)
     record = models.JSONField()
     year = models.IntegerField(default=timezone.now().year)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -477,9 +477,9 @@ class employee_invoice(models.Model):
     invoice_date = models.DateField()
     due_date = models.DateField()
     invoice_amount = models.IntegerField()
-    currency = models.CharField(max_length=10, default="", null=True)
+    currency = models.CharField(max_length=255, default="", null=True)
     payment_status = models.CharField(
-        max_length=15, choices=payment_status, default="pending"
+        max_length=255, choices=payment_status, default="pending"
     )
     invoice = models.FileField(
         upload_to="invoices/employee_invoices/",
@@ -520,13 +520,13 @@ class other_payment(models.Model):
     ]
     id = models.AutoField(primary_key=True)
     client_id = models.EmailField()
-    invoice_reference = models.CharField(max_length=30)
+    invoice_reference = models.CharField(max_length=255)
     invoice_date = models.DateField()
     due_date = models.DateField()
     invoice_amount = models.IntegerField()
-    currency = models.CharField(max_length=10, default="", null=True)
+    currency = models.CharField(max_length=255, default="", null=True)
     payment_status = models.CharField(
-        max_length=15, choices=payment_status, default="pending"
+        max_length=255, choices=payment_status, default="pending"
     )
     invoice = models.FileField(
         upload_to="invoices/other_payments/",
@@ -671,10 +671,10 @@ class offshore_contracts(models.Model):
 class asset(models.Model):
     id = models.AutoField(primary_key=True)
     employee_id = models.EmailField(null=True)
-    gadget = models.CharField(max_length=50)
-    asset_id = models.CharField(max_length=15)
+    gadget = models.CharField(max_length=255)
+    asset_id = models.CharField(max_length=255)
     assigned_date = models.DateTimeField()
-    assignee_name = models.CharField(max_length=15, null=True)
+    assignee_name = models.CharField(max_length=255, null=True)
     assignee_email = models.EmailField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -687,13 +687,13 @@ class outsource_employees(models.Model):
     id = models.AutoField(primary_key=True)
     client_id = models.EmailField()
     employee_id = models.EmailField()
-    job_title = models.CharField(max_length=150, default="")
-    country = models.CharField(max_length=45)
-    role_type = models.CharField(max_length=15)
-    employment_term = models.CharField(max_length=15)
+    job_title = models.CharField(max_length=255, default="")
+    country = models.CharField(max_length=255)
+    role_type = models.CharField(max_length=255)
+    employment_term = models.CharField(max_length=255)
     joining_date = models.DateField()
     salary = models.IntegerField()
-    status = models.CharField(max_length=15, default="active")
+    status = models.CharField(max_length=255, default="active")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -704,7 +704,7 @@ class outsource_employees(models.Model):
 
 class company_data(models.Model):
     id = models.AutoField(primary_key=True)
-    company_name = models.CharField(max_length=30, default="")
+    company_name = models.CharField(max_length=255, default="")
     company_email = models.EmailField(default="")
     website_url = models.URLField(default="")
     image = models.FileField(
@@ -741,7 +741,7 @@ class company_data(models.Model):
 
 class policy(models.Model):
     id = models.AutoField(primary_key=True)
-    policy_name = models.CharField(max_length=50, default="")
+    policy_name = models.CharField(max_length=255, default="")
     policy_doc = models.FileField(
         upload_to="policies/",
         validators=[pdf_ext_valid, valid_pdffile_type],
@@ -777,7 +777,7 @@ class policy(models.Model):
 
 class account_n_persmission(models.Model):
     id = models.AutoField(primary_key=True)
-    account_name = models.CharField(max_length=30, default="")
+    account_name = models.CharField(max_length=255, default="")
     email = models.EmailField(unique=True, default="")
     password = models.BinaryField(default=b"")
     image = models.FileField(
@@ -841,8 +841,8 @@ class notifications(models.Model):
     id = models.AutoField(primary_key=True)
     email = models.EmailField(default="")
     ref_id = models.IntegerField(null=True)
-    notification_type = models.CharField(max_length=30, default="")
-    status = models.CharField(max_length=10, default="")
+    notification_type = models.CharField(max_length=255, default="")
+    status = models.CharField(max_length=255, default="")
     description = models.CharField(max_length=255, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -862,8 +862,8 @@ class wfh_request(models.Model):
     start_date = models.DateField(default=timezone.now)
     end_date = models.DateField(default=timezone.now)
     count = models.IntegerField(default=1)
-    reason = models.CharField(max_length=200, default="")
-    status = models.CharField(max_length=10, choices=status, default="pending")
+    reason = models.CharField(max_length=255, default="")
+    status = models.CharField(max_length=255, choices=status, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -874,8 +874,8 @@ class wfh_request(models.Model):
 class benefits(models.Model):
     id = models.AutoField(primary_key=True)
     employee_id = models.EmailField(null=True)
-    benefit = models.CharField(max_length=50)
-    card_id = models.CharField(max_length=15)
+    benefit = models.CharField(max_length=255)
+    card_id = models.CharField(max_length=255)
     issue_date = models.DateField()
     description = models.CharField(max_length=255, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -889,13 +889,13 @@ class letter(models.Model):
     id = models.AutoField(primary_key=True)
     email = models.EmailField()
     issue_date = models.DateField()
-    objective = models.CharField(max_length=100)
+    objective = models.CharField(max_length=255)
     letter = models.FileField(
         upload_to="employees/letters/",
         validators=[pdf_ext_valid, valid_pdffile_type],
         default="",
     )
-    reason = models.CharField(max_length=200, null=True)
+    reason = models.CharField(max_length=255, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -928,7 +928,7 @@ class salary(models.Model):
     id = models.AutoField(primary_key=True)
     employee_id = models.EmailField()
     date = models.DateField()
-    job_status = models.CharField(max_length=25)
+    job_status = models.CharField(max_length=255)
     gross_salary = models.IntegerField()
     tax_deduction = models.FloatField()
     net_salary = models.IntegerField()
