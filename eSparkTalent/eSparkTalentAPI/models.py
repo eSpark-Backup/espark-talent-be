@@ -56,15 +56,16 @@ class end_user(AbstractBaseUser, PermissionsMixin):
 
 
 # file format checks
-img_ext_valid = FileExtensionValidator(["png", "jpg", "jpeg"])
+img_ext_valid = FileExtensionValidator(["png", "jpg", "jpeg", "svg"])
 
 
 def valid_imgfile_type(file):
-    accept = ["image/png", "image/jpeg"]
+    accept = ["image/png", "image/jpeg", "image/svg+xml"]
     file_type = magic.from_buffer(file.read(1024), mime=True)
+    file.seek(0)
     if file_type not in accept:
         raise ValidationError(
-            "Unsupported file type. Only PNG JPG and JPEG images are allowed."
+            "Unsupported file type. Only PNG JPG SVG and JPEG images are allowed."
         )
     limit = 5 * 1024 * 1024
     if file.size > limit:
@@ -77,6 +78,7 @@ pdf_ext_valid = FileExtensionValidator(["pdf"])
 def valid_pdffile_type(file):
     accept = ["application/pdf"]
     file_type = magic.from_buffer(file.read(1024), mime=True)
+    file.seek(0)
     if file_type not in accept:
         raise ValidationError("Unsupported file type. Only PDFs are allowed.")
     limit = 5 * 1024 * 1024
@@ -84,12 +86,13 @@ def valid_pdffile_type(file):
         raise ValidationError("File too large. Size should not exceed 5 MB.")
 
 
-ext_valid = FileExtensionValidator(["png", "jpg", "jpeg", "pdf"])
+ext_valid = FileExtensionValidator(["png", "jpg", "jpeg", "pdf", "svg"])
 
 
 def valid_file_type(file):
-    accept = ["application/pdf", "image/png", "image/jpeg"]
+    accept = ["application/pdf", "image/png", "image/jpeg", "image/svg+xml"]
     file_type = magic.from_buffer(file.read(1024), mime=True)
+    file.seek(0)
     if file_type not in accept:
         raise ValidationError(
             "Unsupported file type. Only PNG JPG JPEG and PDFs are allowed."
@@ -123,7 +126,7 @@ class employee(models.Model):
     email = models.EmailField(unique=True)
     personal_email =  models.EmailField(unique=True, default="")
     marital_status = models.CharField(max_length=15, null=True)
-    image = models.ImageField(
+    image = models.FileField(
         upload_to="employees/profiles/",
         validators=[img_ext_valid, valid_imgfile_type],
         default="",
@@ -208,7 +211,7 @@ class client(models.Model):
     phone_number = models.CharField(max_length=15)
     email = models.EmailField(unique=True)
     country = models.CharField(max_length=45, null=True)
-    image = models.ImageField(
+    image = models.FileField(
         upload_to="clients/profiles/",
         validators=[img_ext_valid, valid_imgfile_type],
         default="",
@@ -704,7 +707,7 @@ class company_data(models.Model):
     company_name = models.CharField(max_length=30, default="")
     company_email = models.EmailField(default="")
     website_url = models.URLField(default="")
-    image = models.ImageField(
+    image = models.FileField(
         upload_to="company/logo",
         validators=[img_ext_valid, valid_imgfile_type],
         default="",
@@ -777,7 +780,7 @@ class account_n_persmission(models.Model):
     account_name = models.CharField(max_length=30, default="")
     email = models.EmailField(unique=True, default="")
     password = models.BinaryField(default=b"")
-    image = models.ImageField(
+    image = models.FileField(
         upload_to="accounts/profiles",
         validators=[img_ext_valid, valid_imgfile_type],
         default="",
