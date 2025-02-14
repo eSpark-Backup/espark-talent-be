@@ -205,7 +205,7 @@ class client(models.Model):
     company_name = models.CharField(max_length=30)
     phone_number = models.CharField(max_length=15)
     email = models.EmailField(unique=True)
-    country = models.CharField(max_length=15, null=True)
+    country = models.CharField(max_length=45, null=True)
     image = models.ImageField(
         upload_to="clients/profiles/",
         validators=[img_ext_valid, valid_imgfile_type],
@@ -249,7 +249,7 @@ class hiring_request(models.Model):
     employment_term = models.CharField(max_length=15)
     salary_range = models.JSONField(null=True)
     salary_currency = models.CharField(max_length=50, default="$ U.S. dollar")
-    country = models.CharField(max_length=30, default="")
+    country = models.CharField(max_length=45, default="")
     hiring_start_date = models.DateField()
     hiring_end_date = models.DateField()
     job_description = models.FileField(
@@ -307,7 +307,7 @@ class interview_schedule(models.Model):
     role_type = models.CharField(max_length=15)
     employment_term = models.CharField(max_length=15)
     interview_date_time = models.DateTimeField()
-    country = models.CharField(max_length=30)
+    country = models.CharField(max_length=45)
     status = models.CharField(max_length=15, choices=status, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -322,7 +322,7 @@ class onboarding(models.Model):
     employee_name = models.CharField(max_length=20)
     gender = models.CharField(max_length=15, default="")
     job_title = models.CharField(max_length=30, default="")
-    country = models.CharField(max_length=30)
+    country = models.CharField(max_length=45)
     role_type = models.CharField(max_length=15)
     employment_term = models.CharField(max_length=15)
     joining_date = models.DateField()
@@ -683,7 +683,7 @@ class outsource_employees(models.Model):
     client_id = models.EmailField()
     employee_id = models.EmailField()
     job_title = models.CharField(max_length=30, default="")
-    country = models.CharField(max_length=30)
+    country = models.CharField(max_length=45)
     role_type = models.CharField(max_length=15)
     employment_term = models.CharField(max_length=15)
     joining_date = models.DateField()
