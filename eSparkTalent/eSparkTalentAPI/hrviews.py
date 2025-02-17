@@ -1716,6 +1716,9 @@ class Hr_Employee(APIView):
                                     type=openapi.TYPE_STRING,
                                     format=openapi.FORMAT_EMAIL,
                                 ),
+                                "phone_number": openapi.Schema(
+                                    type=openapi.TYPE_STRING,
+                                ),
                                 "personal_email": openapi.Schema(
                                     type=openapi.TYPE_STRING,
                                     format=openapi.FORMAT_EMAIL,
@@ -1891,6 +1894,7 @@ class Hr_Employee(APIView):
                     "last_name": emp_record.last_name,
                     "gender": emp_record.gender,
                     "dob": emp_record.dob,
+                    "phone_number":emp_record.phone_number,
                     "email": emp_record.email,
                     "personal_email": emp_record.personal_email,
                     "marital_status": emp_record.marital_status,
