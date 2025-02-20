@@ -111,12 +111,6 @@ class Add_Employee(APIView):
                 required=True,
             ),
             openapi.Parameter(
-                name="emergency_no",
-                in_=openapi.IN_FORM,
-                type=openapi.TYPE_STRING,
-                required=True,
-            ),
-            openapi.Parameter(
                 name="resume",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_FILE,
@@ -276,7 +270,6 @@ class Add_Employee(APIView):
                         personal_email=serializer.validated_data["personal_email"],
                         marital_status=serializer.validated_data["marital_status"],
                         image=serializer.validated_data["image"],
-                        emergency_no=serializer.validated_data["emergency_no"],
                         resume=serializer.validated_data["resume"],
                         emergency_contact=serializer.validated_data[
                             "emergency_contact"
