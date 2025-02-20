@@ -37,7 +37,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
     ending_date = serializers.DateField(required=False, allow_null=True)
     class Meta:
         model = employee
-        fields = "__all__"
+        exclude = ["emergency_no"]
 
 
 class ClientSerializer(serializers.ModelSerializer):
