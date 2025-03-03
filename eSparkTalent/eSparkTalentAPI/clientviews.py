@@ -14,7 +14,8 @@ from django.http import Http404, HttpResponse
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Image
 from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from rest_framework.parsers import MultiPartParser
@@ -2353,6 +2354,11 @@ class Download_Report(APIView):
             )
 
         try:
+            centered_style = ParagraphStyle(
+                "CenteredStyle",
+                parent=getSampleStyleSheet()["Normal"],
+                alignment=TA_CENTER,
+            )
             if get_tab == "lr":
                 records = leave_request.objects.filter(client_id=user)
                 current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -2378,8 +2384,8 @@ class Download_Report(APIView):
                         employee.objects.get(email=data.employee_id)
                     )
                     employee_data = employee_serializer.data
-                    full_name = len(str(employee_data.get("first_name", "") + " " + employee_data.get("last_name", "")))
-                    employee_names_length.append(full_name)
+                    full_name = employee_data.get("first_name", "") + " " + employee_data.get("last_name", "")
+                    employee_names_length.append(len(full_name))
                     outsource = outsource_employees.objects.get(
                         client_id=data.client_id, employee_id=employee_data["email"]
                     )
@@ -2390,11 +2396,7 @@ class Download_Report(APIView):
 
                     row_data = [
                         str(employee_data.get("employee_id", "")),
-                        str(
-                            employee_data.get("first_name", "")
-                            + " "
-                            + employee_data.get("last_name", ""),
-                        ),
+                        Paragraph(full_name, centered_style),
                         str(outsource.country),
                         str(outsource.job_title),
                         str(data.leave_type),
@@ -2405,6 +2407,8 @@ class Download_Report(APIView):
                     table_data.append(row_data)
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
                 name_length = max(employee_names_length)*6
+                if name_length>150:
+                    name_length=150
                 job_title_length = max(job_titles_length)*6
                 country_length = max(countries_length)*6
                 col_widths = [65, name_length, country_length, job_title_length, 60, 35, 70, 50]
@@ -2429,16 +2433,10 @@ class Download_Report(APIView):
                         employee.objects.get(email=data.employee_id)
                     )
                     employee_data = employee_serializer.data
-                    full_name = len(str(employee_data.get("first_name", "") + " " + employee_data.get("last_name", "")))
-                    employee_names_length.append(full_name)
-
+                    full_name = employee_data.get("first_name", "") + " " + employee_data.get("last_name", "")
                     row_data = [
                         str(employee_data.get("employee_id", "")),
-                        str(
-                            employee_data.get("first_name", "")
-                            + " "
-                            + employee_data.get("last_name", ""),
-                        ),
+                        Paragraph(full_name, centered_style),
                         str(data.date),
                         str(data.punch_time),
                         str(data.punch_type),
@@ -2446,8 +2444,7 @@ class Download_Report(APIView):
                     ]
                     table_data.append(row_data)
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
-                name_length = max(employee_names_length)*6
-                col_widths = [65, name_length, 80, 80, 80, 80]
+                col_widths = [65, 180, 80, 80, 80, 80]
             elif get_tab == "lb":
                 records = outsource_employees.objects.filter(client_id=user)
                 current_datetime = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -2469,15 +2466,10 @@ class Download_Report(APIView):
                         employee.objects.get(email=data.employee_id)
                     )
                     employee_data = employee_serializer.data
-                    full_name = len(str(employee_data.get("first_name", "") + " " + employee_data.get("last_name", "")))
-                    employee_names_length.append(full_name)
+                    full_name = str(employee_data.get("first_name", "") + " " + employee_data.get("last_name", ""))
                     leaves = leave_balance.objects.get(employee_id=data.employee_id)
                     row_data = [
-                        str(
-                            employee_data.get("first_name", "")
-                            + " "
-                            + employee_data.get("last_name", ""),
-                        ),
+                        Paragraph(full_name, centered_style),
                         str(leaves.casual_leaves["balance"]),
                         str(leaves.sick_leaves["balance"]),
                         str(leaves.annual_leaves["balance"]),
@@ -2496,8 +2488,7 @@ class Download_Report(APIView):
                     ]
                     table_data.append(row_data)
                     raw_data.append(f"Raw Data for {get_tab}: {data}")
-                name_length = max(employee_names_length)*6
-                col_widths = [name_length, 80, 80, 80, 80, 80]
+                col_widths = [180, 80, 80, 80, 80, 80]
             if records.exists():
                 response = HttpResponse(content_type="application/pdf")
                 response["Content-Disposition"] = f'attachment; filename="{filename}"'
