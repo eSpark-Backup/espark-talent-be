@@ -4523,6 +4523,8 @@ class Policies(APIView):
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Policies_Edit(APIView):
+    parser_classes = (MultiPartParser,)
+
     @swagger_auto_schema(
         tags=["Policies"],
         manual_parameters=[
@@ -4532,24 +4534,33 @@ class Policies_Edit(APIView):
                 description="Bearer Token",
                 type=openapi.TYPE_STRING,
             ),
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Policy record id",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "policy_name",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "policy_doc",
+                openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+            ),
+            openapi.Parameter(
+                "employee",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "client",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
         ],
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                "data": openapi.Schema(
-                    type=openapi.TYPE_ARRAY,
-                    items=openapi.Schema(
-                        type=openapi.TYPE_OBJECT,
-                        properties={
-                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
-                            "employee": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                            "client": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-                        },
-                    ),
-                ),
-            },
-            required=["data"],
-        ),
         responses={
             200: "Request processed successfully",
             400: "Bad Request",
@@ -4560,23 +4571,34 @@ class Policies_Edit(APIView):
         operation_id="3",
     )
     def patch(self, request, *args, **kwargs):
-        policy_ids_array = json.loads(request.body)
+        policy_id = request.query_params.get("id")
+        updates = request.data
         try:
-            for policy_id_json in policy_ids_array["data"]:
-                try:
-                    policy_instance = policy.objects.get(id=policy_id_json["id"])
-                except policy.DoesNotExist:
-                    return Response(
-                        {"error": "Policy not found"}, status=status.HTTP_404_NOT_FOUND
-                    )
-                del policy_id_json["id"]
-                for key in policy_id_json:
-                    setattr(policy_instance, key, policy_id_json[key])
-                policy_instance.save()
+            policy_instance = policy.objects.get(id=policy_id)
+            for key in updates:
+                if key == "policy_doc":
+                    policy_doc = updates['policy_doc']
+                    try:
+                        pdf_ext_valid(policy_doc)
+                        valid_pdffile_type(policy_doc)
+                    except ValidationError as e:
+                        return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    removed = remove_bucket_file(policy_instance.policy_doc.name)
+                    if removed:
+                        return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+                setattr(policy_instance, key, updates[key])
+            policy_instance.save()
             return Response(
                 {"message": "Changes have been saved successfully"},
                 status=status.HTTP_200_OK,
             )
+        except policy.DoesNotExist:
+            return Response(
+                {"error": "Policy not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+        except ValidationError as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
