@@ -4903,6 +4903,131 @@ class Company_Contract(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        tags=["Company Contract"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Company Contract record id",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "tab",
+                openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                enum=["employee", "client"],
+                required=True,
+            ),
+            openapi.Parameter(
+                name="client_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL
+            ),
+            openapi.Parameter(
+                name="employee_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL
+            ),
+            openapi.Parameter(
+                name="contract_name",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="date",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+            ),
+            openapi.Parameter(
+                name="contract_doc",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+            ),
+        ],
+        responses={
+            200: "Request processed successfully",
+            400: "Bad Request",
+            401: "Unauthorized",
+            404: "Policy not found",
+        },
+        operation_summary="Endpoint to edit a company contract",
+        operation_id="4",
+    )
+    def patch(self, request, *args, **kwargs):
+        contract_id = request.query_params.get("id")
+        tab = request.query_params.get("tab")
+        updates = request.data
+        if tab == "employee":
+            try:
+                employee_contract_instance = employee_contract.objects.get(id=contract_id)
+                for key in updates:
+                    if key == "contract_doc":
+                        contract_doc = updates['contract_doc']
+                        try:
+                            pdf_ext_valid(contract_doc)
+                            valid_pdffile_type(contract_doc)
+                        except ValidationError as e:
+                            return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
+                        
+                        removed = remove_bucket_file(employee_contract_instance.contract_doc.name)
+                        if removed:
+                            return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+                    setattr(employee_contract_instance, key, updates[key])
+                employee_contract_instance.save()
+                return Response(
+                    {"message": "Changes have been saved successfully"},
+                    status=status.HTTP_200_OK,
+                )
+            except employee_contract.DoesNotExist:
+                return Response(
+                    {"error": "Employee contract not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+            except ValidationError as e:
+                return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        elif tab == "client":
+            try:
+                client_contract_instance = client_contract.objects.get(id=contract_id)
+                for key in updates:
+                    if key == "contract_doc":
+                        contract_doc = updates['contract_doc']
+                        try:
+                            pdf_ext_valid(contract_doc)
+                            valid_pdffile_type(contract_doc)
+                        except ValidationError as e:
+                            return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
+                        
+                        removed = remove_bucket_file(client_contract_instance.contract_doc.name)
+                        if removed:
+                            return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+                    setattr(client_contract_instance, key, updates[key])
+                client_contract_instance.save()
+                return Response(
+                    {"message": "Changes have been saved successfully"},
+                    status=status.HTTP_200_OK,
+                )
+            except client_contract.DoesNotExist:
+                return Response(
+                    {"error": "Client contract not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+            except ValidationError as e:
+                return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -5139,6 +5264,89 @@ class Offshore_Contract(APIView):
                 {"error": "offshore contract not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        tags=["Offshore Contract"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Offshore Contract record id",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="client_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="employee_id",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="contract_name",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="date",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+            ),
+            openapi.Parameter(
+                name="contract_doc",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+            ),
+        ],
+        responses={
+            200: "Request processed successfully",
+            400: "Bad Request",
+            401: "Unauthorized",
+            404: "Policy not found",
+        },
+        operation_summary="Endpoint to edit a offshore contract",
+        operation_id="4",
+    )
+    def patch(self, request, *args, **kwargs):
+        offshore_contract_id = request.query_params.get("id")
+        updates = request.data
+        try:
+            offshore_contract_instance = offshore_contracts.objects.get(id=offshore_contract_id)
+            for key in updates:
+                if key == "contract_doc":
+                    contract_doc = updates['contract_doc']
+                    try:
+                        pdf_ext_valid(contract_doc)
+                        valid_pdffile_type(contract_doc)
+                    except ValidationError as e:
+                        return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    removed = remove_bucket_file(offshore_contract_instance.contract_doc.name)
+                    if removed:
+                        return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+                setattr(offshore_contract_instance, key, updates[key])
+            offshore_contract_instance.save()
+            return Response(
+                {"message": "Changes have been saved successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except offshore_contracts.DoesNotExist:
+            return Response(
+                {"error": "Offshore contract not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+        except ValidationError as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
