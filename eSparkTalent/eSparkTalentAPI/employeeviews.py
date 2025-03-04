@@ -2593,6 +2593,7 @@ class Policies(APIView):
             record = {
                 "id": emp_pol.id,
                 "policy_name": emp_pol.policy_name,
+                "description": emp_pol.description,
             }
             policies.append(record)
         if len(policies) > 0:
