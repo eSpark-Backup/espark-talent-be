@@ -2640,7 +2640,7 @@ class Start_Hiring(APIView):
             ),
         ],
         operation_summary="Endpoint to create Start_Hiring.",
-        operation_id="5",
+        operation_id="9",
     )
     def post(self, request, *args, **kwargs):
         serializer = start_requestSerializer(data=request.data)
@@ -2737,7 +2737,7 @@ class Start_Hiring(APIView):
             204: openapi.Response(description="No Content"),
             401: openapi.Response("UnAuthorize"),
         },
-        operation_id="4",
+        operation_id="10",
         operation_summary="Get Start_Hiring ",
     )
     def get(self, request, *args, **kwargs):
@@ -2849,7 +2849,7 @@ class Start_Hiring(APIView):
             ),
         ],
         operation_summary="Endpoint to update hiring request.",
-        operation_id="9",
+        operation_id="12",
     )
     def patch(self, request, *args, **kwargs):
         record_id = request.query_params.get("id")
@@ -2913,7 +2913,7 @@ class Start_Hiring(APIView):
             401: openapi.Response(description="Unauthorize"),
         },
         operation_summary="Endpoint to delete a Start_Hiring.",
-        operation_id="6",
+        operation_id="11",
     )
     def delete(self, request, *args, **kwargs):
         delete_id = request.query_params.get("id")
@@ -3084,6 +3084,69 @@ class Interview_Schedule(APIView):
             return Response(records, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        tags=["Clients : Hire & onBoard"],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "client_id": openapi.Schema(
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
+                ),
+                "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
+                "gender": openapi.Schema(type=openapi.TYPE_STRING),
+                "job_title": openapi.Schema(type=openapi.TYPE_STRING),
+                "role_type": openapi.Schema(type=openapi.TYPE_STRING),
+                "employment_term": openapi.Schema(type=openapi.TYPE_STRING),
+                "interview_date_time": openapi.Schema(
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_DATETIME
+                ),
+                "country": openapi.Schema(type=openapi.TYPE_STRING),
+            },
+        ),
+        responses={
+            200: openapi.Response("Successful updated"),
+            400: openapi.Response("Bad request"),
+            401: openapi.Response("UnAuthorize"),
+            404: openapi.Response(description="Not Found"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Id of record to update",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        operation_summary="Endpoint to update interview request.",
+        operation_id="4",
+    )
+    def patch(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        updates = request.data
+        try:
+            record = interview_schedule.objects.get(id=record_id)
+            for key in updates:
+                setattr(record, key, updates[key])
+            record.save()
+            return Response(
+                {"message": "Interview schedule record has been updated successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except interview_schedule.DoesNotExist:
+            return Response(
+                    {"error": "Interview schedule record not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
