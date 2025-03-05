@@ -4443,7 +4443,6 @@ class Policies(APIView):
                 name="description",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
-                required=True,
             ),
             openapi.Parameter(
                 name="policy_doc",

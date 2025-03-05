@@ -740,7 +740,7 @@ class company_data(models.Model):
 class policy(models.Model):
     id = models.AutoField(primary_key=True)
     policy_name = models.CharField(max_length=255, default="")
-    description = models.CharField(max_length=255, default="")
+    description = models.CharField(max_length=255, default="", null=True)
     policy_doc = models.FileField(
         upload_to="policies/",
         validators=[pdf_ext_valid, valid_pdffile_type],
