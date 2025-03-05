@@ -825,7 +825,20 @@ class Employee_Invoice(APIView):
 
     @swagger_auto_schema(
         tags=["Client : Employee Invoice"],
+        responses={
+            200: openapi.Response("Successfull"),
+            400: openapi.Response("Bad request"),
+            401: openapi.Response("UnAuthorize"),
+            404: openapi.Response("Not Found"),
+        },
         manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required= True,
+            ),
             openapi.Parameter(
                 "id",
                 openapi.IN_QUERY,
@@ -834,56 +847,102 @@ class Employee_Invoice(APIView):
                 required=True,
             ),
             openapi.Parameter(
+                "client_id",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+            ),
+            openapi.Parameter(
+                "employee_id",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+            ),
+            openapi.Parameter(
+                "invoice_date",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+            ),
+            openapi.Parameter(
+                "due_date",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+            ),
+            openapi.Parameter(
+                "invoice_amount",
+                openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+            ),
+            openapi.Parameter(
+                "currency",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
                 "payment_status",
                 openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
                 enum=["pending", "paid", "processing"],
-                required=True,
             ),
             openapi.Parameter(
-                "Authorization",
-                openapi.IN_HEADER,
-                description="Bearer Token",
-                type=openapi.TYPE_STRING,
+                "invoice",
+                openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
             ),
         ],
-        responses={
-            201: "Request created",
-            400: "Bad Request",
-            401: "Unauthorized",
-        },
-        operation_summary="Employee Invoice",
+        operation_summary="Endpoint to update invoice record.",
         operation_id="1",
     )
     def patch(self, request, *args, **kwargs):
-        request_id = request.query_params.get("id")
-        to_update_status = request.data.get("payment_status")
-        if to_update_status:
-            try:
-                to_update_emp_inv = employee_invoice.objects.get(id=request_id)
-                to_update_emp_inv.payment_status = to_update_status
-                to_update_emp_inv.save()
+        record_id = request.query_params.get("id")
+        updates = request.data
+        try:
+            record = employee_invoice.objects.get(id=record_id)
+            keys = updates.keys()
+            file_to_remove = ""
+            send_notif = False
+            for key in keys:
+                if key == "invoice":
+                    file_to_remove = record.invoice.name
+                if key == "payment_status":
+                    send_notif = True
+                setattr(record, key, updates[key])
+
+            record.save()
+
+            if file_to_remove != "":
+                removed = remove_bucket_file(file_to_remove)
+                if removed:
+                    return Response(
+                        {"error": str(removed)},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            if send_notif:
                 employee_data = employee.objects.get(
-                    email=to_update_emp_inv.employee_id
+                    email=record.employee_id
                 )
                 notif = notifications.objects.get(
-                    ref_id=to_update_emp_inv.id,
+                    ref_id=record.id,
                     notification_type=f"employee_invoice",
                 )
-                notif.status = to_update_status
-                notif.email = to_update_emp_inv.client_id
-                notif.description = f"Invoice is {to_update_status} for {employee_data.first_name} {employee_data.last_name}"
+                notif.status = updates['payment_status']
+                notif.email = record.client_id
+                notif.description = f"Invoice is {updates['payment_status']} for {employee_data.first_name} {employee_data.last_name}"
                 notif.save()
-                return Response(
-                    {"message": f"One new invoice is {to_update_status}"},
-                    status=status.HTTP_200_OK,
-                )
-            except employee_invoice.DoesNotExist:
-                return Response(status=status.HTTP_404_NOT_FOUND)
-            except Exception as e:
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"message": "Invoice record has been updated successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except employee_invoice.DoesNotExist:
+            return Response(
+                    {"error": "Invoice record not found"}, status=status.HTTP_404_NOT_FOUND
+            )            
+        except ValidationError as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
         tags=["Client : Employee Invoice"],
@@ -1143,48 +1202,109 @@ class Other_Payment(APIView):
                 required=True,
             ),
             openapi.Parameter(
+                "client_id",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+            ),
+            openapi.Parameter(
+                "invoice_reference",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "invoice_date",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+            ),
+            openapi.Parameter(
+                "due_date",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_DATE,
+            ),
+            openapi.Parameter(
+                "invoice_amount",
+                openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+            ),
+            openapi.Parameter(
+                "currency",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
                 "payment_status",
                 openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
                 enum=["pending", "paid", "processing"],
-                required=True,
+            ),
+            openapi.Parameter(
+                "invoice",
+                openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
             ),
             openapi.Parameter(
                 "Authorization",
                 openapi.IN_HEADER,
                 description="Bearer Token",
                 type=openapi.TYPE_STRING,
+                required=True,
             ),
         ],
         responses={
             201: "Request created",
             400: "Bad Request",
             401: "Unauthorized",
+            404: openapi.Response("Not Found"),
         },
-        operation_summary="Other Invoice/payment",
+        operation_summary="Endpoint to update invoice record.",
         operation_id="1",
     )
     def patch(self, request, *args, **kwargs):
-        request_id = request.query_params.get("id")
-        to_update_status = request.data["payment_status"]
+        record_id = request.query_params.get("id")
+        updates = request.data
         try:
-            to_update_otherpay = other_payment.objects.get(id=request_id)
-            to_update_otherpay.payment_status = to_update_status
-            to_update_otherpay.save()
-            notif = notifications.objects.get(
-                ref_id=to_update_otherpay.id,
-                notification_type="other_payment",
-            )
-            notif.status = to_update_status
-            notif.email = to_update_otherpay.client_id
-            notif.description = f"Invoice is {to_update_status} for {to_update_otherpay.invoice_reference}"
-            notif.save()
+            record = other_payment.objects.get(id=record_id)
+            keys = updates.keys()
+            file_to_remove = ""
+            send_notif = False
+            for key in keys:
+                if key == "invoice":
+                    file_to_remove = record.invoice.name
+                if key == "payment_status":
+                    send_notif = True
+                setattr(record, key, updates[key])
+
+            record.save()
+
+            if file_to_remove != "":
+                removed = remove_bucket_file(file_to_remove)
+                if removed:
+                    return Response(
+                        {"error": str(removed)},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            if send_notif:
+                notif = notifications.objects.get(
+                    ref_id=record.id,
+                    notification_type="other_payment",
+                )
+                notif.status = updates['payment_status']
+                notif.email = record.client_id
+                notif.description = f"Invoice is {updates['payment_status']} for {record.invoice_reference}"
+                notif.save()
             return Response(
-                {"message": f"One new invoice is {to_update_status}"},
+                {"message": "Invoice record has been updated successfully"},
                 status=status.HTTP_200_OK,
             )
         except other_payment.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                    {"error": "Invoice record not found"}, status=status.HTTP_404_NOT_FOUND
+            )            
+        except ValidationError as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
