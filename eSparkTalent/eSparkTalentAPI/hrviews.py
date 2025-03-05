@@ -3369,6 +3369,72 @@ class Onboarding(APIView):
 
     @swagger_auto_schema(
         tags=["Clients : Hire & onBoard"],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "client_id": openapi.Schema(
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_EMAIL
+                ),
+                "employee_name": openapi.Schema(type=openapi.TYPE_STRING),
+                "gender": openapi.Schema(type=openapi.TYPE_STRING),
+                "country": openapi.Schema(type=openapi.TYPE_STRING),
+                "job_title": openapi.Schema(type=openapi.TYPE_STRING),
+                "role_type": openapi.Schema(type=openapi.TYPE_STRING),
+                "employment_term": openapi.Schema(type=openapi.TYPE_STRING),
+                "joining_date": openapi.Schema(
+                    type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE
+                ),
+                "notice_period": openapi.Schema(type=openapi.TYPE_INTEGER),
+                "salary": openapi.Schema(type=openapi.TYPE_INTEGER),
+                "salary_currency": openapi.Schema(type=openapi.TYPE_STRING),
+            },
+        ),
+        responses={
+            200: openapi.Response("Successful updated"),
+            400: openapi.Response("Bad request"),
+            401: openapi.Response("UnAuthorize"),
+            404: openapi.Response(description="Not Found"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Id of record to update",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        operation_summary="Endpoint to update onboarding request.",
+        operation_id="5",
+    )
+    def patch(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        updates = request.data
+        try:
+            record = onboarding.objects.get(id=record_id)
+            for key in updates:
+                setattr(record, key, updates[key])
+            record.save()
+            return Response(
+                {"message": "Onboarding record has been updated successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except onboarding.DoesNotExist:
+            return Response(
+                    {"error": "Onboarding record not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        tags=["Clients : Hire & onBoard"],
         manual_parameters=[
             openapi.Parameter(
                 "id",
