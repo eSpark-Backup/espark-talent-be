@@ -4379,6 +4379,7 @@ class Policies(APIView):
                         properties={
                             "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "policy_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "description": openapi.Schema(type=openapi.TYPE_STRING),
                             "employee": openapi.Schema(type=openapi.TYPE_BOOLEAN),
                             "client": openapi.Schema(type=openapi.TYPE_BOOLEAN),
                         },
@@ -4407,6 +4408,7 @@ class Policies(APIView):
             record = {
                 "id": hr_pol.id,
                 "policy_name": hr_pol.policy_name,
+                "description": hr_pol.description,
                 "employee": hr_pol.employee,
                 "client": hr_pol.client,
             }
@@ -4438,6 +4440,11 @@ class Policies(APIView):
                 required=True,
             ),
             openapi.Parameter(
+                name="description",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
                 name="policy_doc",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_FILE,
@@ -4453,6 +4460,7 @@ class Policies(APIView):
             try:
                 pol = policy.objects.create(
                     policy_name=serializer.validated_data["policy_name"],
+                    description=serializer.validated_data["description"],
                     policy_doc=serializer.validated_data["policy_doc"],
                     employee=False,
                     client=False,
@@ -4519,12 +4527,84 @@ class Policies(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        tags=["Policies"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Policy record id",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "policy_name",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "description",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "policy_doc",
+                openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+            ),
+        ],
+        responses={
+            200: "Request processed successfully",
+            400: "Bad Request",
+            401: "Unauthorized",
+            404: "Policy not found",
+        },
+        operation_summary="Endpoint to edit a policy",
+        operation_id="3",
+    )
+    def patch(self, request, *args, **kwargs):
+        policy_id = request.query_params.get("id")
+        updates = request.data
+        try:
+            policy_instance = policy.objects.get(id=policy_id)
+            for key in updates:
+                if key == "policy_doc":
+                    policy_doc = updates['policy_doc']
+                    try:
+                        pdf_ext_valid(policy_doc)
+                        valid_pdffile_type(policy_doc)
+                    except ValidationError as e:
+                        return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    removed = remove_bucket_file(policy_instance.policy_doc.name)
+                    if removed:
+                        return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+                setattr(policy_instance, key, updates[key])
+            policy_instance.save()
+            return Response(
+                {"message": "Changes have been saved successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except policy.DoesNotExist:
+            return Response(
+                {"error": "Policy not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+        except ValidationError as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 class Policies_Edit(APIView):
     @swagger_auto_schema(
-        tags=["Policies"],
+        tags=["Edit Policies"],
         manual_parameters=[
             openapi.Parameter(
                 "Authorization",

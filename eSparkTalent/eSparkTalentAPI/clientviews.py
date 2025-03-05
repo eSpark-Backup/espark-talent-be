@@ -3520,6 +3520,7 @@ class Policies(APIView):
             record = {
                 "id": client_pol.id,
                 "policy_name": client_pol.policy_name,
+                "description": client_pol.description,
             }
             policies.append(record)
         if len(policies) > 0:
