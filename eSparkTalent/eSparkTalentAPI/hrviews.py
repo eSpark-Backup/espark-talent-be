@@ -616,7 +616,7 @@ class Add_Asset(APIView):
             401: openapi.Response(description="Unauthorize"),
             404: openapi.Response(description="Not Found"),
         },
-        operation_summary="Endpoint to update a benefit.",
+        operation_summary="Endpoint to update an asset.",
         operation_id="3",
     )
     def patch(self, request, *args, **kwargs):
