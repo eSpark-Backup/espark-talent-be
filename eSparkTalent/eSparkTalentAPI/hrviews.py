@@ -4357,6 +4357,93 @@ class Accounts(APIView):
 
     @swagger_auto_schema(
         tags=["Settings: Accounts"],
+        responses={
+            200: openapi.Response("Successfull"),
+            400: openapi.Response("Bad request"),
+            401: openapi.Response("UnAuthorize"),
+            404: openapi.Response("Not Found"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required= True,
+            ),
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "account_name",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "email",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                format=openapi.FORMAT_EMAIL,
+            ),
+            openapi.Parameter(
+                "password",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "image",
+                openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+            ),
+        ],
+        operation_summary="Endpoint to update account record.",
+        operation_id="4",
+    )
+    def patch(self, request, *args, **kwargs):
+        id = request.query_params.get("id")
+        updates = request.data
+        try:
+            file_to_remove=""
+            account = account_n_persmission.objects.get(id=id)
+            for key in updates:
+                if key == "password":
+                    key = PBKDF2(self.pass_key, self.salt, dkLen=32)
+                    message = updates["password"]
+                    message_bytes = message.encode("utf-8")
+                    en_cipher = AES.new(key, AES.MODE_CBC, iv=self.iv)
+                    ciphered_data = en_cipher.encrypt(
+                        pad(message_bytes, AES.block_size)
+                    )
+                    setattr(account, "password", ciphered_data)
+                    continue
+                if key == "image":
+                    file_to_remove = account.image.name
+                setattr(account, key, updates[key])
+            account.save()
+            if file_to_remove != "":
+                    removed = remove_bucket_file(file_to_remove)
+                    if removed:
+                        return Response(
+                            {"error": str(removed)},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+            return Response(
+                {"message": "Changes have been saved successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except account_n_persmission.DoesNotExist:
+            return Response({"error": "Account record not found"}, status=status.HTTP_404_NOT_FOUND)
+        except ValidationError as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        tags=["Settings: Accounts"],
         manual_parameters=[
             openapi.Parameter(
                 "id",
