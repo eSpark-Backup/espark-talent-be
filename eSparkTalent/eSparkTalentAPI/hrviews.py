@@ -4857,7 +4857,7 @@ class Policies(APIView):
             try:
                 pol = policy.objects.create(
                     policy_name=serializer.validated_data["policy_name"],
-                    description=serializer.validated_data["description"],
+                    description=request.data.get("description"),
                     policy_doc=serializer.validated_data["policy_doc"],
                     employee=False,
                     client=False,
@@ -7823,3 +7823,319 @@ class Salary(APIView):
             return Response(
                  {"error": "Id parameter required"}, status=status.HTTP_400_BAD_REQUEST
             )
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Guide(APIView):
+    parser_classes = (MultiPartParser,)
+
+    @swagger_auto_schema(
+        tags=["Guide"],
+        responses={
+            201: "Request created",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="guide_name",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="description",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="language",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                name="guide_doc",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+                required=True,
+            ),
+        ],
+        operation_summary="Add a new Guide",
+        operation_id="1",
+    )
+    def post(self, request, *args, **kwargs):
+        try:
+            serializer = GuideSerializer(data=request.data)
+            if serializer.is_valid():
+                guide_record=guide.objects.create(
+                    guide_name=serializer.validated_data["guide_name"],
+                    language=serializer.validated_data["language"],
+                    guide_doc=serializer.validated_data["guide_doc"],
+                    description=request.data.get("description"),
+                    employee=False,
+                    client=False,
+                )
+                return Response(
+                    {
+                        "message": "New guide has been added successfully",
+                        "id": guide_record.id,
+                    },
+                    status=status.HTTP_201_CREATED,
+                )
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                
+        except ValidationError as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    @swagger_auto_schema(
+        tags=["Guide"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "guide_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "description": openapi.Schema(type=openapi.TYPE_STRING),
+                            "language": openapi.Schema(type=openapi.TYPE_STRING),
+                            "employee": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "client": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve guides",
+        operation_id="2",
+    )
+    def get(self, request, *args, **kwargs):
+        hr_guides = guide.objects.all()
+        guides = []
+        for hr_pol in hr_guides:
+            record = {
+                "id": hr_pol.id,
+                "guide_name": hr_pol.guide_name,
+                "description": hr_pol.description,
+                "language": hr_pol.language,
+                "employee": hr_pol.employee,
+                "client": hr_pol.client,
+            }
+            guides.append(record)
+        if len(guides) > 0:
+            return Response(guides, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @swagger_auto_schema(
+        tags=["Guide"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="Record id",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "guide_name",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "description",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "language",
+                openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "guide_doc",
+                openapi.IN_FORM,
+                type=openapi.TYPE_FILE,
+            ),
+        ],
+        responses={
+            200: "Request processed successfully",
+            400: "Bad Request",
+            401: "Unauthorized",
+            404: "Record not found",
+        },
+        operation_summary="Endpoint to edit a guide",
+        operation_id="3",
+    )
+    def patch(self, request, *args, **kwargs):
+        guide_id = request.query_params.get("id")
+        updates = request.data
+        try:
+            guide_instance = guide.objects.get(id=guide_id)
+            for key in updates:
+                if key == "guide_doc":
+                    guide_doc = updates['guide_doc']
+                    try:
+                        pdf_ext_valid(guide_doc)
+                        valid_pdffile_type(guide_doc)
+                    except ValidationError as e:
+                        return Response({"error":e}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    removed = remove_bucket_file(guide_instance.guide_doc.name)
+                    if removed:
+                        return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+                setattr(guide_instance, key, updates[key])
+            guide_instance.save()
+            return Response(
+                {"message": "Changes have been saved successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except guide.DoesNotExist:
+            return Response(
+                {"error": "Guide not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+        except ValidationError as e:
+            return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_auto_schema(
+        tags=["Guide"],
+        manual_parameters=[
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to delete",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(description="Successful deletion"),
+            204: openapi.Response(description="No content"),
+            400: openapi.Response(description="Bad request"),
+            401: openapi.Response(description="Unauthorize"),
+        },
+        operation_summary="Endpoint to delete a guide request.",
+        operation_id="4",
+    )
+    def delete(self, request, *args, **kwargs):
+        delete_id = request.query_params.get("id")
+        try:
+            pol = guide.objects.get(id=delete_id)
+            removed = remove_bucket_file(pol.guide_doc.name)
+            if removed:
+                return Response(
+                    {"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST
+                )
+            pol.delete()
+            return Response(
+                {"message": "Guide has been removed successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except guide.DoesNotExist:
+            return Response({"error": "Guide record not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Guides_Edit(APIView):
+    @swagger_auto_schema(
+        tags=["Edit Guides"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "data": openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "employee": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            "client": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                        },
+                    ),
+                ),
+            },
+            required=["data"],
+        ),
+        responses={
+            200: "Request processed successfully",
+            400: "Bad Request",
+            401: "Unauthorized",
+        },
+        operation_summary="Endpoint to edit a guide",
+        operation_id="3",
+    )
+    def patch(self, request, *args, **kwargs):
+        guide_ids_array = json.loads(request.body)
+        try:
+            for guide_id_json in guide_ids_array["data"]:
+                try:
+                    guide_instance = guide.objects.get(id=guide_id_json["id"])
+                except guide.DoesNotExist:
+                    return Response(
+                        {"error": "Guide not found"}, status=status.HTTP_404_NOT_FOUND
+                    )
+                del guide_id_json["id"]
+                for key in guide_id_json:
+                    setattr(guide_instance, key, guide_id_json[key])
+                guide_instance.save()
+            return Response(
+                {"message": "Changes have been saved successfully"},
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+

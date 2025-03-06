@@ -2568,6 +2568,7 @@ class Policies(APIView):
                         properties={
                             "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "policy_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "description": openapi.Schema(type=openapi.TYPE_STRING),
                         },
                     ),
                 ),
@@ -2598,6 +2599,58 @@ class Policies(APIView):
             policies.append(record)
         if len(policies) > 0:
             return Response(policies, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Guide(APIView):
+    @swagger_auto_schema(
+        tags=["Guide"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "guide_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "description": openapi.Schema(type=openapi.TYPE_STRING),
+                            "language": openapi.Schema(type=openapi.TYPE_STRING),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve employee guides.",
+        operation_id=".",
+    )
+    def get(self, request, *args, **kwargs):
+        emp_guides = guide.objects.filter(employee=True)
+        guides = []
+        for emp_guide in emp_guides:
+            record = {
+                "id": emp_guide.id,
+                "guide_name": emp_guide.guide_name,
+                "description": emp_guide.description,
+                "language": emp_guide.description,
+            }
+            guides.append(record)
+        if len(guides) > 0:
+            return Response(guides, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
 

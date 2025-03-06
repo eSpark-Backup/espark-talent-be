@@ -23,7 +23,10 @@ urlpatterns=[
     path('c_cmpcontract/', Client_contract.as_view()),
     path('c_empcontract/', Employee_Contract.as_view()),
     path('c_policy/', Policies.as_view()),
+    path('c_guide/', Guide.as_view()),
     path('notify/', Notifications.as_view()),
     path('c_availemp/', Available_Employees.as_view()),
     path('down_jd/',Download_Job_Description.as_view()),
+    path('down_policy/',Download_Policy.as_view()),
+    path('down_guide/',Download_Guide.as_view()),
 ]

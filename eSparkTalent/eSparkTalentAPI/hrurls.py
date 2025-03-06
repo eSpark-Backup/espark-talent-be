@@ -50,4 +50,7 @@ urlpatterns=[
     path('down_letter/',Download_Letter.as_view()),
     path('emp_salary/',Salary.as_view()),
     path('down_payslip/',Download_Payslip.as_view()),
+    path('hr_guide/', Guide.as_view()),
+    path('hr_guide_edit/', Guides_Edit.as_view()),
+    path('down_guide/',Download_Guide.as_view()),
 ]

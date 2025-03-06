@@ -3495,6 +3495,7 @@ class Policies(APIView):
                         properties={
                             "id": openapi.Schema(type=openapi.TYPE_INTEGER),
                             "policy_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "description": openapi.Schema(type=openapi.TYPE_STRING),
                         },
                     ),
                 ),
@@ -3525,6 +3526,58 @@ class Policies(APIView):
             policies.append(record)
         if len(policies) > 0:
             return Response(policies, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Guide(APIView):
+    @swagger_auto_schema(
+        tags=["Guide"],
+        responses={
+            200: openapi.Response(
+                description="Successful request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER),
+                            "guide_name": openapi.Schema(type=openapi.TYPE_STRING),
+                            "description": openapi.Schema(type=openapi.TYPE_STRING),
+                            "language": openapi.Schema(type=openapi.TYPE_STRING),
+                        },
+                    ),
+                ),
+            ),
+            204: openapi.Response(description="No Content"),
+            401: openapi.Response(description="Unauthorized"),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        operation_summary="Endpoint to retrieve Client guides",
+        operation_id=".",
+    )
+    def get(self, request, *args, **kwargs):
+        client_guides = guide.objects.filter(client=True)
+        guides = []
+        for client_guide in client_guides:
+            record = {
+                "id": client_guide.id,
+                "guide_name": client_guide.guide_name,
+                "description": client_guide.description,
+                "language": client_guide.language,
+            }
+            guides.append(record)
+        if len(guides) > 0:
+            return Response(guides, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -3595,6 +3648,9 @@ class Notifications(APIView):
             policies = policy.objects.filter(
                 employee=True, created_at__gte=one_week_ago
             ).order_by("-created_at")
+            guides = guide.objects.filter(
+                employee=True, created_at__gte=one_week_ago
+            ).order_by("-created_at")
             for data in notifications_data:
                 record = {
                     "type": capwords(data.notification_type.replace("_", " ")),
@@ -3633,6 +3689,22 @@ class Notifications(APIView):
                         "description": f"{policies.count()} new policies have been added.",
                         "date": policies[0].created_at.date(),
                         "time": policies[0].created_at.strftime("%H:%M:%S"),
+                    }
+                noti_array.append(record)
+            if guides:
+                if guides.count() == 1:
+                    record = {
+                        "type": "Guide",
+                        "description": f"1 new guide have been added.",
+                        "date": guides[0].created_at.date(),
+                        "time": guides[0].created_at.strftime("%H:%M:%S"),
+                    }
+                else:
+                    record = {
+                        "type": "Guide",
+                        "description": f"{guides.count()} new guides have been added.",
+                        "date": guides[0].created_at.date(),
+                        "time": guides[0].created_at.strftime("%H:%M:%S"),
                     }
                 noti_array.append(record)
 
@@ -3677,6 +3749,9 @@ class Notifications(APIView):
             policies = policy.objects.filter(
                 client=True, created_at__gte=one_week_ago
             ).order_by("-created_at")
+            guides = guide.objects.filter(
+                client=True, created_at__gte=one_week_ago
+            ).order_by("-created_at")
             for data in notifications_data:
                 record = {
                     "type": capwords(data.notification_type.replace("_", " ")),
@@ -3715,6 +3790,22 @@ class Notifications(APIView):
                         "description": f"{policies.count()} new policies have been added.",
                         "date": policies[0].created_at.date(),
                         "time": policies[0].created_at.strftime("%H:%M:%S"),
+                    }
+                noti_array.append(record)
+            if guides:
+                if guides.count() == 1:
+                    record = {
+                        "type": "Guide",
+                        "description": f"1 new guide have been added.",
+                        "date": guides[0].created_at.date(),
+                        "time": guides[0].created_at.strftime("%H:%M:%S"),
+                    }
+                else:
+                    record = {
+                        "type": "Guide",
+                        "description": f"{guides.count()} new guides have been added.",
+                        "date": guides[0].created_at.date(),
+                        "time": guides[0].created_at.strftime("%H:%M:%S"),
                     }
                 noti_array.append(record)
             if int_sch:

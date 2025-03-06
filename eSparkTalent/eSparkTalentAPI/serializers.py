@@ -163,3 +163,8 @@ class SalarySerializer(serializers.ModelSerializer):
     class Meta:
         model = salary
         exclude =["employee_id"]
+        
+class GuideSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = guide
+        fields = ["guide_name","guide_doc","language"]
