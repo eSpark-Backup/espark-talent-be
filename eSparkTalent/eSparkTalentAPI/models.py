@@ -962,3 +962,43 @@ class salary(models.Model):
             except ValidationError as e:
                 raise ValidationError(e)
         super().save(*args, **kwargs)
+
+
+class guide(models.Model):
+    id = models.AutoField(primary_key=True)
+    guide_name = models.CharField(max_length=255, default="")
+    description = models.CharField(max_length=255, default="", null=True)
+    language = models.CharField(max_length=255, default="")
+    guide_doc = models.FileField(
+        upload_to="guides/",
+        validators=[pdf_ext_valid, valid_pdffile_type],
+        default="",
+    )
+    employee = models.BooleanField()
+    client = models.BooleanField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    
+    def __str__(self):
+        return f"{self.guide_name} - {self.id}"
+
+    def save(self, *args, **kwargs):
+        try:
+            guide_rec = guide.objects.get(id=self.id)
+            if self.guide_doc != guide_rec.guide_doc:
+                
+                try:
+                    file_content = self.guide_doc.file.seek(0)
+                    valid_pdffile_type(self.guide_doc.file)
+                    self.guide_doc.name = upload_file(self.guide_doc.name)
+                except ValidationError as e:
+                    raise ValidationError(e)
+        except guide.DoesNotExist:
+            try:
+                file_content = self.guide_doc.file.seek(0)
+                valid_pdffile_type(self.guide_doc.file)
+                self.guide_doc.name = upload_file(self.guide_doc.name)
+            except ValidationError as e:
+                raise ValidationError(e)
+        super().save(*args, **kwargs)

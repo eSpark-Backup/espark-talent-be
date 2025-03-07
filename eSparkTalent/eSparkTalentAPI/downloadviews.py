@@ -677,3 +677,65 @@ class Download_Payslip(APIView):
             )
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+class Download_Guide(APIView):
+    @swagger_auto_schema(
+        tags=["Download Guide"],
+        manual_parameters=[
+            openapi.Parameter(
+                "Authorization",
+                openapi.IN_HEADER,
+                description="Bearer Token",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+            openapi.Parameter(
+                "id",
+                openapi.IN_QUERY,
+                description="ID of the record to download",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+        ],
+        responses={
+            200: openapi.Response("Successful Download"),
+            204: openapi.Response("No content"),
+            401: openapi.Response("UnAuthorize"),
+        },
+        operation_id="0",
+        operation_summary="Endpoint to download file",
+    )
+    def get(self, request, *args, **kwargs):
+        record_id = request.query_params.get("id")
+        try:
+            pol = guide.objects.get(id=record_id)
+            download = download_file_from_bucket(pol.guide_doc.name)
+            if download:
+                with open(download.name, "rb") as downloaded_file:
+                    file_content = downloaded_file.read()
+
+                http_response = HttpResponse(
+                    file_content, content_type="application/octet-stream"
+                )
+                http_response[
+                    "Content-Disposition"
+                ] = f'attachment; filename="guide{os.path.splitext(pol.guide_doc.name)[1]}"'
+
+                os.remove(download.name)
+                return http_response
+            else:
+                return Response(
+                    {"message": "File doesn't exists"},
+                    status=status.HTTP_204_NO_CONTENT,
+                )
+
+        except guide.DoesNotExist:
+            return Response(
+                {"error": "guide not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
