@@ -5,6 +5,8 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import TemplateView
+from .views import home
 
 schema_url_patterns1 = [
     path('api/', include('eSparkTalentAPI.clienturls')),
@@ -18,7 +20,7 @@ schema_view1 = get_schema_view(
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
-    url='http://127.0.0.1:8000/api/',
+    url='http://54.162.147.127:8000/api/',
     patterns=schema_url_patterns1,
 )
 
@@ -34,7 +36,7 @@ schema_view2 = get_schema_view(
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
-    url='http://127.0.0.1:8000/api/',
+    url='http://54.162.147.127:8000/api/',
     patterns=schema_url_patterns2,
 )
 
@@ -50,11 +52,12 @@ schema_view3 = get_schema_view(
     ),
     public=True,
     permission_classes=(permissions.AllowAny,),
-    url='http://127.0.0.1:8000/api/',
+    url='http://54.162.147.127:8000/api/',
     patterns=schema_url_patterns3,
 )
 
 urlpatterns = [
+    path('', home, name='home'),
     path("admin/", admin.site.urls),
     path("api/", include("eSparkTalentAPI.clienturls")),
     path("api/", include("eSparkTalentAPI.employeeurls")),
@@ -75,3 +78,5 @@ urlpatterns = [
         name="schema-swagger-ui",
     ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
