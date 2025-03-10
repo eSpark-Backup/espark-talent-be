@@ -4325,6 +4325,12 @@ class Accounts(APIView):
                                 "delete": False,
                                 "download": False,
                             },
+                            guides_perms={
+                                "read": False,
+                                "write": False,
+                                "delete": False,
+                                "download": False,
+                            },
                         )
 
                         return Response(
@@ -4629,6 +4635,17 @@ class Roles_n_Permissions(APIView):
                                     ),
                                 },
                             ),
+                            "guides_perms": openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                    "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                    "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                    "download": openapi.Schema(
+                                        type=openapi.TYPE_BOOLEAN
+                                    ),
+                                },
+                            ),
                         },
                     ),
                 ),
@@ -4651,6 +4668,7 @@ class Roles_n_Permissions(APIView):
                 "leaves_perms": perm.leaves_perms,
                 "invoices_perms": perm.invoices_perms,
                 "policies_perms": perm.policies_perms,
+                "guides_perms": perm.guides_perms,
             }
             records.append(record)
         if records:
