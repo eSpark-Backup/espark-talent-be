@@ -789,6 +789,7 @@ class account_n_persmission(models.Model):
     leaves_perms = models.JSONField()
     invoices_perms = models.JSONField()
     policies_perms = models.JSONField()
+    guides_perms = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
