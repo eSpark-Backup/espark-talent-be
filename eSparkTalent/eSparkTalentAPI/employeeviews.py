@@ -2646,7 +2646,7 @@ class Guide(APIView):
                 "id": emp_guide.id,
                 "guide_name": emp_guide.guide_name,
                 "description": emp_guide.description,
-                "language": emp_guide.description,
+                "language": emp_guide.language,
             }
             guides.append(record)
         if len(guides) > 0:
