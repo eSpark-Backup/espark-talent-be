@@ -1494,6 +1494,15 @@ class Hr_Home(APIView):
                                 "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
                             },
                         ),
+                        "guides_perms": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "read": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "write": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "delete": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                                "download": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            },
+                        ),
                         "employees": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "clients": openapi.Schema(type=openapi.TYPE_INTEGER),
                         "hiring_requests": openapi.Schema(type=openapi.TYPE_INTEGER),
@@ -1544,6 +1553,7 @@ class Hr_Home(APIView):
                 leaves_perms = (user_account.leaves_perms,)
                 invoices_perms = (user_account.invoices_perms,)
                 policies_perms = (user_account.policies_perms,)
+                policies_perms = (user_account.guides_perms,)
             except:
                 user_image = ""
                 employee_perms = {}
@@ -1551,6 +1561,7 @@ class Hr_Home(APIView):
                 leaves_perms = {}
                 invoices_perms = {}
                 policies_perms = {}
+                guides_perms = {}
             if company:
                 comp_image = company[0].image.url
             else:
@@ -1564,6 +1575,7 @@ class Hr_Home(APIView):
                 "leaves_perms": leaves_perms,
                 "invoices_perms": invoices_perms,
                 "policies_perms": policies_perms,
+                "guides_perms": guides_perms,
                 "employees": employee.objects.all().count(),
                 "clients": client.objects.all().count(),
                 "hiring_requests": hiring_request.objects.all().count(),
