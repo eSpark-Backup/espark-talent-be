@@ -1553,7 +1553,7 @@ class Hr_Home(APIView):
                 leaves_perms = (user_account.leaves_perms,)
                 invoices_perms = (user_account.invoices_perms,)
                 policies_perms = (user_account.policies_perms,)
-                policies_perms = (user_account.guides_perms,)
+                guides_perms = (user_account.guides_perms,)
             except:
                 user_image = ""
                 employee_perms = {}
