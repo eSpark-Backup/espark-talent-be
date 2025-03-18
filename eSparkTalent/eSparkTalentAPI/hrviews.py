@@ -2889,6 +2889,7 @@ class Start_Hiring(APIView):
                     "role_type": data.role_type,
                     "gender": data.gender,
                     "employment_term": data.employment_term,
+                    "country": data.country,
                     "salary_range": data.salary_range,
                     "salary_currency": data.salary_currency,
                     "hiring_start_date": data.hiring_start_date,
