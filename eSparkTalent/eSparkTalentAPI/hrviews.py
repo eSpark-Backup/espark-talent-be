@@ -856,7 +856,6 @@ class Employee_Invoice(APIView):
                 "employee_id",
                 openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
-                format=openapi.FORMAT_EMAIL,
             ),
             openapi.Parameter(
                 "invoice_date",
@@ -907,7 +906,13 @@ class Employee_Invoice(APIView):
                 if key == "invoice":
                     file_to_remove = record.invoice.name
                 if key == "payment_status":
-                    send_notif = True
+                    send_notif = True                
+                if key == "employee_id":
+                    employee_email = employee.objects.get(employee_id=updates[key]).email
+                    outsrc = outsource_employees.objects.get(client_id=record.client_id, employee_id=employee_email)
+                    record.employee_id = outsrc.employee_id
+                    continue
+                
                 setattr(record, key, updates[key])
 
             record.save()
@@ -938,7 +943,15 @@ class Employee_Invoice(APIView):
         except employee_invoice.DoesNotExist:
             return Response(
                     {"error": "Invoice record not found"}, status=status.HTTP_404_NOT_FOUND
-            )            
+            )
+        except employee.DoesNotExist:
+            return Response(
+                    {"error": "Employee record not found"}, status=status.HTTP_404_NOT_FOUND
+            )      
+        except outsource_employees.DoesNotExist:
+            return Response(
+                    {"error": "Outsource employee record not found"}, status=status.HTTP_404_NOT_FOUND
+            )               
         except ValidationError as e:
             return Response({"error": e}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
@@ -5437,13 +5450,11 @@ class Company_Contract(APIView):
                 name="client_id",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
-                format=openapi.FORMAT_EMAIL
             ),
             openapi.Parameter(
                 name="employee_id",
                 in_=openapi.IN_FORM,
                 type=openapi.TYPE_STRING,
-                format=openapi.FORMAT_EMAIL
             ),
             openapi.Parameter(
                 name="contract_name",
@@ -5490,6 +5501,10 @@ class Company_Contract(APIView):
                         removed = remove_bucket_file(employee_contract_instance.contract_doc.name)
                         if removed:
                             return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+                    if key == "employee_id":
+                        emp = employee.objects.get(employee_id=updates["employee_id"])
+                        employee_contract_instance.employee_id = emp.email
+                        continue
                     setattr(employee_contract_instance, key, updates[key])
                 employee_contract_instance.save()
                 return Response(
@@ -5519,6 +5534,10 @@ class Company_Contract(APIView):
                         removed = remove_bucket_file(client_contract_instance.contract_doc.name)
                         if removed:
                             return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+                    if key == "client_id":
+                        clnt = client.objects.get(client_id=updates["client_id"])
+                        client_contract_instance. client_id = clnt.email
+                        continue
                     setattr(client_contract_instance, key, updates[key])
                 client_contract_instance.save()
                 return Response(
@@ -5843,6 +5862,14 @@ class Offshore_Contract(APIView):
                     removed = remove_bucket_file(offshore_contract_instance.contract_doc.name)
                     if removed:
                         return Response({"error": str(removed)}, status=status.HTTP_400_BAD_REQUEST)
+                if key == "employee_id":
+                    emp = employee.objects.get(employee_id=updates["employee_id"])
+                    offshore_contract_instance.employee_id = emp.email
+                    continue
+                if key == "client_id":
+                    clnt = client.objects.get(client_id=updates["client_id"])
+                    offshore_contract_instance.client_id = clnt.email
+                    continue
                 setattr(offshore_contract_instance, key, updates[key])
             offshore_contract_instance.save()
             return Response(
